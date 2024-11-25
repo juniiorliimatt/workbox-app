@@ -5,7 +5,7 @@ import path from 'node:path';
 export default defineConfig({
   plugins: [react()],
   build: {
-    outDir: '../resources/static',
+    outDir: '../workbox-api/src/main/resources/static',
     emptyOutDir: true,
   },
   base: '/',
