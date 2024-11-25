@@ -1,19 +1,19 @@
-import {useAuth} from "@/contexts/AuthContext.tsx";
-import {FC, FormEvent, useState} from "react";
+import { useAuth } from "@/contexts/AuthContext.tsx";
+import { FC, FormEvent, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 const Login: FC = () => {
-  const {login} = useAuth();
+  const { login } = useAuth();
+  const navigate = useNavigate();
+
   const [username, setUsername] = useState<string>('');
   const [password, setPassword] = useState<string>('');
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    try {
-      await login(username, password).then(() => console.log('Login successful')).catch(() => console.log(`Could not login with username ${username}`));
-      alert(`Login successful`);
-    } catch {
-      alert(`Could not login with username ${username}`);
-    }
+    await login(username, password)
+      .then(() => navigate("/dashboard"))
+      .catch(() => alert(`Could not login with username ${username}`));
   };
 
   return (
