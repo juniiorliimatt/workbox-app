@@ -6,6 +6,10 @@ Frontend do [monorepo `workbox`](../README.md) — consome a API em
 > Desenvolvimento deste submódulo é de responsabilidade do agente Antigravity (ver
 > [AGENTS.md](../AGENTS.md) na raiz do monorepo).
 
+Também espelhado no [GitHub](https://github.com/juniiorliimatt/workbox-app) — todo push
+pro GitLab é replicado automaticamente via git hook. Ver
+[README raiz](../README.md#espelho-no-github--git-hooks).
+
 ## Stack
 
 | Camada | Tecnologia |
