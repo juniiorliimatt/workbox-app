@@ -19,4 +19,3 @@ sonarcloud-check:
   only:
     - merge_requests
     - main
-    - develop
