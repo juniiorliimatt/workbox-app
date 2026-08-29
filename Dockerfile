@@ -6,10 +6,7 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
 COPY . .
-# --outDir sobrescreve o outDir de vite.config.js (que aponta pra
-# ../workbox-api/src/main/resources/static, usado só no modo embutido/monólito) —
-# aqui o build fica standalone, servido pelo nginx neste próprio container.
-RUN npx tsc -b && npx vite build --outDir dist
+RUN npm run build
 
 FROM nginxinc/nginx-unprivileged:alpine
 COPY --from=build /app/dist /usr/share/nginx/html

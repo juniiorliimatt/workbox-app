@@ -4,10 +4,6 @@ import path from 'node:path';
 
 export default defineConfig({
   plugins: [react()],
-  build: {
-    outDir: '../workbox-api/src/main/resources/static',
-    emptyOutDir: true,
-  },
   base: '/',
   resolve: {
     alias: {
