@@ -63,12 +63,12 @@ describe('Admin Module Pages', () => {
           socialName: 'Carlos Silva',
           email: 'carlos@workbox.local',
           enabled: true,
-          roles: [{ id: 2, authority: 'ROLE_USER' }],
+          roles: [{ id: 2, authority: 'USER' }],
         },
       ];
       const mockRoles = [
-        { id: 1, authority: 'ROLE_ADMIN' },
-        { id: 2, authority: 'ROLE_USER' },
+        { id: 1, authority: 'ADMIN' },
+        { id: 2, authority: 'USER' },
       ];
 
       vi.mocked(api.get).mockImplementation((url) => {
@@ -135,7 +135,7 @@ describe('Admin Module Pages', () => {
           socialName: 'Ana Souza',
           email: 'ana@workbox.local',
           enabled: true,
-          roles: [{ id: 2, authority: 'ROLE_USER' }],
+          roles: [{ id: 2, authority: 'USER' }],
         },
       ];
       const mockUserHistory = [
@@ -191,12 +191,12 @@ describe('Admin Module Pages', () => {
     it('renders role list and creates a new role', async () => {
       const user = userEvent.setup();
       const mockRoles = [
-        { id: 1, authority: 'ROLE_ADMIN' },
-        { id: 2, authority: 'ROLE_USER' },
+        { id: 1, authority: 'ADMIN' },
+        { id: 2, authority: 'USER' },
       ];
 
       vi.mocked(api.get).mockResolvedValue({ data: mockRoles });
-      vi.mocked(api.post).mockResolvedValue({ data: { id: 3, authority: 'ROLE_FINANCE' } });
+      vi.mocked(api.post).mockResolvedValue({ data: { id: 3, authority: 'FINANCE' } });
 
       const authValue = createMockAuthContext();
       render(
@@ -208,8 +208,8 @@ describe('Admin Module Pages', () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByText('ROLE_ADMIN')).toBeInTheDocument();
-        expect(screen.getByText('ROLE_USER')).toBeInTheDocument();
+        expect(screen.getByText('ADMIN')).toBeInTheDocument();
+        expect(screen.getByText('USER')).toBeInTheDocument();
       });
 
       const novoPapelBtn = screen.getByRole('button', { name: /Novo Papel/i });
@@ -238,7 +238,7 @@ describe('Admin Module Pages', () => {
     it('opens role audit history modal and displays revisions', async () => {
       const user = userEvent.setup();
       const mockRoles = [
-        { id: 5, authority: 'ROLE_MANAGER' },
+        { id: 5, authority: 'MANAGER' },
       ];
       const mockRoleHistory = [
         {
@@ -247,7 +247,7 @@ describe('Admin Module Pages', () => {
           changedAt: '2026-08-30T11:00:00',
           changedBy: 'admin@workbox.local',
           id: 5,
-          authority: 'ROLE_MANAGER',
+          authority: 'MANAGER',
         },
       ];
 
@@ -271,7 +271,7 @@ describe('Admin Module Pages', () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByText('ROLE_MANAGER')).toBeInTheDocument();
+        expect(screen.getByText('MANAGER')).toBeInTheDocument();
       });
 
       const auditBtn = screen.getByRole('button', { name: /Auditoria do papel/i });
@@ -279,7 +279,7 @@ describe('Admin Module Pages', () => {
 
       await waitFor(() => {
         expect(api.get).toHaveBeenCalledWith('/api/v1/audit/roles/5/history', expect.anything());
-        expect(screen.getByText(/Histórico de Auditoria: ROLE_MANAGER/i)).toBeInTheDocument();
+        expect(screen.getByText(/Histórico de Auditoria: MANAGER/i)).toBeInTheDocument();
         expect(screen.getByText('#202')).toBeInTheDocument();
       });
     }, 15000);

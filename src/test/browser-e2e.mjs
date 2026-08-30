@@ -173,10 +173,29 @@ async function runBrowserValidation() {
     await page.click('#btn-novo-usuario');
     await page.waitForSelector('#admin-form-social-name', { timeout: 3000 });
 
-    const adminCreatedEmail = `admin_created_${uniqueId}@workbox.local`;
-    await page.type('#admin-form-social-name', `Colaborador ${uniqueId}`);
-    await page.type('#admin-form-email', adminCreatedEmail);
-    await page.type('#admin-form-password', 'SenhaAdmin123!');
+    const adminUniqueId = Date.now();
+    const adminCreatedEmail = `admin_created_${adminUniqueId}@workbox.local`;
+    await page.evaluate((name, email, pass) => {
+      const setNativeValue = (element, value) => {
+        const valueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')?.set;
+        const prototype = Object.getPrototypeOf(element);
+        const prototypeValueSetter = Object.getOwnPropertyDescriptor(prototype, 'value')?.set;
+        if (valueSetter && valueSetter !== prototypeValueSetter) {
+          prototypeValueSetter?.call(element, value);
+        } else {
+          valueSetter?.call(element, value);
+        }
+        element.dispatchEvent(new Event('input', { bubbles: true }));
+        element.dispatchEvent(new Event('change', { bubbles: true }));
+      };
+
+      const nameEl = document.querySelector('#admin-form-social-name');
+      const emailEl = document.querySelector('#admin-form-email');
+      const passEl = document.querySelector('#admin-form-password');
+      if (nameEl) setNativeValue(nameEl, name);
+      if (emailEl) setNativeValue(emailEl, email);
+      if (passEl) setNativeValue(passEl, pass);
+    }, `Colaborador ${adminUniqueId}`, adminCreatedEmail, 'SenhaAdmin123!');
 
     await page.click('#btn-salvar-usuario-admin');
     try {

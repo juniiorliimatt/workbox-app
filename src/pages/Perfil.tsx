@@ -591,7 +591,7 @@ const Perfil: FC = () => {
                       size="small"
                     />
                     <Chip
-                      label={isAdmin ? 'ROLE_ADMIN' : 'ROLE_USER'}
+                      label={isAdmin ? 'Administrador' : 'Usuário'}
                       color={isAdmin ? 'primary' : 'default'}
                       size="small"
                       variant="outlined"

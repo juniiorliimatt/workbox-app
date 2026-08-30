@@ -39,7 +39,7 @@ const Admin: FC = () => {
             Gestão Administrativa & Segurança
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Módulo de controle e governança exclusivo para administradores (ROLE_ADMIN).
+            Módulo de controle e governança exclusivo para administradores.
           </Typography>
         </Paper>
 
@@ -104,7 +104,7 @@ const Admin: FC = () => {
                 </Typography>
                 <Divider sx={{ width: '100%', mb: 1.5 }} />
                 <Typography variant="body2" color="text.secondary">
-                  Gerenciamento de Roles (ROLE_ADMIN, ROLE_USER) e níveis de autoridade de acesso.
+                  Gerenciamento de papéis de usuários (ADMIN, USER) e níveis de autoridade de acesso.
                 </Typography>
               </CardActionArea>
             </Card>
