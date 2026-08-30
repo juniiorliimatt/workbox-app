@@ -89,7 +89,7 @@ Aliases de import configurados em `vite.config.js` (`@`, `@components`, `@pages`
 
 ### 1. Autenticação & Segurança (`/`)
 - **Login por E-mail**: Validação com React Hook Form e Yup, suporte a "Lembrar de mim" via `localStorage`.
-- **Auto-cadastro Público**: Criação direta de novas contas atribuindo o papel padrão `ROLE_USER`.
+- **Auto-cadastro Público**: Criação direta de novas contas atribuindo o papel padrão `USER`.
 - **Autenticação em Duas Etapas (MFA / 2FA)**:
   - Detecção automática de contas com MFA ativo via desafio `mfa_token`.
   - Formulário dedicado para validação do código de 6 dígitos gerado por aplicativo autenticador.
@@ -99,7 +99,7 @@ Aliases de import configurados em `vite.config.js` (`@`, `@components`, `@pages`
 
 ### 2. Hub de Módulos (`/dashboard`)
 - Tela inicial pós-login contendo **12 cards de módulos**:
-  1. **Administração** (`/admin`): Exibido com prioridade para usuários com papel `ROLE_ADMIN`.
+  1. **Administração** (`/admin`): Exibido com prioridade para usuários com papel `ADMIN`.
   2. **Finanças** (`/financas`): Acesso ao módulo de finanças pessoais (*budget-service*).
   3. Demais 10 módulos com badge *"Em breve"* e estado desabilitado (RH, Vendas, Relatórios, CRM, Estoque, etc.).
 
@@ -118,14 +118,16 @@ Aliases de import configurados em `vite.config.js` (`@`, `@components`, `@pages`
   - Opção para desativação segura de MFA com código de confirmação.
 
 ### 4. Módulo de Administração (`/admin`)
-Exclusivo para contas com permissão de administrador (`ROLE_ADMIN`):
+Exclusivo para contas com permissão de administrador (papel `ADMIN`):
 - **Gestão de Usuários** (`/admin/usuarios`):
   - Tabela com foto, nome social, e-mail, status (ativo/inativo) e papéis.
   - Diálogo para criação e edição de usuários, incluindo alteração opcional de senha, papéis e status.
   - Exclusão lógica/confirmação de remoção de usuários.
 - **Papéis & Permissões** (`/admin/papeis`):
   - Listagem de papéis cadastrados no sistema.
-  - Cadastro de novas autoridades (ex.: `ROLE_ADMIN`, `ROLE_USER`, `ROLE_GESTOR`).
+  - Cadastro de novas autoridades — nome puro, **sem** prefixo `ROLE_` (esse prefixo é
+    adicionado só pelo backend na emissão do JWT, nunca no valor armazenado/exibido via
+    `/api/v1/role`); ex.: `GESTOR`, `FINANCEIRO`.
 - **Auditoria de Logins** (`/admin/auditoria`):
   - Visualização de trilha de acessos: data/hora, e-mail do usuário, endereço IP de origem e status de sucesso ou falha (ex.: `mfa_invalid_code`, `bad_credentials`).
   - Filtro em tempo real por termo de busca.
@@ -191,10 +193,16 @@ Contas fixas no banco local para uso **exclusivo dos dois agentes de IA (Claude 
 
 | Papel | E-mail | Senha | Roles | Módulo Principal |
 |---|---|---|---|---|
-| **Admin QA** | `qa.admin@workbox.local` | `QaAdmin@123` | `ROLE_ADMIN`, `ROLE_USER` | Painel de Administração (`/admin`) + Hub |
-| **User QA** | `qa.user@workbox.local` | `QaUser@123` | `ROLE_USER` | Finanças (`/financas`) + Hub |
+| **Admin QA** | `qa.admin@workbox.local` | `QaAdmin@123` | `ADMIN`, `USER` | Painel de Administração (`/admin`) + Hub |
+| **User QA** | `qa.user@workbox.local` | `QaUser@123` | `USER` | Finanças (`/financas`) + Hub |
 
-> Contas seed originais para testes rápidos do desenvolvedor: `admin@workbox.local` / `admin` e `user@workbox.local` / `user`.
+> Roles acima são o valor puro retornado por `/api/v1/role` e `/api/v1/user/**` (sem
+> prefixo `ROLE_`) — só o claim `roles` dentro do JWT (o que `AuthContext` lê) vem
+> prefixado (`ROLE_ADMIN`/`ROLE_USER`).
+
+> ⚠️ As contas seed originais (`admin@workbox.local`, `user@workbox.local`) **não têm
+> senha estável** — já foram alteradas várias vezes por teste manual real ao longo do
+> desenvolvimento. Não depender delas; usar sempre as contas QA acima.
 
 ---
 
