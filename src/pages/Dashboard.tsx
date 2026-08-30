@@ -46,14 +46,6 @@ interface IModuleCard {
 
 const MODULES_LIST: IModuleCard[] = [
   {
-    id: 'financas',
-    title: 'Finanças',
-    description: 'Controle de receitas, despesas, contas, metas e orçamentos.',
-    icon: <WalletIcon sx={{ fontSize: 40 }} color="primary" />,
-    path: '/financas',
-    enabled: true,
-  },
-  {
     id: 'administracao',
     title: 'Administração',
     description: 'Gestão de usuários, papéis, auditoria de logins e governança.',
@@ -61,6 +53,14 @@ const MODULES_LIST: IModuleCard[] = [
     path: '/admin',
     enabled: true,
     adminOnly: true,
+  },
+  {
+    id: 'financas',
+    title: 'Finanças',
+    description: 'Controle de receitas, despesas, contas, metas e orçamentos.',
+    icon: <WalletIcon sx={{ fontSize: 40 }} color="primary" />,
+    path: '/financas',
+    enabled: true,
   },
   {
     id: 'tarefas',
@@ -186,7 +186,7 @@ const Dashboard: FC = () => {
 
       <Container maxWidth="xl" sx={{ mt: 4, mb: 4, flexGrow: 1 }}>
         <Paper elevation={1} sx={{ p: 3, mb: 4, borderRadius: 2 }}>
-          <Typography variant="h5" sx={{ fontWeight: 600, mb: 1 }}>
+          <Typography variant="h5" component="h2" sx={{ fontWeight: 600, mb: 1 }}>
             Olá, {user?.username || 'Usuário'}! Selecione um módulo
           </Typography>
           <Typography variant="body2" color="text.secondary">
@@ -220,7 +220,7 @@ const Dashboard: FC = () => {
                       <Box>{mod.icon}</Box>
                       <Chip label="Acessar" size="small" color="primary" variant="filled" />
                     </Box>
-                    <Typography variant="h6" component="div" sx={{ fontWeight: 600, mb: 1 }}>
+                    <Typography variant="h6" component="h3" sx={{ fontWeight: 600, mb: 1 }}>
                       {mod.title}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
@@ -251,7 +251,7 @@ const Dashboard: FC = () => {
                         sx={{ bgcolor: 'grey.200', color: 'text.secondary', fontWeight: 500 }}
                       />
                     </Box>
-                    <Typography variant="h6" component="div" sx={{ fontWeight: 600, mb: 1, color: 'text.secondary' }}>
+                    <Typography variant="h6" component="h3" sx={{ fontWeight: 600, mb: 1, color: 'text.secondary' }}>
                       {mod.title}
                     </Typography>
                     <Typography variant="body2" color="text.disabled">

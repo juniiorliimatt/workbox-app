@@ -56,12 +56,17 @@ describe('Dashboard Component', () => {
     vi.clearAllMocks();
   });
 
-  it('renders all 12 cards when user is an administrator', () => {
+  it('renders all 12 cards with Administração as the first card when user is an administrator', () => {
     renderDashboard({ isAdmin: true });
 
     expect(screen.getByText(/Olá, admin! Selecione um módulo/i)).toBeInTheDocument();
-    expect(screen.getByText('Finanças')).toBeInTheDocument();
+
+    const titles = screen.getAllByRole('heading', { level: 3 }).map((h) => h.textContent);
+    expect(titles[0]).toBe('Administração');
+    expect(titles[1]).toBe('Finanças');
+
     expect(screen.getByText('Administração')).toBeInTheDocument();
+    expect(screen.getByText('Finanças')).toBeInTheDocument();
     expect(screen.getByText('Tarefas & Projetos')).toBeInTheDocument();
     expect(screen.getByText('Documentos & Wiki')).toBeInTheDocument();
     expect(screen.getByText('Comunicação & Chat')).toBeInTheDocument();
@@ -77,7 +82,7 @@ describe('Dashboard Component', () => {
     expect(emBreveBadges).toHaveLength(10);
   });
 
-  it('hides the Administração card when user is a regular non-admin user', () => {
+  it('hides the Administração card when user is a regular non-admin user (Finanças comes first)', () => {
     renderDashboard({
       isAdmin: false,
       user: {
@@ -90,8 +95,22 @@ describe('Dashboard Component', () => {
     });
 
     expect(screen.getByText(/Olá, regular_user! Selecione um módulo/i)).toBeInTheDocument();
+
+    const titles = screen.getAllByRole('heading', { level: 3 }).map((h) => h.textContent);
+    expect(titles[0]).toBe('Finanças');
+
     expect(screen.getByText('Finanças')).toBeInTheDocument();
     expect(screen.queryByText('Administração')).not.toBeInTheDocument();
+  });
+
+  it('navigates to /admin when clicking the Administração card', async () => {
+    const user = userEvent.setup();
+    renderDashboard({ isAdmin: true });
+
+    const adminCard = screen.getByText('Administração');
+    await user.click(adminCard);
+
+    expect(mockNavigate).toHaveBeenCalledWith('/admin');
   });
 
   it('navigates to /financas when clicking the Finanças card', async () => {
