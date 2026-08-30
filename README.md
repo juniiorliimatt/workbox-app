@@ -1,74 +1,204 @@
 # workbox-app
 
 Frontend do [monorepo `workbox`](../README.md) — consome a API em
-[`workbox-api`](../workbox-api/README.md).
+[`workbox-api`](../workbox-api/README.md) e serviços do ecossistema.
 
-> Desenvolvimento deste submódulo é de responsabilidade do agente Antigravity (ver
+> Desenvolvimento deste submódulo é de responsabilidade do agente **Antigravity** (ver
 > [AGENTS.md](../AGENTS.md) na raiz do monorepo).
 
 Também espelhado no [GitHub](https://github.com/juniiorliimatt/workbox-app) — todo push
 pro GitLab é replicado automaticamente via git hook. Ver
 [README raiz](../README.md#espelho-no-github--git-hooks).
 
-## Stack
+---
+
+## Stack Tecnológica
 
 | Camada | Tecnologia |
 |---|---|
-| Linguagem | TypeScript |
+| Linguagem | TypeScript 5 |
 | Framework | React 18 |
-| Build | Vite 5 |
-| UI | MUI (Material UI) + Emotion |
-| Formulários | react-hook-form + yup |
-| HTTP | axios |
-| Roteamento | react-router-dom |
-| i18n | react-i18next |
+| Build Tool | Vite 5 |
+| UI & Componentes | Material UI (MUI v5) + Emotion |
+| Ícones | `@mui/icons-material` |
+| Formulários & Validação | `react-hook-form` + `yup` (`@hookform/resolvers`) |
+| Cliente HTTP | Axios (com interceptors de Bearer token e refresh automático) |
+| Roteamento | `react-router-dom` v6 |
+| MFA / 2FA TOTP | `qrcode.react` (geração de QR Code compatível com Google Authenticator) |
+| Testes Unitários | Vitest + React Testing Library + `@testing-library/user-event` |
+| Testes E2E / Visuais | Puppeteer-core + Google Chrome headless |
+| Linters & Padrões | ESLint + TypeScript ESLint |
 
-## Estrutura
+---
+
+## Estrutura do Projeto
 
 ```
 src/
-├── assets/       Imagens, ícones estáticos
-├── contexts/      Contextos React (ex.: AuthContext)
-├── interfaces/    Tipos/contratos TypeScript
-├── pages/         Telas
-├── routes/        Definição de rotas (routes.tsx)
-└── services/      Clientes HTTP (ex.: useAxiosWithAuth)
+├── assets/          # Ícones e recursos estáticos
+├── components/      # Componentes reutilizáveis globais
+│   ├── AppNavbar.tsx     # Barra de navegação persistente com avatar e logout
+│   ├── ProtectedRoute.tsx # Guarda de rota autenticada
+│   ├── PublicRoute.tsx    # Guarda de rota pública (redireciona autenticados)
+│   └── UserAvatar.tsx     # Componente de exibição de avatar autenticado
+├── contexts/        # Contextos React e State Management
+│   ├── AuthContext.tsx    # Provedor de autenticação, tokens, MFA e perfis
+│   └── AuthContextValue.ts
+├── hooks/           # Custom React Hooks
+│   ├── useAuth.ts               # Hook de consumo do AuthContext
+│   └── useAuthenticatedAvatar.ts # Hook para carregar imagens autenticadas com Bearer
+├── interfaces/      # Contratos e tipagens TypeScript
+│   ├── IAuthContext.ts
+│   ├── IAuthResponse.ts
+│   ├── IMfaEnrollResponse.ts
+│   ├── IUser.ts
+│   ├── IUserAdminDTO.ts
+│   └── ...
+├── pages/           # Telas da aplicação
+│   ├── Login.tsx          # Login, auto-cadastro e desafio MFA TOTP
+│   ├── Dashboard.tsx      # Hub central de módulos (12 cards temáticos)
+│   ├── Perfil.tsx         # Edição cadastral, foto de perfil, troca de senha e MFA
+│   ├── AdminHub.tsx       # Hub de acesso aos módulos administrativos
+│   ├── AdminUsuarios.tsx  # Gestão completa de usuários (CRUD + fotos + papéis)
+│   ├── AdminPapeis.tsx    # Gestão de papéis e permissões
+│   ├── AdminAuditoria.tsx # Trilha de auditoria e segurança de logins
+│   ├── Financas.tsx       # Módulo de Finanças Pessoais (budget)
+│   └── NotFound.tsx       # Página 404
+├── routes/          # Definição e configuração das rotas (routes.tsx)
+├── services/        # Configuração de clientes HTTP
+│   ├── api.ts             # Instância configurada do Axios
+│   └── useAxiosWithAuth.ts # Interceptors de requisição e renovação de token (401 retry)
+└── test/            # Suíte de testes automatizados e E2E
+    ├── AdminPages.test.tsx
+    ├── AuthContext.test.tsx
+    ├── Dashboard.test.tsx
+    ├── Login.test.tsx
+    ├── Perfil.test.tsx
+    ├── ProtectedRoute.test.tsx
+    ├── PublicRoute.test.tsx
+    ├── UserAvatar.test.tsx
+    └── browser-e2e.mjs     # Teste ponta a ponta no Google Chrome headless
 ```
 
 Aliases de import configurados em `vite.config.js` (`@`, `@components`, `@pages`,
-`@services`, `@contexts`, `@hooks`, `@i18n`, `@interfaces`, `@models`, `@routes`,
-`@themes`, `@utils`, `@img`, `@config`, `@assets`).
+`@services`, `@contexts`, `@hooks`, `@interfaces`, `@routes`, etc.).
 
-## Rodando localmente
+---
+
+## Módulos e Funcionalidades
+
+### 1. Autenticação & Segurança (`/`)
+- **Login por E-mail**: Validação com React Hook Form e Yup, suporte a "Lembrar de mim" via `localStorage`.
+- **Auto-cadastro Público**: Criação direta de novas contas atribuindo o papel padrão `ROLE_USER`.
+- **Autenticação em Duas Etapas (MFA / 2FA)**:
+  - Detecção automática de contas com MFA ativo via desafio `mfa_token`.
+  - Formulário dedicado para validação do código de 6 dígitos gerado por aplicativo autenticador.
+- **Renovação de Sessão (Token Refresh)**:
+  - Rotação contínua de refresh tokens via `POST /api/v1/auth/refresh` com corpo JSON `{ "refreshToken": "..." }`.
+  - Renovação automática transparente via interceptors do Axios em respostas 401.
+
+### 2. Hub de Módulos (`/dashboard`)
+- Tela inicial pós-login contendo **12 cards de módulos**:
+  1. **Administração** (`/admin`): Exibido com prioridade para usuários com papel `ROLE_ADMIN`.
+  2. **Finanças** (`/financas`): Acesso ao módulo de finanças pessoais (*budget-service*).
+  3. Demais 10 módulos com badge *"Em breve"* e estado desabilitado (RH, Vendas, Relatórios, CRM, Estoque, etc.).
+
+### 3. Meu Perfil & Segurança (`/perfil`)
+- **Dados Cadastrais**: Visualização e edição de Nome Social e E-mail.
+- **Gerenciamento de Foto de Perfil (Avatar)**:
+  - Seletor de arquivo de imagem (PNG, JPEG, WEBP até 2MB).
+  - Envio multipart para `POST /api/v1/auth/avatar`.
+  - Remoção de foto via `DELETE /api/v1/auth/avatar`.
+  - Renderização protegida por token através do hook `useAuthenticatedAvatar` e componente `UserAvatar`.
+- **Alteração de Senha**: Validação de senha atual e confirmação de nova senha via `PUT /api/v1/auth/password`.
+- **Configuração de MFA**:
+  - Geração de segredo e **QR Code TOTP** escaneável no Google Authenticator, Microsoft Authenticator e Authy.
+  - Exibição de chave alfanumérica manual com botão de cópia.
+  - Ativação imediata mediante confirmação do primeiro código TOTP.
+  - Opção para desativação segura de MFA com código de confirmação.
+
+### 4. Módulo de Administração (`/admin`)
+Exclusivo para contas com permissão de administrador (`ROLE_ADMIN`):
+- **Gestão de Usuários** (`/admin/usuarios`):
+  - Tabela com foto, nome social, e-mail, status (ativo/inativo) e papéis.
+  - Diálogo para criação e edição de usuários, incluindo alteração opcional de senha, papéis e status.
+  - Exclusão lógica/confirmação de remoção de usuários.
+- **Papéis & Permissões** (`/admin/papeis`):
+  - Listagem de papéis cadastrados no sistema.
+  - Cadastro de novas autoridades (ex.: `ROLE_ADMIN`, `ROLE_USER`, `ROLE_GESTOR`).
+- **Auditoria de Logins** (`/admin/auditoria`):
+  - Visualização de trilha de acessos: data/hora, e-mail do usuário, endereço IP de origem e status de sucesso ou falha (ex.: `mfa_invalid_code`, `bad_credentials`).
+  - Filtro em tempo real por termo de busca.
+
+### 5. Barra de Navegação Global (`AppNavbar`)
+- Cabeçalho persistente em todos os módulos autenticados.
+- Exibe o Avatar do usuário, nome social e função (Administrador / Meu Perfil).
+- Acesso rápido permanente à tela de Perfil e botão de Logout seguro.
+
+---
+
+## Rodando Localmente
+
+### Pré-requisitos
+- Node.js 18+ (recomendado Node 20+)
+- Google Chrome instalado (para execução dos testes E2E headless)
+
+### Comandos
 
 ```bash
+# Instalação das dependências
 npm install
+
+# Servidor de desenvolvimento (com proxy reverso /api -> http://localhost:8080)
 npm run dev       # http://localhost:5173
+
+# Verificação estática de código (ESLint)
 npm run lint
-npm run build      # bundle em dist/ (padrão do Vite)
+
+# Execução da suíte de testes unitários (Vitest)
+npm test
+
+# Execução de testes unitários em modo watch
+npm run test:watch
+
+# Execução de testes de ponta a ponta (E2E com Chrome headless)
+npm run test:e2e
+
+# Build de produção (saída em dist/)
+npm run build
+
+# Preview do build de produção
 npm run preview
 ```
 
-Variáveis de ambiente (`.env.development`): `VITE_PUBLIC_URL_API` (origem da API),
-`VITE_PUBLIC_URL_API_ORIGIN`, `VITE_PUBLIC_SSO_LOGIN_URL` /
-`VITE_PUBLIC_SSO_LOGOUT_URL`, `VITE_INITIAL_PATH`, `VITE_BASE_URL`.
+---
 
-Também roda containerizado, isolado dos backends (`Dockerfile` — build `dist/` +
-nginx servindo standalone, com proxy reverso de `/api/*` pro `workbox-api` dentro da
-rede do `docker-compose.yml` da raiz); ver [README raiz](../README.md#rodando-tudo-em-containers).
+## Variáveis de Ambiente
 
-## Integração com o backend
+Arquivo `.env.development` (e `.env.production`):
 
-Decisão em 2026-08-29: existia um modo em que `npm run build` escrevia direto em
-`workbox-api/src/main/resources/static/` e o backend servia o `index.html` na raiz
-(`FrontendController`) — API e SPA no mesmo JAR. Descontinuado; `workbox-api` não serve
-mais frontend nenhum, o build fica em `dist/` e sobe isolado (nativo via `npm run
-preview`, ou containerizado via `Dockerfile`).
+| Variável | Descrição | Padrão |
+|---|---|---|
+| `VITE_PUBLIC_URL_API` | Base URL da API (`workbox-api`). Em dev, vazio utiliza o proxy do Vite `/api`. | `""` |
+| `VITE_PUBLIC_URL_API_ORIGIN` | Origem da API para comunicação direta | `http://localhost:8080` |
+| `VITE_INITIAL_PATH` | Caminho inicial pós-autenticação | `/dashboard` |
 
-A API consumida é `workbox-api`. O contrato REST — endpoints, schemas, o que pode ser
-assumido — está versionado em
-[`workbox-api/openapi/openapi.yaml`](../workbox-api/openapi/openapi.yaml) e documentado
-em [`workbox-api/README.md`](../workbox-api/README.md#contrato-de-api-openapi). Não
-assuma comportamento de endpoint que não esteja descrito nesse arquivo; se precisar de
-algo que não existe no contrato, é uma mudança do lado backend, não algo pra
-mockar/assumir no frontend.
+---
+
+## Contas de Teste (QA)
+
+Conforme documentado em [`workbox-api/README.md`](../workbox-api/README.md#contas-de-teste-qa), as contas fixas para validação e testes locais são:
+
+| Papel | E-mail | Senha | Módulo Principal |
+|---|---|---|---|
+| **Administrador** | `admin@workbox.local` | `admin` | Painel de Administração (`/admin`) + Hub |
+| **Usuário Padrão** | `user@workbox.local` | `user` | Finanças (`/financas`) + Hub |
+
+---
+
+## Integração com o Backend
+
+O frontend comunica-se exclusivamente com as APIs através dos contratos OpenAPI publicados:
+- Fonte da verdade de autenticação e identidade: [`workbox-api/openapi/openapi.yaml`](../workbox-api/openapi/openapi.yaml).
+- Todas as requisições autenticadas enviam o header `Authorization: Bearer <access_token>`.
+- Imagens de avatar protegidas são resolvidas através de blobs autenticados via `GET /api/v1/user/{id}/avatar`.
