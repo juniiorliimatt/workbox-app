@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import Dashboard from '@/pages/Dashboard';
@@ -16,66 +16,102 @@ vi.mock('react-router-dom', async () => {
 });
 
 const createMockAuthContext = (overrides?: Partial<IAuthContext>): IAuthContext => ({
-  accessToken: 'header.payload.signature',
+  accessToken: 'mock-access-token',
   user: {
-    id: 'user-uuid-1234',
+    id: '123',
     username: 'admin',
     email: 'admin@workbox.local',
     enabled: true,
+    roles: ['ROLE_ADMIN'],
   },
   isAuthenticated: true,
+  isAdmin: true,
   isLoading: false,
   mfaRequired: false,
   mfaToken: null,
-  login: vi.fn(),
-  loginMfa: vi.fn(),
-  refresh: vi.fn(),
+  login: vi.fn().mockResolvedValue(undefined),
+  loginMfa: vi.fn().mockResolvedValue(undefined),
+  registerUser: vi.fn().mockResolvedValue({ id: '1', username: 'u', email: 'e', enabled: true }),
+  refresh: vi.fn().mockResolvedValue(null),
   logout: vi.fn().mockResolvedValue(undefined),
   ...overrides,
 });
+
+const renderDashboard = (contextValue?: Partial<IAuthContext>) => {
+  const authValue = createMockAuthContext(contextValue);
+  return {
+    ...render(
+      <AuthContext.Provider value={authValue}>
+        <BrowserRouter>
+          <Dashboard />
+        </BrowserRouter>
+      </AuthContext.Provider>
+    ),
+    authValue,
+  };
+};
 
 describe('Dashboard Component', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it('renders dashboard with user details and status cards', () => {
-    const authValue = createMockAuthContext();
+  it('renders all 12 cards when user is an administrator', () => {
+    renderDashboard({ isAdmin: true });
 
-    render(
-      <AuthContext.Provider value={authValue}>
-        <BrowserRouter>
-          <Dashboard />
-        </BrowserRouter>
-      </AuthContext.Provider>
-    );
+    expect(screen.getByText(/Olá, admin! Selecione um módulo/i)).toBeInTheDocument();
+    expect(screen.getByText('Finanças')).toBeInTheDocument();
+    expect(screen.getByText('Administração')).toBeInTheDocument();
+    expect(screen.getByText('Tarefas & Projetos')).toBeInTheDocument();
+    expect(screen.getByText('Documentos & Wiki')).toBeInTheDocument();
+    expect(screen.getByText('Comunicação & Chat')).toBeInTheDocument();
+    expect(screen.getByText('Relatórios & Analytics')).toBeInTheDocument();
+    expect(screen.getByText('CRM & Clientes')).toBeInTheDocument();
+    expect(screen.getByText('Estoque & Produtos')).toBeInTheDocument();
+    expect(screen.getByText('RH & Pessoas')).toBeInTheDocument();
+    expect(screen.getByText('Automações & Webhooks')).toBeInTheDocument();
+    expect(screen.getByText('Configurações Globais')).toBeInTheDocument();
+    expect(screen.getByText('Suporte & Helpdesk')).toBeInTheDocument();
 
-    expect(screen.getByText(/Workbox Dashboard/i)).toBeInTheDocument();
-    expect(screen.getByText(/Bem-vindo ao Workbox, admin!/i)).toBeInTheDocument();
-    expect(screen.getByText(/user-uuid-1234/i)).toBeInTheDocument();
-    expect(screen.getByText(/admin@workbox.local/i)).toBeInTheDocument();
-    expect(screen.getByText(/Conta Ativa/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Sair/i })).toBeInTheDocument();
+    const emBreveBadges = screen.getAllByText(/Em breve/i);
+    expect(emBreveBadges).toHaveLength(10);
   });
 
-  it('executes logout and redirects to / on clicking Sair', async () => {
-    const user = userEvent.setup();
-    const authValue = createMockAuthContext();
-
-    render(
-      <AuthContext.Provider value={authValue}>
-        <BrowserRouter>
-          <Dashboard />
-        </BrowserRouter>
-      </AuthContext.Provider>
-    );
-
-    const logoutBtn = screen.getByRole('button', { name: /Sair/i });
-    await user.click(logoutBtn);
-
-    await waitFor(() => {
-      expect(authValue.logout).toHaveBeenCalled();
-      expect(mockNavigate).toHaveBeenCalledWith('/');
+  it('hides the Administração card when user is a regular non-admin user', () => {
+    renderDashboard({
+      isAdmin: false,
+      user: {
+        id: '456',
+        username: 'regular_user',
+        email: 'user@workbox.local',
+        enabled: true,
+        roles: ['ROLE_USER'],
+      },
     });
+
+    expect(screen.getByText(/Olá, regular_user! Selecione um módulo/i)).toBeInTheDocument();
+    expect(screen.getByText('Finanças')).toBeInTheDocument();
+    expect(screen.queryByText('Administração')).not.toBeInTheDocument();
+  });
+
+  it('navigates to /financas when clicking the Finanças card', async () => {
+    const user = userEvent.setup();
+    renderDashboard();
+
+    const financasCard = screen.getByText('Finanças');
+    await user.click(financasCard);
+
+    expect(mockNavigate).toHaveBeenCalledWith('/financas');
+  });
+
+  it('calls logout when clicking the Sair button', async () => {
+    const user = userEvent.setup();
+    const { authValue } = renderDashboard();
+
+    const sairBtn = screen.getByRole('button', { name: /Sair/i });
+    await user.click(sairBtn);
+
+    expect(authValue.logout).toHaveBeenCalled();
+    expect(mockNavigate).toHaveBeenCalledWith('/');
   });
 });

@@ -1,6 +1,8 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 import Login from '@/pages/Login';
 import Dashboard from '@/pages/Dashboard';
+import Financas from '@/pages/Financas';
+import Admin from '@/pages/Admin';
 import ProtectedRoute from '@/routes/ProtectedRoute';
 import PublicRoute from '@/routes/PublicRoute';
 
@@ -20,6 +22,14 @@ export const router = createBrowserRouter([
       {
         path: '/dashboard',
         element: <Dashboard />,
+      },
+      {
+        path: '/financas',
+        element: <Financas />,
+      },
+      {
+        path: '/admin',
+        element: <Admin />,
       },
     ],
   },

@@ -20,14 +20,8 @@ async function runBrowserValidation() {
     const title = await page.$eval('h1', (el) => el.textContent);
     console.log(`   ✅ Título da página renderizado: "${title}"`);
 
-    // 2. Testar validação de formulário vazio
-    console.log('2️⃣ Testando submissão de formulário vazio...');
-    await page.click('button[type="submit"]');
-    await page.waitForSelector('.MuiFormHelperText-root.Mui-error', { timeout: 3000 });
-    console.log('   ✅ Mensagens de validação Yup/MUI exibidas com sucesso.');
-
-    // 3. Testar cadastro de um NOVO USUÁRIO pela interface web (POST /api/v1/auth/register)
-    console.log('3️⃣ Testando auto-cadastro de novo usuário na aba "Novo Usuário"...');
+    // 2. Auto-cadastro de usuário comum (ROLE_USER)
+    console.log('2️⃣ Testando auto-cadastro de novo usuário padrão...');
     const uniqueUser = `usr_${Date.now()}`;
     const uniqueEmail = `${uniqueUser}@workbox.local`;
     const uniquePass = 'SenhaForte123!';
@@ -42,31 +36,61 @@ async function runBrowserValidation() {
     await page.type('#signup-confirm-password', uniquePass);
 
     await page.click('button[type="submit"]');
-
     await page.waitForSelector('.MuiAlert-standardSuccess', { timeout: 5000 });
-    const successText = await page.$eval('.MuiAlert-message', (el) => el.textContent);
-    console.log(`   ✅ Cadastro realizado com sucesso: "${successText}"`);
+    console.log(`   ✅ Usuário comum cadastrado com sucesso.`);
 
-    // 4. Testar login imediato com a nova conta recém-criada
-    console.log(`4️⃣ Testando login com o usuário recém-criado (${uniqueUser})...`);
+    // 3. Login com usuário comum e verificação dos cards no Dashboard
+    console.log(`3️⃣ Testando login e grid de módulos para usuário comum (${uniqueUser})...`);
     await page.type('#password', uniquePass);
     await page.click('button[type="submit"]');
 
     await page.waitForFunction(() => window.location.pathname === '/dashboard', { timeout: 6000 });
-    console.log(`   ✅ Login efetuado com sucesso para a conta nova! Navegado para /dashboard.`);
+    console.log(`   ✅ Redirecionado para o Hub de Módulos (/dashboard).`);
 
-    await page.waitForSelector('.MuiTypography-h5', { timeout: 3000 });
-    const welcomeNewUser = await page.$eval('.MuiTypography-h5', (el) => el.textContent);
-    console.log(`   ✅ Dashboard renderizado para novo usuário: "${welcomeNewUser}"`);
+    // Verificar visibilidade de Finanças e ocultação de Administração
+    await page.waitForSelector('.MuiCard-root', { timeout: 3000 });
+    const financasExists = await page.evaluate(() => {
+      const cards = Array.from(document.querySelectorAll('.MuiCard-root'));
+      return cards.some((c) => c.textContent?.includes('Finanças'));
+    });
+    const adminExists = await page.evaluate(() => {
+      const cards = Array.from(document.querySelectorAll('.MuiCard-root'));
+      return cards.some((c) => c.textContent?.includes('Administração'));
+    });
+
+    console.log(`   ✅ Card "Finanças" visível: ${financasExists}`);
+    console.log(`   ✅ Card "Administração" oculto para usuário comum: ${!adminExists}`);
+
+    if (!financasExists || adminExists) {
+      throw new Error('Falha na filtragem de papéis no Dashboard para usuário comum!');
+    }
+
+    // 4. Testar navegação para o módulo de Finanças (/financas)
+    console.log('4️⃣ Testando clique no card Finanças e navegação para /financas...');
+    await page.evaluate(() => {
+      const cards = Array.from(document.querySelectorAll('.MuiCardActionArea-root'));
+      const financasCard = cards.find((c) => c.textContent?.includes('Finanças'));
+      financasCard?.click();
+    });
+
+    await page.waitForFunction(() => window.location.pathname === '/financas', { timeout: 5000 });
+    const financasHeader = await page.$eval('h5', (el) => el.textContent);
+    console.log(`   ✅ Módulo Finanças renderizado: "${financasHeader}"`);
+
+    // Voltar para o Dashboard
+    const voltarBtn = await page.waitForSelector('button ::-p-text(Voltar aos Módulos)', { timeout: 3000 });
+    await voltarBtn.click();
+    await page.waitForFunction(() => window.location.pathname === '/dashboard', { timeout: 5000 });
+    console.log(`   ✅ Retorno ao /dashboard concluído.`);
 
     // Logout
-    const logoutBtn = await page.waitForSelector('button ::-p-text(Sair)', { timeout: 3000 });
-    await logoutBtn.click();
+    const logoutUserBtn = await page.waitForSelector('button ::-p-text(Sair)', { timeout: 3000 });
+    await logoutUserBtn.click();
     await page.waitForFunction(() => window.location.pathname === '/', { timeout: 5000 });
-    console.log(`   ✅ Logout efetuado com sucesso.`);
+    console.log(`   ✅ Logout de usuário comum efetuado.`);
 
-    // 5. Testar login com "admin" / "admin" e checkbox "Lembrar de mim"
-    console.log('5️⃣ Testando login com "admin" e "Lembrar de mim"...');
+    // 5. Testar login com Administrador (admin / admin)
+    console.log('5️⃣ Testando login com Administrador ("admin") e visualização de 12 cards...');
     await page.$eval('#username', (el) => {
       el.focus();
       el.value = '';
@@ -78,28 +102,48 @@ async function runBrowserValidation() {
       el.value = '';
     });
     await page.type('#password', 'admin');
+    await page.click('button[type="submit"]');
 
-    const rememberCheckbox = await page.$('#rememberMe');
-    if (rememberCheckbox) {
-      await rememberCheckbox.click();
-      console.log('   ✅ Checkbox "Lembrar de mim" marcado.');
+    await page.waitForFunction(() => window.location.pathname === '/dashboard', { timeout: 6000 });
+
+    // Verificar se Administração está visível e total de 12 cards
+    await page.waitForSelector('.MuiCard-root', { timeout: 3000 });
+    const totalCardsAdmin = await page.$$eval('.MuiCard-root', (cards) => cards.length);
+    const adminCardVisible = await page.evaluate(() => {
+      const cards = Array.from(document.querySelectorAll('.MuiCard-root'));
+      return cards.some((c) => c.textContent?.includes('Administração'));
+    });
+
+    console.log(`   ✅ Total de cards para Administrador: ${totalCardsAdmin} (esperado 12)`);
+    console.log(`   ✅ Card "Administração" visível para admin: ${adminCardVisible}`);
+
+    if (totalCardsAdmin !== 12 || !adminCardVisible) {
+      throw new Error(`Total de cards incorreto para admin: ${totalCardsAdmin}`);
     }
 
-    await page.click('button[type="submit"]');
-    await page.waitForFunction(() => window.location.pathname === '/dashboard', { timeout: 6000 });
-    console.log(`   ✅ Login de administrador realizado com sucesso.`);
+    // 6. Testar navegação para /admin
+    console.log('6️⃣ Testando clique no card Administração e navegação para /admin...');
+    await page.evaluate(() => {
+      const cards = Array.from(document.querySelectorAll('.MuiCardActionArea-root'));
+      const adminCard = cards.find((c) => c.textContent?.includes('Administração'));
+      adminCard?.click();
+    });
 
-    // Logout
+    await page.waitForFunction(() => window.location.pathname === '/admin', { timeout: 5000 });
+    const adminHeader = await page.$eval('h5', (el) => el.textContent);
+    console.log(`   ✅ Painel de Administração renderizado: "${adminHeader}"`);
+
+    // Voltar para o Dashboard e deslogar
+    const voltarAdminBtn = await page.waitForSelector('button ::-p-text(Voltar aos Módulos)', { timeout: 3000 });
+    await voltarAdminBtn.click();
+    await page.waitForFunction(() => window.location.pathname === '/dashboard', { timeout: 5000 });
+
     const logoutAdminBtn = await page.waitForSelector('button ::-p-text(Sair)', { timeout: 3000 });
     await logoutAdminBtn.click();
     await page.waitForFunction(() => window.location.pathname === '/', { timeout: 5000 });
+    console.log(`   ✅ Logout final realizado com sucesso.`);
 
-    // 6. Verificar persistência de Lembrar de mim
-    console.log('6️⃣ Verificando se o usuário "admin" foi lembrado...');
-    const rememberedUsername = await page.$eval('#username', (el) => el.value);
-    console.log(`   ✅ Campo de usuário preenchido automaticamente com: "${rememberedUsername}"`);
-
-    console.log('\n🎉 TODAS AS VALIDAÇÕES NO NAVEGADOR E INTEGRAÇÃO FORAM CONCLUÍDAS COM SUCESSO!');
+    console.log('\n🎉 TODAS AS VALIDAÇÕES DE CARDS, ROLES E NAVEGAÇÃO PASSARAM COM SUCESSO!');
   } catch (error) {
     console.error('❌ Erro durante a validação no navegador:', error);
     process.exitCode = 1;

@@ -19,7 +19,7 @@ const mockAxiosResponse = <T,>(data: T): AxiosResponse<T> => ({
 });
 
 const TestConsumer = () => {
-  const { user, accessToken, isAuthenticated, isLoading, login, logout, registerUser } = useAuth();
+  const { user, accessToken, isAuthenticated, isAdmin, isLoading, login, logout, registerUser } = useAuth();
 
   if (isLoading) {
     return <div>Carregando...</div>;
@@ -28,6 +28,7 @@ const TestConsumer = () => {
   return (
     <div>
       <div data-testid="auth-status">{isAuthenticated ? 'Autenticado' : 'Não autenticado'}</div>
+      <div data-testid="is-admin">{isAdmin ? 'Admin' : 'Regular'}</div>
       <div data-testid="user-name">{user?.username || 'Anônimo'}</div>
       <div data-testid="token">{accessToken || 'Sem token'}</div>
       <button onClick={() => login('admin', 'admin')}>Fazer Login</button>

@@ -11,6 +11,20 @@ import { IUserApiRegisterDTO } from '@/interfaces/IUserApiRegisterDTO';
 import api from '@/services/api';
 import { AuthContext } from './AuthContextValue';
 
+const extractRolesFromToken = (token: string): string[] => {
+  try {
+    const payloadBase64 = token.split('.')[1];
+    if (!payloadBase64) return [];
+    const decoded = JSON.parse(atob(payloadBase64.replace(/-/g, '+').replace(/_/g, '/')));
+    if (Array.isArray(decoded.roles)) {
+      return decoded.roles;
+    }
+    return [];
+  } catch {
+    return [];
+  }
+};
+
 export const AuthProvider: FC<IAuthProviderProps> = ({ children }) => {
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [user, setUser] = useState<IUser | null>(null);
@@ -25,8 +39,13 @@ export const AuthProvider: FC<IAuthProviderProps> = ({ children }) => {
           Authorization: `Bearer ${token}`,
         },
       });
-      setUser(response.data);
-      return response.data;
+      const roles = extractRolesFromToken(token);
+      const userProfile: IUser = {
+        ...response.data,
+        roles,
+      };
+      setUser(userProfile);
+      return userProfile;
     } catch {
       setUser(null);
       return null;
@@ -137,6 +156,7 @@ export const AuthProvider: FC<IAuthProviderProps> = ({ children }) => {
   }, [refresh]);
 
   const isAuthenticated = Boolean(accessToken);
+  const isAdmin = Boolean(user?.roles?.includes('ROLE_ADMIN'));
 
   return (
     <AuthContext.Provider
@@ -144,6 +164,7 @@ export const AuthProvider: FC<IAuthProviderProps> = ({ children }) => {
         accessToken,
         user,
         isAuthenticated,
+        isAdmin,
         isLoading,
         mfaRequired,
         mfaToken,

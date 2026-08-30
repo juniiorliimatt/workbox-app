@@ -7,10 +7,10 @@ import {
   Box,
   Button,
   Card,
+  CardActionArea,
   CardContent,
   Chip,
   Container,
-  Divider,
   Grid,
   Paper,
   Toolbar,
@@ -20,13 +20,122 @@ import {
   ExitToApp as LogoutIcon,
   Person as PersonIcon,
   Dashboard as DashboardIcon,
-  CheckCircle as CheckCircleIcon,
-  VpnKey as KeyIcon,
   AccountBalanceWallet as WalletIcon,
+  AdminPanelSettings as AdminIcon,
+  Assignment as TasksIcon,
+  Description as DocsIcon,
+  Chat as ChatIcon,
+  BarChart as AnalyticsIcon,
+  People as CrmIcon,
+  Inventory as InventoryIcon,
+  Badge as RhIcon,
+  AutoFixHigh as AutomationIcon,
+  Settings as SettingsIcon,
+  SupportAgent as SupportIcon,
 } from '@mui/icons-material';
 
+interface IModuleCard {
+  id: string;
+  title: string;
+  description: string;
+  icon: React.ReactNode;
+  path?: string;
+  enabled: boolean;
+  adminOnly?: boolean;
+}
+
+const MODULES_LIST: IModuleCard[] = [
+  {
+    id: 'financas',
+    title: 'Finanças',
+    description: 'Controle de receitas, despesas, contas, metas e orçamentos.',
+    icon: <WalletIcon sx={{ fontSize: 40 }} color="primary" />,
+    path: '/financas',
+    enabled: true,
+  },
+  {
+    id: 'administracao',
+    title: 'Administração',
+    description: 'Gestão de usuários, papéis, auditoria de logins e governança.',
+    icon: <AdminIcon sx={{ fontSize: 40 }} color="primary" />,
+    path: '/admin',
+    enabled: true,
+    adminOnly: true,
+  },
+  {
+    id: 'tarefas',
+    title: 'Tarefas & Projetos',
+    description: 'Quadros Kanban, acompanhamento de sprints, marcos e prazos.',
+    icon: <TasksIcon sx={{ fontSize: 40 }} color="disabled" />,
+    enabled: false,
+  },
+  {
+    id: 'documentos',
+    title: 'Documentos & Wiki',
+    description: 'Repositório central de arquivos, notas colaborativas e manuais.',
+    icon: <DocsIcon sx={{ fontSize: 40 }} color="disabled" />,
+    enabled: false,
+  },
+  {
+    id: 'comunicacao',
+    title: 'Comunicação & Chat',
+    description: 'Canais de equipe, conversas diretas e integrações instantâneas.',
+    icon: <ChatIcon sx={{ fontSize: 40 }} color="disabled" />,
+    enabled: false,
+  },
+  {
+    id: 'relatorios',
+    title: 'Relatórios & Analytics',
+    description: 'Dashboards analíticos, métricas operacionais e exportação.',
+    icon: <AnalyticsIcon sx={{ fontSize: 40 }} color="disabled" />,
+    enabled: false,
+  },
+  {
+    id: 'crm',
+    title: 'CRM & Clientes',
+    description: 'Funil de vendas, cadastro de contatos e histórico comercial.',
+    icon: <CrmIcon sx={{ fontSize: 40 }} color="disabled" />,
+    enabled: false,
+  },
+  {
+    id: 'estoque',
+    title: 'Estoque & Produtos',
+    description: 'Catálogo de itens, movimentações de entrada/saída e suprimentos.',
+    icon: <InventoryIcon sx={{ fontSize: 40 }} color="disabled" />,
+    enabled: false,
+  },
+  {
+    id: 'rh',
+    title: 'RH & Pessoas',
+    description: 'Gestão de colaboradores, benefícios, solicitações e organograma.',
+    icon: <RhIcon sx={{ fontSize: 40 }} color="disabled" />,
+    enabled: false,
+  },
+  {
+    id: 'automacoes',
+    title: 'Automações & Webhooks',
+    description: 'Gatilhos automatizados, rotinas programadas e integrações externas.',
+    icon: <AutomationIcon sx={{ fontSize: 40 }} color="disabled" />,
+    enabled: false,
+  },
+  {
+    id: 'configuracoes',
+    title: 'Configurações Globais',
+    description: 'Preferências da organização, personalização de temas e segurança.',
+    icon: <SettingsIcon sx={{ fontSize: 40 }} color="disabled" />,
+    enabled: false,
+  },
+  {
+    id: 'suporte',
+    title: 'Suporte & Helpdesk',
+    description: 'Central de ajuda, abertura de chamados técnicos e documentação.',
+    icon: <SupportIcon sx={{ fontSize: 40 }} color="disabled" />,
+    enabled: false,
+  },
+];
+
 const Dashboard: FC = () => {
-  const { user, accessToken, logout } = useAuth();
+  const { user, isAdmin, logout } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -34,22 +143,32 @@ const Dashboard: FC = () => {
     navigate('/');
   };
 
+  // Filtra cards de acordo com privilégios do usuário
+  const visibleModules = MODULES_LIST.filter(
+    (mod) => !mod.adminOnly || isAdmin
+  );
+
   return (
     <Box sx={{ width: '100%', minHeight: '100vh', bgcolor: 'grey.50', display: 'flex', flexDirection: 'column' }}>
       <AppBar position="static" color="primary" elevation={1} sx={{ width: '100%' }}>
         <Toolbar>
           <DashboardIcon sx={{ mr: 2 }} />
           <Typography variant="h6" component="div" sx={{ flexGrow: 1, fontWeight: 600 }}>
-            Workbox Dashboard
+            Workbox Hub
           </Typography>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <Avatar sx={{ bgcolor: 'secondary.main', width: 34, height: 34 }}>
                 <PersonIcon fontSize="small" />
               </Avatar>
-              <Typography variant="body2" sx={{ display: { xs: 'none', sm: 'block' } }}>
-                {user?.username || 'Usuário'}
-              </Typography>
+              <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
+                <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                  {user?.username || 'Usuário'}
+                </Typography>
+                <Typography variant="caption" sx={{ opacity: 0.8, display: 'block' }}>
+                  {isAdmin ? 'Administrador' : 'Usuário'}
+                </Typography>
+              </Box>
             </Box>
             <Button
               color="inherit"
@@ -65,99 +184,84 @@ const Dashboard: FC = () => {
         </Toolbar>
       </AppBar>
 
-      <Container maxWidth="lg" sx={{ mt: 4, mb: 4, flexGrow: 1 }}>
+      <Container maxWidth="xl" sx={{ mt: 4, mb: 4, flexGrow: 1 }}>
         <Paper elevation={1} sx={{ p: 3, mb: 4, borderRadius: 2 }}>
           <Typography variant="h5" sx={{ fontWeight: 600, mb: 1 }}>
-            Bem-vindo ao Workbox, {user?.username || 'Usuário'}!
+            Olá, {user?.username || 'Usuário'}! Selecione um módulo
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Sessão autenticada via Spring Boot Security (JWT HS256) emitida por <code>workbox-api</code>.
+            Navegue pelos serviços e ferramentas do ecossistema Workbox.
           </Typography>
         </Paper>
 
         <Grid container spacing={3}>
-          <Grid item xs={12} md={4}>
-            <Card elevation={2} sx={{ height: '100%', borderRadius: 2 }}>
-              <CardContent>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <PersonIcon color="primary" sx={{ mr: 1 }} />
-                  <Typography variant="h6" component="div">
-                    Perfil do Usuário
-                  </Typography>
-                </Box>
-                <Divider sx={{ mb: 2 }} />
-                <Typography variant="body2" color="text.secondary">
-                  <strong>ID:</strong> {user?.id || 'N/A'}
-                </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                  <strong>Username:</strong> {user?.username || 'N/A'}
-                </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                  <strong>E-mail:</strong> {user?.email || 'Não cadastrado'}
-                </Typography>
-                <Box sx={{ mt: 2 }}>
-                  <Chip
-                    icon={<CheckCircleIcon />}
-                    label={user?.enabled ? 'Conta Ativa' : 'Inativo'}
-                    color={user?.enabled ? 'success' : 'default'}
-                    size="small"
-                  />
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-
-          <Grid item xs={12} md={4}>
-            <Card elevation={2} sx={{ height: '100%', borderRadius: 2 }}>
-              <CardContent>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <KeyIcon color="primary" sx={{ mr: 1 }} />
-                  <Typography variant="h6" component="div">
-                    Sessão & Tokens
-                  </Typography>
-                </Box>
-                <Divider sx={{ mb: 2 }} />
-                <Typography variant="body2" color="text.secondary">
-                  <strong>Status JWT:</strong> Ativo
-                </Typography>
-                <Typography
-                  variant="body2"
-                  color="text.secondary"
+          {visibleModules.map((mod) => (
+            <Grid item xs={12} sm={6} md={4} lg={3} key={mod.id}>
+              {mod.enabled ? (
+                <Card
+                  elevation={2}
                   sx={{
-                    mt: 1,
-                    wordBreak: 'break-all',
-                    fontFamily: 'monospace',
-                    fontSize: '0.75rem',
-                    bgcolor: 'grey.100',
-                    p: 1,
-                    borderRadius: 1,
+                    height: '100%',
+                    borderRadius: 2,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
+                    '&:hover': {
+                      transform: 'translateY(-4px)',
+                      boxShadow: 6,
+                    },
                   }}
                 >
-                  {accessToken ? `${accessToken.substring(0, 48)}...` : 'Nenhum token'}
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-
-          <Grid item xs={12} md={4}>
-            <Card elevation={2} sx={{ height: '100%', borderRadius: 2 }}>
-              <CardContent>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <WalletIcon color="primary" sx={{ mr: 1 }} />
-                  <Typography variant="h6" component="div">
-                    Microserviços Conectados
-                  </Typography>
-                </Box>
-                <Divider sx={{ mb: 2 }} />
-                <Typography variant="body2" color="text.secondary">
-                  <strong>workbox-api:</strong> 8080 (Identidade)
-                </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                  <strong>budget-service:</strong> 8081 (Finanças / Resource Server)
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
+                  <CardActionArea
+                    onClick={() => mod.path && navigate(mod.path)}
+                    sx={{ height: '100%', p: 2, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', justifyContent: 'flex-start' }}
+                  >
+                    <Box sx={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                      <Box>{mod.icon}</Box>
+                      <Chip label="Acessar" size="small" color="primary" variant="filled" />
+                    </Box>
+                    <Typography variant="h6" component="div" sx={{ fontWeight: 600, mb: 1 }}>
+                      {mod.title}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {mod.description}
+                    </Typography>
+                  </CardActionArea>
+                </Card>
+              ) : (
+                <Card
+                  elevation={1}
+                  sx={{
+                    height: '100%',
+                    borderRadius: 2,
+                    opacity: 0.65,
+                    bgcolor: 'background.paper',
+                    cursor: 'not-allowed',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    p: 2,
+                  }}
+                >
+                  <CardContent sx={{ p: 0, '&:last-child': { pb: 0 } }}>
+                    <Box sx={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                      <Box>{mod.icon}</Box>
+                      <Chip
+                        label="Em breve"
+                        size="small"
+                        sx={{ bgcolor: 'grey.200', color: 'text.secondary', fontWeight: 500 }}
+                      />
+                    </Box>
+                    <Typography variant="h6" component="div" sx={{ fontWeight: 600, mb: 1, color: 'text.secondary' }}>
+                      {mod.title}
+                    </Typography>
+                    <Typography variant="body2" color="text.disabled">
+                      {mod.description}
+                    </Typography>
+                  </CardContent>
+                </Card>
+              )}
+            </Grid>
+          ))}
         </Grid>
       </Container>
     </Box>

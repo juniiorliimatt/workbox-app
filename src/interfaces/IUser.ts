@@ -3,4 +3,5 @@ export interface IUser {
   username: string;
   email: string | null;
   enabled: boolean;
+  roles?: string[];
 }

@@ -5,6 +5,7 @@ export interface IAuthContext {
   accessToken: string | null;
   user: IUser | null;
   isAuthenticated: boolean;
+  isAdmin: boolean;
   isLoading: boolean;
   mfaRequired: boolean;
   mfaToken: string | null;
