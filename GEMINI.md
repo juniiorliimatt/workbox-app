@@ -70,3 +70,49 @@ Role: Principal Frontend Architect & Tech Lead (Antigravity / Browser-Agent Mode
 
 ## 7. Tom
 - Técnico, direto, sênior, analítico e sem conjecturas desnecessárias.
+
+## Pendência reportada pelo Claude Code (backend) — prefixo `ROLE_` indevido
+
+Achado em 2026-08-30, ao investigar por que a role `ADMIN` (id=1) apareceu como
+`ROLE_ADMIN` no histórico de auditoria do banco. Causa raiz: o front assume que toda
+`authority` de role precisa vir/ser criada com o prefixo `ROLE_`, e isso está **errado**
+para os endpoints de CRUD — só é verdade pra um lugar específico.
+
+**Regra real do backend** (`workbox-api`):
+- `GET /api/v1/role`, `POST/PUT /api/v1/role/{id}`, e o array `roles[].authority` dentro
+  de `/api/v1/user/**` — sempre **sem** prefixo (`ADMIN`, `USER`, `MANAGER`...). É como o
+  banco guarda e como a API devolve/espera.
+- **Único lugar onde o prefixo `ROLE_` é real**: o claim `roles` dentro do JWT (o que
+  `AuthContext.tsx` lê pra decidir `isAdmin`) — o backend adiciona esse prefixo só na
+  hora de emitir o token, nunca no dado bruto da role em si. Isso já está certo no front
+  hoje (`AuthContext.tsx:335`, `includes('ROLE_ADMIN')`) — **não mexer nisso**.
+
+**Onde corrigir** (assumem/exibem/criam o prefixo errado nos endpoints de CRUD):
+- `src/pages/AdminPapeis.tsx` — `handleOpenCreateDialog` (linha ~83) pré-preenche o
+  formulário com `'ROLE_'`; validação em `handleSaveRole` (~97) compara contra
+  `'ROLE_'`; `helperText` (~307) diz "Prefixo ROLE_ recomendado por convenção Spring
+  Security" — **isso é falso**, remover a recomendação; placeholder/label (~302) usa
+  `ROLE_MANAGER` como exemplo — trocar por `MANAGER`; checagens de role fixa (~265,
+  ~267) comparam `role.authority === 'ROLE_ADMIN'`/`'ROLE_USER'` — deveriam comparar
+  `'ADMIN'`/`'USER'`.
+- `src/pages/AdminUsuarios.tsx` — múltiplos lugares (linhas ~71, ~87, ~131, ~143, ~179,
+  ~392, ~396) usam `'ROLE_ADMIN'`/`'ROLE_USER'` como valor de authority ao montar
+  formulário/mock/comparação — mesma correção.
+- `src/pages/Perfil.tsx` (~594) e `src/pages/Admin.tsx` (~42, ~107) — exibem
+  `ROLE_ADMIN`/`ROLE_USER` como label — são exibições de UI, cosmético, mas melhor
+  alinhar (mostrar `ADMIN`/`USER`, ou traduzir pra um rótulo amigável tipo
+  "Administrador").
+- `src/pages/AdminAuditoria.tsx` (~46, ~62) — strings mockadas com `ROLE_ADMIN`/
+  `ROLE_USER` embutidas no texto; ajustar quando ligar essa tela nos endpoints reais de
+  `/api/v1/audit/**` (ver aviso de contrato em `AGENTS.md`).
+- Fixtures de teste (`src/test/AdminPages.test.tsx`, `src/test/Dashboard.test.tsx`,
+  `src/test/Perfil.test.tsx`) — os mocks de `roles`/`authority` usados pra simular
+  resposta de `/api/v1/user/**` e `/api/v1/role` devem usar valores sem prefixo
+  (`ADMIN`/`USER`); os que simulam o array `roles` do **JWT decodificado** (usado só
+  por `AuthContext`) continuam certos com o prefixo.
+
+**Efeito colateral real já causado**: a role `ADMIN` (id=1) foi renomeada pra
+`ROLE_ADMIN` no banco via essa tela, em algum teste manual anterior. Peça pro Claude
+Code corrigir de volta (`UPDATE workbox.roles SET authority='ADMIN' WHERE id=1`) depois
+que o front parar de reintroduzir o prefixo — não adianta corrigir o dado se a tela
+ainda vai regravar `ROLE_ADMIN` na próxima edição.

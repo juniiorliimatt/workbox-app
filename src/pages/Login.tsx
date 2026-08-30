@@ -396,6 +396,7 @@ const Login: FC = () => {
 
               <Button
                 type="submit"
+                id="btn-login-submit"
                 fullWidth
                 variant="contained"
                 size="large"
@@ -514,6 +515,7 @@ const Login: FC = () => {
 
               <Button
                 type="submit"
+                id="btn-signup-submit"
                 fullWidth
                 variant="contained"
                 size="large"

@@ -600,6 +600,7 @@ const Perfil: FC = () => {
 
                   <Button
                     type="submit"
+                    id="btn-salvar-perfil"
                     fullWidth
                     variant="contained"
                     startIcon={<SaveIcon />}

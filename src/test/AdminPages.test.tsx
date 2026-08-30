@@ -126,6 +126,65 @@ describe('Admin Module Pages', () => {
         );
       });
     }, 15000);
+
+    it('opens user audit history modal and displays revisions', async () => {
+      const user = userEvent.setup();
+      const mockUsers = [
+        {
+          id: 'user-uuid-1',
+          socialName: 'Ana Souza',
+          email: 'ana@workbox.local',
+          enabled: true,
+          roles: [{ id: 2, authority: 'ROLE_USER' }],
+        },
+      ];
+      const mockUserHistory = [
+        {
+          revision: 101,
+          revisionType: 'ADD',
+          changedAt: '2026-08-30T10:00:00',
+          changedBy: 'admin@workbox.local',
+          id: 'user-uuid-1',
+          socialName: 'Ana Souza',
+          email: 'ana@workbox.local',
+          enabled: true,
+          mfaEnabled: false,
+        },
+      ];
+
+      vi.mocked(api.get).mockImplementation((url) => {
+        if (url.includes('/api/v1/user/find-all')) {
+          return Promise.resolve({ data: { _embedded: { userApiDTOList: mockUsers } } });
+        }
+        if (url.includes('/api/v1/audit/users/user-uuid-1/history')) {
+          return Promise.resolve({ data: mockUserHistory });
+        }
+        return Promise.resolve({ data: [] });
+      });
+
+      const authValue = createMockAuthContext();
+      render(
+        <AuthContext.Provider value={authValue}>
+          <BrowserRouter>
+            <AdminUsuarios />
+          </BrowserRouter>
+        </AuthContext.Provider>
+      );
+
+      await waitFor(() => {
+        expect(screen.getByText('Ana Souza')).toBeInTheDocument();
+      });
+
+      const auditBtn = screen.getByRole('button', { name: /Auditoria do usuário/i });
+      await user.click(auditBtn);
+
+      await waitFor(() => {
+        expect(api.get).toHaveBeenCalledWith('/api/v1/audit/users/user-uuid-1/history', expect.anything());
+        expect(screen.getByText(/Histórico de Auditoria: Ana Souza/i)).toBeInTheDocument();
+        expect(screen.getByText('#101')).toBeInTheDocument();
+        expect(screen.getByText('Criação (ADD)')).toBeInTheDocument();
+      });
+    }, 15000);
   });
 
   describe('AdminPapeis', () => {
@@ -156,11 +215,13 @@ describe('Admin Module Pages', () => {
       const novoPapelBtn = screen.getByRole('button', { name: /Novo Papel/i });
       await user.click(novoPapelBtn);
 
-      expect(screen.getByText('Criar Novo Papel')).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByText('Criar Novo Papel')).toBeInTheDocument();
+      });
 
       const input = screen.getByLabelText(/Nome da Autoridade/i);
       await user.clear(input);
-      await user.type(input, 'ROLE_FINANCE');
+      await user.type(input, 'FINANCE');
 
       const salvarBtn = screen.getByRole('button', { name: /^Salvar$/i });
       await user.click(salvarBtn);
@@ -168,16 +229,96 @@ describe('Admin Module Pages', () => {
       await waitFor(() => {
         expect(api.post).toHaveBeenCalledWith(
           '/api/v1/role',
-          { authority: 'ROLE_FINANCE' },
+          { authority: 'FINANCE' },
           expect.anything()
         );
+      });
+    }, 15000);
+
+    it('opens role audit history modal and displays revisions', async () => {
+      const user = userEvent.setup();
+      const mockRoles = [
+        { id: 5, authority: 'ROLE_MANAGER' },
+      ];
+      const mockRoleHistory = [
+        {
+          revision: 202,
+          revisionType: 'ADD',
+          changedAt: '2026-08-30T11:00:00',
+          changedBy: 'admin@workbox.local',
+          id: 5,
+          authority: 'ROLE_MANAGER',
+        },
+      ];
+
+      vi.mocked(api.get).mockImplementation((url) => {
+        if (url === '/api/v1/role') {
+          return Promise.resolve({ data: mockRoles });
+        }
+        if (url.includes('/api/v1/audit/roles/5/history')) {
+          return Promise.resolve({ data: mockRoleHistory });
+        }
+        return Promise.resolve({ data: [] });
+      });
+
+      const authValue = createMockAuthContext();
+      render(
+        <AuthContext.Provider value={authValue}>
+          <BrowserRouter>
+            <AdminPapeis />
+          </BrowserRouter>
+        </AuthContext.Provider>
+      );
+
+      await waitFor(() => {
+        expect(screen.getByText('ROLE_MANAGER')).toBeInTheDocument();
+      });
+
+      const auditBtn = screen.getByRole('button', { name: /Auditoria do papel/i });
+      await user.click(auditBtn);
+
+      await waitFor(() => {
+        expect(api.get).toHaveBeenCalledWith('/api/v1/audit/roles/5/history', expect.anything());
+        expect(screen.getByText(/Histórico de Auditoria: ROLE_MANAGER/i)).toBeInTheDocument();
+        expect(screen.getByText('#202')).toBeInTheDocument();
       });
     }, 15000);
   });
 
   describe('AdminAuditoria', () => {
-    it('renders login audit logs and filters by term', async () => {
+    it('fetches and renders login audit logs with pagination and filters', async () => {
       const user = userEvent.setup();
+      const mockAuditPage = {
+        content: [
+          {
+            id: 'audit-1',
+            email: 'admin@workbox.local',
+            successful: true,
+            reason: 'mfa_verified',
+            ipAddress: '192.168.1.10',
+            createdAt: '2026-08-30T12:00:00',
+          },
+          {
+            id: 'audit-2',
+            email: 'hacker@bot.net',
+            successful: false,
+            reason: 'bad_credentials',
+            ipAddress: '200.100.50.25',
+            createdAt: '2026-08-30T12:05:00',
+          },
+        ],
+        totalElements: 2,
+        totalPages: 1,
+        number: 0,
+        size: 10,
+        numberOfElements: 2,
+        first: true,
+        last: true,
+        empty: false,
+      };
+
+      vi.mocked(api.get).mockResolvedValue({ data: mockAuditPage });
+
       const authValue = createMockAuthContext();
       render(
         <AuthContext.Provider value={authValue}>
@@ -188,13 +329,39 @@ describe('Admin Module Pages', () => {
       );
 
       expect(screen.getByText('Trilha de Auditoria & Segurança de Acesso')).toBeInTheDocument();
-      expect(screen.getAllByText('admin@workbox.local').length).toBeGreaterThan(0);
 
-      const searchInput = screen.getByPlaceholderText(/Filtrar por e-mail, IP ou detalhe.../i);
-      await user.type(searchInput, 'attacker');
+      await waitFor(() => {
+        expect(api.get).toHaveBeenCalledWith(
+          '/api/v1/audit/logins',
+          expect.objectContaining({
+            params: expect.objectContaining({
+              page: 0,
+              size: 10,
+            }),
+          })
+        );
+        expect(screen.getByText('admin@workbox.local')).toBeInTheDocument();
+        expect(screen.getByText('MFA Validado com Sucesso')).toBeInTheDocument();
+        expect(screen.getByText('hacker@bot.net')).toBeInTheDocument();
+        expect(screen.getByText('Senha Incorreta')).toBeInTheDocument();
+      });
 
-      expect(screen.getByText('attacker@botnet.org')).toBeInTheDocument();
-      expect(screen.queryByText('cliente@workbox.local')).not.toBeInTheDocument();
+      const emailInput = screen.getByLabelText(/Filtrar por E-mail/i);
+      await user.type(emailInput, 'admin@workbox.local');
+
+      const filterBtn = screen.getByRole('button', { name: /^Filtrar$/i });
+      await user.click(filterBtn);
+
+      await waitFor(() => {
+        expect(api.get).toHaveBeenCalledWith(
+          '/api/v1/audit/logins',
+          expect.objectContaining({
+            params: expect.objectContaining({
+              email: 'admin@workbox.local',
+            }),
+          })
+        );
+      });
     }, 15000);
   });
 });

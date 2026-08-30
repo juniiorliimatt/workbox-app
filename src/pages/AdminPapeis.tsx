@@ -5,6 +5,7 @@ import {
   Button,
   Card,
   CardContent,
+  Chip,
   CircularProgress,
   Container,
   Dialog,
@@ -21,6 +22,7 @@ import {
   TableHead,
   TableRow,
   TextField,
+  Tooltip,
   Typography,
 } from '@mui/material';
 import {
@@ -29,11 +31,13 @@ import {
   Edit as EditIcon,
   Security as SecurityIcon,
   Refresh as RefreshIcon,
+  History as HistoryIcon,
 } from '@mui/icons-material';
 import axios from 'axios';
 import api from '@/services/api';
 import AppNavbar from '@/components/AppNavbar';
 import { IRoleDTO } from '@/interfaces/IRoleDTO';
+import { IRoleRevisionDTO } from '@/interfaces/IRoleRevisionDTO';
 import { useAuth } from '@/hooks/useAuth';
 
 export const AdminPapeis: FC = () => {
@@ -53,6 +57,12 @@ export const AdminPapeis: FC = () => {
   // Delete State
   const [roleToDelete, setRoleToDelete] = useState<IRoleDTO | null>(null);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
+
+  // Audit State
+  const [roleForAudit, setRoleForAudit] = useState<IRoleDTO | null>(null);
+  const [roleAuditHistory, setRoleAuditHistory] = useState<IRoleRevisionDTO[]>([]);
+  const [isLoadingRoleAudit, setIsLoadingRoleAudit] = useState<boolean>(false);
+  const [roleAuditError, setRoleAuditError] = useState<string | null>(null);
 
   const fetchRoles = useCallback(async () => {
     setIsLoading(true);
@@ -80,7 +90,7 @@ export const AdminPapeis: FC = () => {
   const handleOpenCreateDialog = () => {
     setIsEditing(false);
     setSelectedRole(null);
-    setFormAuthority('ROLE_');
+    setFormAuthority('');
     setIsDialogOpen(true);
   };
 
@@ -91,11 +101,41 @@ export const AdminPapeis: FC = () => {
     setIsDialogOpen(true);
   };
 
+  const handleOpenRoleAudit = async (role: IRoleDTO) => {
+    if (role.id === undefined || role.id === null) return;
+    setRoleForAudit(role);
+    setIsLoadingRoleAudit(true);
+    setRoleAuditError(null);
+    setRoleAuditHistory([]);
+
+    try {
+      const response = await api.get<IRoleRevisionDTO[]>(
+        `/api/v1/audit/roles/${role.id}/history`,
+        {
+          headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
+        }
+      );
+      setRoleAuditHistory(response.data || []);
+    } catch (err: unknown) {
+      if (axios.isAxiosError(err)) {
+        if (err.response?.status === 403) {
+          setRoleAuditError('Acesso negado: apenas administradores podem consultar auditoria.');
+        } else {
+          setRoleAuditError(err.response?.data?.detail || 'Falha ao buscar histórico de auditoria do papel.');
+        }
+      } else {
+        setRoleAuditError('Erro inesperado ao consultar auditoria do papel.');
+      }
+    } finally {
+      setIsLoadingRoleAudit(false);
+    }
+  };
+
   const handleSaveRole = async (e: React.FormEvent) => {
     e.preventDefault();
     const formatted = formAuthority.trim().toUpperCase();
-    if (!formatted || formatted === 'ROLE_') {
-      setFeedbackError('Informe o nome da autoridade (ex: ROLE_MANAGER).');
+    if (!formatted) {
+      setFeedbackError('Informe o nome da autoridade (ex: MANAGER, AUDITOR).');
       return;
     }
 
@@ -163,6 +203,19 @@ export const AdminPapeis: FC = () => {
       }
     } finally {
       setIsDeleting(false);
+    }
+  };
+
+  const getRevisionTypeChip = (type: string) => {
+    switch (type) {
+      case 'ADD':
+        return <Chip label="Criação (ADD)" color="success" size="small" />;
+      case 'MOD':
+        return <Chip label="Alteração (MOD)" color="primary" size="small" />;
+      case 'DEL':
+        return <Chip label="Exclusão (DEL)" color="error" size="small" />;
+      default:
+        return <Chip label={type} size="small" />;
     }
   };
 
@@ -249,28 +302,53 @@ export const AdminPapeis: FC = () => {
                           <TableCell sx={{ fontFamily: 'monospace' }}>{role.id ?? '-'}</TableCell>
                           <TableCell sx={{ fontWeight: 600 }}>{role.authority}</TableCell>
                           <TableCell sx={{ textAlign: 'right' }}>
-                            <IconButton
-                              aria-label="Editar papel"
-                              color="primary"
-                              size="small"
-                              onClick={() => handleOpenEditDialog(role)}
-                            >
-                              <EditIcon fontSize="small" />
-                            </IconButton>
-                            <IconButton
-                              aria-label="Excluir papel"
-                              color="error"
-                              size="small"
-                              onClick={() => setRoleToDelete(role)}
-                              disabled={role.authority === 'ROLE_ADMIN' || role.authority === 'ROLE_USER'}
+                            <Tooltip title="Histórico de Auditoria">
+                              <IconButton
+                                aria-label="Auditoria do papel"
+                                color="info"
+                                size="small"
+                                onClick={() => handleOpenRoleAudit(role)}
+                              >
+                                <HistoryIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                            <Tooltip title="Editar papel">
+                              <IconButton
+                                aria-label="Editar papel"
+                                color="primary"
+                                size="small"
+                                onClick={() => handleOpenEditDialog(role)}
+                              >
+                                <EditIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                            <Tooltip
                               title={
-                                role.authority === 'ROLE_ADMIN' || role.authority === 'ROLE_USER'
+                                role.authority === 'ADMIN' ||
+                                role.authority === 'USER' ||
+                                role.authority === 'ROLE_ADMIN' ||
+                                role.authority === 'ROLE_USER'
                                   ? 'Papéis base do sistema não podem ser excluídos'
-                                  : undefined
+                                  : 'Excluir papel'
                               }
                             >
-                              <DeleteIcon fontSize="small" />
-                            </IconButton>
+                              <span>
+                                <IconButton
+                                  aria-label="Excluir papel"
+                                  color="error"
+                                  size="small"
+                                  onClick={() => setRoleToDelete(role)}
+                                  disabled={
+                                    role.authority === 'ADMIN' ||
+                                    role.authority === 'USER' ||
+                                    role.authority === 'ROLE_ADMIN' ||
+                                    role.authority === 'ROLE_USER'
+                                  }
+                                >
+                                  <DeleteIcon fontSize="small" />
+                                </IconButton>
+                              </span>
+                            </Tooltip>
                           </TableCell>
                         </TableRow>
                       ))
@@ -287,24 +365,29 @@ export const AdminPapeis: FC = () => {
       <Dialog
         open={isDialogOpen}
         onClose={() => !isSubmitting && setIsDialogOpen(false)}
-        maxWidth="xs"
+        maxWidth="sm"
         fullWidth
       >
         <Box component="form" onSubmit={handleSaveRole}>
           <DialogTitle sx={{ fontWeight: 600 }}>
             {isEditing ? `Editar Papel #${selectedRole?.id}` : 'Criar Novo Papel'}
           </DialogTitle>
-          <DialogContent dividers>
+          <DialogContent>
+            <DialogContentText sx={{ mb: 2 }}>
+              Informe o identificador da autoridade do papel (ex: <code>MANAGER</code>, <code>AUDITOR</code>).
+            </DialogContentText>
             <TextField
+              autoFocus
               margin="dense"
-              required
+              label="Nome da Autoridade (ex: MANAGER)"
+              placeholder="ex: MANAGER"
               fullWidth
-              label="Nome da Autoridade (ex: ROLE_MANAGER)"
+              required
               id="role-authority-input"
               value={formAuthority}
               onChange={(e) => setFormAuthority(e.target.value.toUpperCase())}
               disabled={isSubmitting}
-              helperText="Prefixo ROLE_ recomendado por convenção Spring Security"
+              helperText="Identificador do papel (ex: MANAGER, AUDITOR). O prefixo ROLE_ é adicionado automaticamente pelo token JWT."
             />
           </DialogContent>
           <DialogActions sx={{ p: 2 }}>
@@ -347,6 +430,66 @@ export const AdminPapeis: FC = () => {
           >
             {isDeleting ? <CircularProgress size={20} color="inherit" /> : 'Excluir'}
           </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Modal de Histórico de Auditoria do Papel */}
+      <Dialog
+        open={Boolean(roleForAudit)}
+        onClose={() => setRoleForAudit(null)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle sx={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
+          <HistoryIcon color="primary" />
+          Histórico de Auditoria: {roleForAudit?.authority}
+        </DialogTitle>
+        <DialogContent dividers>
+          {roleAuditError && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {roleAuditError}
+            </Alert>
+          )}
+
+          {isLoadingRoleAudit ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 5 }}>
+              <CircularProgress size={32} />
+            </Box>
+          ) : roleAuditHistory.length === 0 ? (
+            <Typography variant="body2" color="text.secondary" sx={{ py: 3, textAlign: 'center' }}>
+              Nenhum registro de auditoria Envers encontrado para este papel.
+            </Typography>
+          ) : (
+            <TableContainer component={Paper} elevation={0} sx={{ border: '1px solid', borderColor: 'grey.200' }}>
+              <Table size="small" aria-label="Tabela de Revisões do Papel">
+                <TableHead sx={{ bgcolor: 'grey.100' }}>
+                  <TableRow>
+                    <TableCell sx={{ fontWeight: 600 }}>Rev. #</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>Tipo</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>Data & Hora</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>Responsável</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>Autoridade</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {roleAuditHistory.map((rev) => (
+                    <TableRow key={rev.revision} hover>
+                      <TableCell sx={{ fontWeight: 600 }}>#{rev.revision}</TableCell>
+                      <TableCell>{getRevisionTypeChip(rev.revisionType)}</TableCell>
+                      <TableCell sx={{ fontFamily: 'monospace', fontSize: '0.8rem' }}>
+                        {rev.changedAt ? new Date(rev.changedAt).toLocaleString('pt-BR') : '-'}
+                      </TableCell>
+                      <TableCell sx={{ fontSize: '0.85rem' }}>{rev.changedBy || 'Sistema'}</TableCell>
+                      <TableCell sx={{ fontWeight: 600, fontSize: '0.85rem' }}>{rev.authority}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button onClick={() => setRoleForAudit(null)}>Fechar</Button>
         </DialogActions>
       </Dialog>
     </Box>
