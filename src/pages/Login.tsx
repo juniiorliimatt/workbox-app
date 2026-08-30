@@ -110,20 +110,23 @@ const Login: FC = () => {
   };
 
   return (
-    <Container component="main" maxWidth="xs">
-      <Box
-        sx={{
-          minHeight: '100vh',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'center',
-          alignItems: 'center',
-        }}
-      >
+    <Box
+      sx={{
+        width: '100%',
+        minHeight: '100vh',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        px: 2,
+        py: 4,
+        bgcolor: 'background.default',
+      }}
+    >
+      <Container component="main" maxWidth="xs" disableGutters>
         <Paper
           elevation={3}
           sx={{
-            p: 4,
+            p: { xs: 3, sm: 4 },
             width: '100%',
             display: 'flex',
             flexDirection: 'column',
@@ -256,8 +259,8 @@ const Login: FC = () => {
             </Box>
           )}
         </Paper>
-      </Box>
-    </Container>
+      </Container>
+    </Box>
   );
 };
 

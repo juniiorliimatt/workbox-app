@@ -35,8 +35,8 @@ const Dashboard: FC = () => {
   };
 
   return (
-    <Box sx={{ flexGrow: 1, minHeight: '100vh', bgcolor: 'grey.50' }}>
-      <AppBar position="static" color="primary" elevation={1}>
+    <Box sx={{ width: '100%', minHeight: '100vh', bgcolor: 'grey.50', display: 'flex', flexDirection: 'column' }}>
+      <AppBar position="static" color="primary" elevation={1} sx={{ width: '100%' }}>
         <Toolbar>
           <DashboardIcon sx={{ mr: 2 }} />
           <Typography variant="h6" component="div" sx={{ flexGrow: 1, fontWeight: 600 }}>
@@ -65,7 +65,7 @@ const Dashboard: FC = () => {
         </Toolbar>
       </AppBar>
 
-      <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+      <Container maxWidth="lg" sx={{ mt: 4, mb: 4, flexGrow: 1 }}>
         <Paper elevation={1} sx={{ p: 3, mb: 4, borderRadius: 2 }}>
           <Typography variant="h5" sx={{ fontWeight: 600, mb: 1 }}>
             Bem-vindo ao Workbox, {user?.username || 'Usuário'}!
