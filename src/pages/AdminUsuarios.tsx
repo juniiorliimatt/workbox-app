@@ -43,6 +43,7 @@ import {
 } from '@mui/icons-material';
 import axios from 'axios';
 import api from '@/services/api';
+import UserAvatar from '@/components/UserAvatar';
 import AppNavbar from '@/components/AppNavbar';
 import { IUserAdminDTO } from '@/interfaces/IUserAdminDTO';
 import { IRoleDTO } from '@/interfaces/IRoleDTO';
@@ -361,12 +362,11 @@ export const AdminUsuarios: FC = () => {
                           <TableRow key={user.id || user.email} hover>
                             <TableCell>
                               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                                <Avatar
-                                  src={user.avatarUrl || undefined}
-                                  sx={{ width: 36, height: 36, bgcolor: 'primary.main' }}
-                                >
-                                  {!user.avatarUrl && <PersonIcon />}
-                                </Avatar>
+                                <UserAvatar
+                                  avatarUrl={user.avatarUrl}
+                                  name={user.socialName}
+                                  sx={{ width: 36, height: 36, bgcolor: 'primary.main', fontSize: '0.9rem' }}
+                                />
                                 <Typography variant="body2" sx={{ fontWeight: 600 }}>
                                   {user.socialName || 'Sem nome social'}
                                 </Typography>

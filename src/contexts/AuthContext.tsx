@@ -130,14 +130,12 @@ export const AuthProvider: FC<IAuthProviderProps> = ({ children }) => {
     await api.post(
       '/api/v1/auth/avatar',
       formData,
-      accessToken
-        ? {
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-              'Content-Type': 'multipart/form-data',
-            },
-          }
-        : undefined
+      {
+        headers: {
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+          'Content-Type': undefined,
+        },
+      }
     );
 
     if (accessToken) {

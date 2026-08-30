@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import {
   AppBar,
-  Avatar,
   Box,
   Button,
   Toolbar,
@@ -12,8 +11,8 @@ import {
 import {
   ArrowBack as ArrowBackIcon,
   ExitToApp as LogoutIcon,
-  Person as PersonIcon,
 } from '@mui/icons-material';
+import UserAvatar from '@/components/UserAvatar';
 
 export interface IAppNavbarProps {
   title: string;
@@ -65,12 +64,11 @@ export const AppNavbar: FC<IAppNavbarProps> = ({
             id="btn-perfil"
             color="inherit"
             startIcon={
-              <Avatar
-                src={user?.avatarUrl ? user.avatarUrl : undefined}
-                sx={{ bgcolor: 'secondary.main', width: 28, height: 28 }}
-              >
-                {!user?.avatarUrl && <PersonIcon sx={{ fontSize: 18 }} />}
-              </Avatar>
+              <UserAvatar
+                avatarUrl={user?.avatarUrl}
+                name={user?.socialName}
+                sx={{ bgcolor: 'secondary.main', width: 28, height: 28, fontSize: '0.85rem' }}
+              />
             }
             onClick={() => navigate('/perfil')}
             sx={{ textTransform: 'none', color: 'inherit' }}

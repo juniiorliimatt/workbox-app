@@ -182,4 +182,33 @@ describe('Perfil Component', () => {
 
     expect(mockNavigate).toHaveBeenCalledWith('/dashboard');
   });
+
+  it('handles avatar file upload and removal successfully', async () => {
+    const user = userEvent.setup();
+    const { authValue } = renderPerfil({
+      user: {
+        id: 'user-uuid-1234',
+        socialName: 'Maria Silva',
+        email: 'maria@workbox.local',
+        enabled: true,
+        avatarUrl: '/api/v1/user/user-uuid-1234/avatar',
+        roles: ['ROLE_USER'],
+      },
+    });
+
+    const file = new File(['dummy-image'], 'avatar.png', { type: 'image/png' });
+    const fileInput = document.getElementById('avatar-file-input') as HTMLInputElement;
+    await user.upload(fileInput, file);
+
+    await waitFor(() => {
+      expect(authValue.uploadAvatar).toHaveBeenCalledWith(file);
+    });
+
+    const removeBtn = screen.getByRole('button', { name: /Remover Foto/i });
+    await user.click(removeBtn);
+
+    await waitFor(() => {
+      expect(authValue.deleteAvatar).toHaveBeenCalled();
+    });
+  });
 });

@@ -7,7 +7,6 @@ import axios from 'axios';
 import { QRCodeSVG } from 'qrcode.react';
 import {
   Alert,
-  Avatar,
   Badge,
   Box,
   Button,
@@ -37,6 +36,7 @@ import {
   Delete as DeleteIcon,
 } from '@mui/icons-material';
 import AppNavbar from '@/components/AppNavbar';
+import UserAvatar from '@/components/UserAvatar';
 import { IMfaEnrollResponse } from '@/interfaces/IMfaEnrollResponse';
 
 interface IEditProfileInputs {
@@ -359,12 +359,11 @@ const Perfil: FC = () => {
 
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 2 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              <Avatar
-                src={user?.avatarUrl ? user.avatarUrl : undefined}
+              <UserAvatar
+                avatarUrl={user?.avatarUrl}
+                name={user?.socialName}
                 sx={{ bgcolor: 'secondary.main', width: 72, height: 72, fontSize: 32 }}
-              >
-                {!user?.avatarUrl && <PersonIcon sx={{ fontSize: 40 }} />}
-              </Avatar>
+              />
               <Box>
                 <Typography variant="h5" component="h2" sx={{ fontWeight: 600 }}>
                   {user?.socialName || 'Usuário'}
@@ -453,12 +452,11 @@ const Perfil: FC = () => {
                       </label>
                     }
                   >
-                    <Avatar
-                      src={user?.avatarUrl ? user.avatarUrl : undefined}
+                    <UserAvatar
+                      avatarUrl={user?.avatarUrl}
+                      name={user?.socialName}
                       sx={{ bgcolor: 'secondary.main', width: 48, height: 48 }}
-                    >
-                      {!user?.avatarUrl && <PersonIcon />}
-                    </Avatar>
+                    />
                   </Badge>
 
                   <Box sx={{ flexGrow: 1 }}>

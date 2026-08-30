@@ -96,7 +96,7 @@ async function runBrowserValidation() {
 
     await page.waitForFunction(() => window.location.pathname === '/dashboard', { timeout: 6000 });
 
-    const adminCard = await page.waitForSelector('.MuiCard-root .MuiCardActionArea-root', { timeout: 3000 });
+    const adminCard = await page.waitForSelector('.MuiCard-root ::-p-text(Administração)', { timeout: 4000 });
     await adminCard.click();
 
     await page.waitForFunction(() => window.location.pathname === '/admin', { timeout: 5000 });
