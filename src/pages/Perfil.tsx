@@ -4,9 +4,11 @@ import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import axios from 'axios';
+import { QRCodeSVG } from 'qrcode.react';
 import {
   Alert,
   Avatar,
+  Badge,
   Box,
   Button,
   Card,
@@ -31,6 +33,8 @@ import {
   Visibility,
   VisibilityOff,
   Save as SaveIcon,
+  PhotoCamera as PhotoCameraIcon,
+  Delete as DeleteIcon,
 } from '@mui/icons-material';
 import AppNavbar from '@/components/AppNavbar';
 import { IMfaEnrollResponse } from '@/interfaces/IMfaEnrollResponse';
@@ -207,6 +211,51 @@ const Perfil: FC = () => {
     }
   };
 
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      setAvatarError('A imagem deve ter no máximo 2MB.');
+      return;
+    }
+
+    setAvatarError(null);
+    setAvatarSuccess(null);
+    setIsUploadingAvatar(true);
+    try {
+      await uploadAvatar(file);
+      setAvatarSuccess('Foto de perfil atualizada com sucesso!');
+    } catch (err: unknown) {
+      if (axios.isAxiosError(err)) {
+        setAvatarError(err.response?.data?.detail || 'Falha ao enviar imagem. Use formatos PNG, JPEG ou WEBP.');
+      } else {
+        setAvatarError('Erro ao processar imagem de perfil.');
+      }
+    } finally {
+      setIsUploadingAvatar(false);
+      e.target.value = '';
+    }
+  };
+
+  const handleRemoveAvatar = async () => {
+    setAvatarError(null);
+    setAvatarSuccess(null);
+    setIsUploadingAvatar(true);
+    try {
+      await deleteAvatar();
+      setAvatarSuccess('Foto de perfil removida com sucesso.');
+    } catch (err: unknown) {
+      if (axios.isAxiosError(err)) {
+        setAvatarError(err.response?.data?.detail || 'Falha ao remover foto.');
+      } else {
+        setAvatarError('Erro ao remover imagem de perfil.');
+      }
+    } finally {
+      setIsUploadingAvatar(false);
+    }
+  };
+
   const handleStartMfaEnroll = async () => {
     setMfaError(null);
     setMfaSuccess(null);
@@ -284,51 +333,6 @@ const Perfil: FC = () => {
     }
   };
 
-  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (file.size > 2 * 1024 * 1024) {
-      setAvatarError('A imagem deve ter no máximo 2MB.');
-      return;
-    }
-
-    setAvatarError(null);
-    setAvatarSuccess(null);
-    setIsUploadingAvatar(true);
-    try {
-      await uploadAvatar(file);
-      setAvatarSuccess('Foto de perfil atualizada com sucesso!');
-    } catch (err: unknown) {
-      if (axios.isAxiosError(err)) {
-        setAvatarError(err.response?.data?.detail || 'Falha ao enviar imagem. Use formatos PNG, JPEG ou WEBP.');
-      } else {
-        setAvatarError('Erro ao processar imagem de perfil.');
-      }
-    } finally {
-      setIsUploadingAvatar(false);
-      e.target.value = '';
-    }
-  };
-
-  const handleRemoveAvatar = async () => {
-    setAvatarError(null);
-    setAvatarSuccess(null);
-    setIsUploadingAvatar(true);
-    try {
-      await deleteAvatar();
-      setAvatarSuccess('Foto de perfil removida com sucesso.');
-    } catch (err: unknown) {
-      if (axios.isAxiosError(err)) {
-        setAvatarError(err.response?.data?.detail || 'Falha ao remover foto.');
-      } else {
-        setAvatarError('Erro ao remover imagem de perfil.');
-      }
-    } finally {
-      setIsUploadingAvatar(false);
-    }
-  };
-
   return (
     <Box sx={{ width: '100%', minHeight: '100vh', bgcolor: 'grey.50', display: 'flex', flexDirection: 'column' }}>
       {/* Barra de Navegação Permanente com Perfil e Logout */}
@@ -385,6 +389,7 @@ const Perfil: FC = () => {
                   variant="outlined"
                   component="span"
                   size="small"
+                  startIcon={<PhotoCameraIcon />}
                   disabled={isUploadingAvatar}
                 >
                   {isUploadingAvatar ? <CircularProgress size={20} /> : 'Alterar Foto'}
@@ -395,6 +400,7 @@ const Perfil: FC = () => {
                   variant="text"
                   color="error"
                   size="small"
+                  startIcon={<DeleteIcon />}
                   onClick={handleRemoveAvatar}
                   disabled={isUploadingAvatar}
                 >
@@ -406,7 +412,7 @@ const Perfil: FC = () => {
         </Paper>
 
         <Grid container spacing={3}>
-          {/* Card 1: Editar Informações do Usuário (Nome Social & E-mail) */}
+          {/* Card 1: Editar Informações do Usuário (Nome Social & E-mail & Foto) */}
           <Grid item xs={12} md={4}>
             <Card elevation={2} sx={{ height: '100%', borderRadius: 2 }}>
               <CardContent>
@@ -417,6 +423,87 @@ const Perfil: FC = () => {
                   </Typography>
                 </Box>
                 <Divider sx={{ mb: 2 }} />
+
+                {/* Seção de Upload de Imagem dentro de Editar Dados */}
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 2,
+                    p: 1.5,
+                    bgcolor: 'grey.50',
+                    borderRadius: 2,
+                    border: '1px dashed',
+                    borderColor: 'grey.300',
+                    mb: 2,
+                  }}
+                >
+                  <Badge
+                    overlap="circular"
+                    anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                    badgeContent={
+                      <label htmlFor="avatar-file-input-card">
+                        <IconButton
+                          component="span"
+                          size="small"
+                          sx={{ bgcolor: 'primary.main', color: 'white', '&:hover': { bgcolor: 'primary.dark' }, p: 0.5 }}
+                        >
+                          <PhotoCameraIcon sx={{ fontSize: 14 }} />
+                        </IconButton>
+                      </label>
+                    }
+                  >
+                    <Avatar
+                      src={user?.avatarUrl ? user.avatarUrl : undefined}
+                      sx={{ bgcolor: 'secondary.main', width: 48, height: 48 }}
+                    >
+                      {!user?.avatarUrl && <PersonIcon />}
+                    </Avatar>
+                  </Badge>
+
+                  <Box sx={{ flexGrow: 1 }}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 600, fontSize: '0.85rem' }}>
+                      Foto de Perfil
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+                      PNG, JPEG ou WEBP (máx. 2MB)
+                    </Typography>
+
+                    <input
+                      id="avatar-file-input-card"
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp"
+                      style={{ display: 'none' }}
+                      onChange={handleAvatarChange}
+                      disabled={isUploadingAvatar}
+                    />
+                    <Box sx={{ display: 'flex', gap: 1 }}>
+                      <label htmlFor="avatar-file-input-card">
+                        <Button
+                          variant="outlined"
+                          component="span"
+                          size="small"
+                          disabled={isUploadingAvatar}
+                          sx={{ fontSize: '0.75rem', py: 0.2 }}
+                        >
+                          {isUploadingAvatar ? 'Enviando...' : 'Carregar Imagem'}
+                        </Button>
+                      </label>
+                      {user?.avatarUrl && (
+                        <Button
+                          variant="text"
+                          color="error"
+                          size="small"
+                          onClick={handleRemoveAvatar}
+                          disabled={isUploadingAvatar}
+                          sx={{ fontSize: '0.75rem', py: 0.2 }}
+                        >
+                          Remover
+                        </Button>
+                      )}
+                    </Box>
+                  </Box>
+                </Box>
 
                 {profileSuccess && (
                   <Alert severity="success" sx={{ mb: 2 }}>
@@ -652,7 +739,7 @@ const Perfil: FC = () => {
             </Card>
           </Grid>
 
-          {/* Card 3: Autenticação em Duas Etapas (MFA / 2FA) */}
+          {/* Card 3: Autenticação em Duas Etapas (MFA / 2FA com QR Code) */}
           <Grid item xs={12} md={4}>
             <Card elevation={2} sx={{ height: '100%', borderRadius: 2 }}>
               <CardContent>
@@ -682,10 +769,32 @@ const Perfil: FC = () => {
 
                 {enrollData ? (
                   <Box sx={{ p: 2, bgcolor: 'grey.100', borderRadius: 2 }}>
-                    <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-                      1. Adicione a chave ao seu autenticador:
+                    <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1.5, textAlign: 'center' }}>
+                      1. Escaneie o QR Code no seu aplicativo autenticador:
                     </Typography>
 
+                    {/* QR Code para Google Authenticator / Authy */}
+                    <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
+                      <Paper
+                        elevation={1}
+                        id="mfa-qr-code-container"
+                        sx={{ p: 1.5, bgcolor: 'white', display: 'inline-flex', borderRadius: 2 }}
+                      >
+                        <QRCodeSVG
+                          value={
+                            enrollData.otpAuthUri ||
+                            `otpauth://totp/WorkBox:${user?.email || 'usuario'}?secret=${enrollData.secret}&issuer=WorkBox`
+                          }
+                          size={150}
+                          level="M"
+                          includeMargin={false}
+                        />
+                      </Paper>
+                    </Box>
+
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5, textAlign: 'center' }}>
+                      Ou digite a chave manual no autenticador:
+                    </Typography>
                     <Box sx={{ display: 'flex', alignItems: 'center', bgcolor: 'white', p: 1, borderRadius: 1, mb: 2 }}>
                       <Typography variant="caption" sx={{ fontFamily: 'monospace', wordBreak: 'break-all', flexGrow: 1 }}>
                         {enrollData.secret}
@@ -695,7 +804,7 @@ const Perfil: FC = () => {
                       </IconButton>
                     </Box>
                     {copiedSecret && (
-                      <Typography variant="caption" color="success.main" sx={{ display: 'block', mb: 1 }}>
+                      <Typography variant="caption" color="success.main" sx={{ display: 'block', mb: 1, textAlign: 'center' }}>
                         Chave copiada para a área de transferência!
                       </Typography>
                     )}

@@ -2,6 +2,7 @@ import { FC, useEffect, useState, useCallback } from 'react';
 import {
   Alert,
   Avatar,
+  Badge,
   Box,
   Button,
   Card,
@@ -38,6 +39,7 @@ import {
   Person as PersonIcon,
   Search as SearchIcon,
   Refresh as RefreshIcon,
+  PhotoCamera as PhotoCameraIcon,
 } from '@mui/icons-material';
 import axios from 'axios';
 import api from '@/services/api';
@@ -66,6 +68,7 @@ export const AdminUsuarios: FC = () => {
   const [formPassword, setFormPassword] = useState<string>('');
   const [formIsEnabled, setFormIsEnabled] = useState<boolean>(true);
   const [formRoles, setFormRoles] = useState<string[]>(['ROLE_USER']);
+  const [formAvatarPreview, setFormAvatarPreview] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
   // Dialog de Confirmação de Exclusão
@@ -125,6 +128,7 @@ export const AdminUsuarios: FC = () => {
     setFormPassword('');
     setFormIsEnabled(true);
     setFormRoles(['ROLE_USER']);
+    setFormAvatarPreview(null);
     setIsDialogOpen(true);
   };
 
@@ -136,7 +140,19 @@ export const AdminUsuarios: FC = () => {
     setFormPassword('');
     setFormIsEnabled(user.enabled !== undefined ? user.enabled : user.isEnabled ?? true);
     setFormRoles(user.roles ? user.roles.map((r) => r.authority) : ['ROLE_USER']);
+    setFormAvatarPreview(user.avatarUrl || null);
     setIsDialogOpen(true);
+  };
+
+  const handleFormAvatarFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFormAvatarPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleSaveUser = async (e: React.FormEvent) => {
@@ -423,6 +439,50 @@ export const AdminUsuarios: FC = () => {
             {isEditing ? `Editar Informações de "${selectedUser?.socialName}"` : 'Cadastrar Novo Usuário'}
           </DialogTitle>
           <DialogContent dividers>
+            {/* Seção de Foto de Perfil no Modal Admin */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2, p: 1.5, bgcolor: 'grey.50', borderRadius: 2 }}>
+              <Badge
+                overlap="circular"
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                badgeContent={
+                  <label htmlFor="admin-avatar-file-input">
+                    <IconButton
+                      component="span"
+                      size="small"
+                      sx={{ bgcolor: 'primary.main', color: 'white', '&:hover': { bgcolor: 'primary.dark' }, p: 0.5 }}
+                    >
+                      <PhotoCameraIcon sx={{ fontSize: 14 }} />
+                    </IconButton>
+                  </label>
+                }
+              >
+                <Avatar
+                  src={formAvatarPreview || undefined}
+                  sx={{ width: 52, height: 52, bgcolor: 'secondary.main' }}
+                >
+                  {!formAvatarPreview && <PersonIcon />}
+                </Avatar>
+              </Badge>
+              <Box>
+                <Typography variant="subtitle2" sx={{ fontWeight: 600, fontSize: '0.85rem' }}>
+                  Foto do Usuário
+                </Typography>
+                <input
+                  id="admin-avatar-file-input"
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  style={{ display: 'none' }}
+                  onChange={handleFormAvatarFile}
+                  disabled={isSubmitting}
+                />
+                <label htmlFor="admin-avatar-file-input">
+                  <Button variant="text" component="span" size="small" sx={{ p: 0, textTransform: 'none' }}>
+                    {formAvatarPreview ? 'Alterar Imagem' : 'Selecionar Imagem'}
+                  </Button>
+                </label>
+              </Box>
+            </Box>
+
             <TextField
               margin="dense"
               required

@@ -1,7 +1,7 @@
 import puppeteer from 'puppeteer-core';
 
 async function runBrowserValidation() {
-  console.log('🚀 Iniciando validação no Google Chrome headless: Avatar, Gestão de Usuários, Papéis e Auditoria...');
+  console.log('🚀 Iniciando validação no Google Chrome headless: Avatar, QR Code MFA, Gestão de Usuários, Papéis e Auditoria...');
   const browser = await puppeteer.launch({
     executablePath: '/usr/bin/google-chrome',
     headless: true,
@@ -65,13 +65,14 @@ async function runBrowserValidation() {
     await page.waitForSelector('label[for="avatar-file-input"]', { timeout: 3000 });
     console.log(`   ✅ Controles de upload e gerenciamento de Avatar renderizados.`);
 
-    // 6. Testar início do fluxo de configuração de MFA
-    console.log('6️⃣ Testando clique em "Configurar / Habilitar MFA"...');
+    // 6. Testar início do fluxo de configuração de MFA com QR Code
+    console.log('6️⃣ Testando clique em "Configurar / Habilitar MFA" e geração de QR Code...');
     await page.waitForSelector('#btn-mfa-enroll', { timeout: 3000 });
     await page.click('#btn-mfa-enroll');
 
+    await page.waitForSelector('#mfa-qr-code-container svg', { timeout: 5000 });
     await page.waitForSelector('#mfa-verify-code', { timeout: 5000 });
-    console.log(`   ✅ Chave de segredo MFA e verificação TOTP gerados com sucesso.`);
+    console.log(`   ✅ QR Code do Google Authenticator e verificação TOTP gerados com sucesso.`);
 
     // 7. Logout permanente
     console.log('7️⃣ Testando logout permanente via cabeçalho...');
@@ -104,8 +105,8 @@ async function runBrowserValidation() {
 
     // 9. Testar tela de Gestão de Usuários (/admin/usuarios)
     console.log('9️⃣ Testando Gestão de Usuários (/admin/usuarios)...');
-    const cards = await page.$$('.MuiCard-root .MuiCardActionArea-root');
-    await cards[0].click();
+    const gestaoCard = await page.waitForSelector('.MuiCard-root ::-p-text(Gestão de Usuários)', { timeout: 3000 });
+    await gestaoCard.click();
 
     await page.waitForFunction(() => window.location.pathname === '/admin/usuarios', { timeout: 5000 });
     await page.waitForSelector('#tabela-usuarios', { timeout: 5000 });
@@ -124,15 +125,17 @@ async function runBrowserValidation() {
 
     await page.click('#btn-salvar-usuario-admin');
     await page.waitForSelector('.MuiAlert-standardSuccess', { timeout: 5000 });
+    await page.waitForSelector('.MuiDialog-root', { hidden: true, timeout: 3000 });
     console.log(`   ✅ Novo usuário cadastrado com sucesso pelo Administrador.`);
 
     // 10. Testar tela de Papéis & Permissões (/admin/papeis)
     console.log('🔟 Testando Papéis & Permissões (/admin/papeis)...');
-    await page.click('#btn-voltar-dashboard');
+    const backBtn1 = await page.waitForSelector('#btn-voltar-dashboard', { timeout: 3000 });
+    await backBtn1.click();
     await page.waitForFunction(() => window.location.pathname === '/admin', { timeout: 5000 });
 
-    const cardsAdmin = await page.$$('.MuiCard-root .MuiCardActionArea-root');
-    await cardsAdmin[1].click();
+    const papeisCard = await page.waitForSelector('.MuiCard-root ::-p-text(Papéis & Permissões)', { timeout: 5000 });
+    await papeisCard.click();
 
     await page.waitForFunction(() => window.location.pathname === '/admin/papeis', { timeout: 5000 });
     await page.waitForSelector('#tabela-papeis', { timeout: 5000 });
@@ -140,11 +143,12 @@ async function runBrowserValidation() {
 
     // 11. Testar tela de Auditoria de Logins (/admin/auditoria)
     console.log('1️⃣1️⃣ Testando Auditoria de Logins (/admin/auditoria)...');
-    await page.click('#btn-voltar-dashboard');
+    const backBtn2 = await page.waitForSelector('#btn-voltar-dashboard', { timeout: 3000 });
+    await backBtn2.click();
     await page.waitForFunction(() => window.location.pathname === '/admin', { timeout: 5000 });
 
-    const cardsAdmin2 = await page.$$('.MuiCard-root .MuiCardActionArea-root');
-    await cardsAdmin2[2].click();
+    const auditoriaCard = await page.waitForSelector('.MuiCard-root ::-p-text(Auditoria de Logins)', { timeout: 5000 });
+    await auditoriaCard.click();
 
     await page.waitForFunction(() => window.location.pathname === '/admin/auditoria', { timeout: 5000 });
     await page.waitForSelector('#tabela-auditoria', { timeout: 5000 });
@@ -154,7 +158,7 @@ async function runBrowserValidation() {
     await page.waitForFunction(() => window.location.pathname === '/', { timeout: 5000 });
     console.log(`   ✅ Logout final concluído.`);
 
-    console.log('\n🎉 TODAS AS VALIDAÇÕES DE AVATAR, GESTÃO DE USUÁRIOS, PAPÉIS E AUDITORIA PASSARAM COM SUCESSO!');
+    console.log('\n🎉 TODAS AS VALIDAÇÕES DE AVATAR, QR CODE MFA, GESTÃO DE USUÁRIOS, PAPÉIS E AUDITORIA PASSARAM COM SUCESSO!');
   } catch (error) {
     console.error('❌ Erro durante a validação no navegador:', error);
     process.exitCode = 1;

@@ -36,7 +36,7 @@ const createMockAuthContext = (overrides?: Partial<IAuthContext>): IAuthContext 
   uploadAvatar: vi.fn().mockResolvedValue(undefined),
   deleteAvatar: vi.fn().mockResolvedValue(undefined),
   changePassword: vi.fn().mockResolvedValue(undefined),
-  enrollMfa: vi.fn().mockResolvedValue({ secret: 'JBSWY3DPEHPK3PXP', otpAuthUri: 'otpauth://totp/...' }),
+  enrollMfa: vi.fn().mockResolvedValue({ secret: 'JBSWY3DPEHPK3PXP', otpAuthUri: 'otpauth://totp/WorkBox:maria@workbox.local?secret=JBSWY3DPEHPK3PXP&issuer=WorkBox' }),
   verifyMfa: vi.fn().mockResolvedValue(undefined),
   disableMfa: vi.fn().mockResolvedValue(undefined),
   refresh: vi.fn().mockResolvedValue(null),
@@ -71,6 +71,7 @@ describe('Perfil Component', () => {
     expect(screen.getByDisplayValue('Maria Silva')).toBeInTheDocument();
     expect(screen.getByDisplayValue('maria@workbox.local')).toBeInTheDocument();
     expect(screen.getByText('Conta Ativa')).toBeInTheDocument();
+    expect(screen.getByText('Carregar Imagem')).toBeInTheDocument();
   });
 
   it('submits updated profile data successfully', async () => {
@@ -128,7 +129,7 @@ describe('Perfil Component', () => {
     });
   });
 
-  it('initiates MFA enrollment and allows verifying TOTP code', async () => {
+  it('initiates MFA enrollment and renders QR Code and verifies TOTP code', async () => {
     const user = userEvent.setup();
     const { authValue } = renderPerfil();
 
@@ -138,6 +139,7 @@ describe('Perfil Component', () => {
     await waitFor(() => {
       expect(authValue.enrollMfa).toHaveBeenCalled();
       expect(screen.getByText('JBSWY3DPEHPK3PXP')).toBeInTheDocument();
+      expect(screen.getByText(/Escaneie o QR Code no seu aplicativo autenticador/i)).toBeInTheDocument();
     });
 
     const codeInput = screen.getByPlaceholderText(/Ex: 123456/i);
