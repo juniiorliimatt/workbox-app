@@ -1,7 +1,7 @@
 import puppeteer from 'puppeteer-core';
 
 async function runBrowserValidation() {
-  console.log('🚀 Iniciando validação no Google Chrome headless com contrato atualizado (Email + SocialName)...');
+  console.log('🚀 Iniciando validação no Google Chrome headless: Navbar permanente, edição de dados e MFA...');
   const browser = await puppeteer.launch({
     executablePath: '/usr/bin/google-chrome',
     headless: true,
@@ -21,10 +21,10 @@ async function runBrowserValidation() {
     console.log(`   ✅ Título da página renderizado: "${title}"`);
 
     // 2. Auto-cadastro de novo usuário com socialName e email
-    console.log('2️⃣ Testando auto-cadastro de novo usuário padrão com Nome Social e E-mail...');
+    console.log('2️⃣ Testando auto-cadastro de novo usuário...');
     const uniqueId = Date.now();
-    const uniqueSocialName = `Dev Tester ${uniqueId}`;
-    const uniqueEmail = `dev_${uniqueId}@workbox.local`;
+    const uniqueSocialName = `Cliente Workbox ${uniqueId}`;
+    const uniqueEmail = `cliente_${uniqueId}@workbox.local`;
     const uniquePass = 'SenhaForte123!';
 
     const tabs = await page.$$('button[role="tab"]');
@@ -41,44 +41,45 @@ async function runBrowserValidation() {
     console.log(`   ✅ Usuário cadastrado com sucesso.`);
 
     // 3. Login com email do usuário comum e verificação do Dashboard
-    console.log(`3️⃣ Testando login com E-mail (${uniqueEmail}) e navegação para /dashboard...`);
+    console.log(`3️⃣ Testando login com E-mail (${uniqueEmail})...`);
     await page.type('#password', uniquePass);
     await page.click('button[type="submit"]');
 
     await page.waitForFunction(() => window.location.pathname === '/dashboard', { timeout: 6000 });
     console.log(`   ✅ Redirecionado para o Hub de Módulos (/dashboard).`);
 
-    // 4. Testar navegação para a tela de Perfil (/perfil) via botão do cabeçalho
-    console.log('4️⃣ Testando navegação para a tela de Perfil (/perfil)...');
+    // 4. Testar persistência do botão de perfil e sair no módulo Finanças
+    console.log('4️⃣ Testando permanência do botão de Perfil e Sair no módulo Finanças (/financas)...');
+    const financasCard = await page.waitForSelector('.MuiCard-root ::-p-text(Finanças)', { timeout: 3000 });
+    await financasCard.click();
+
+    await page.waitForFunction(() => window.location.pathname === '/financas', { timeout: 5000 });
     await page.waitForSelector('#btn-perfil', { timeout: 3000 });
+    await page.waitForSelector('#btn-logout', { timeout: 3000 });
+    console.log(`   ✅ Botões de Perfil e Sair presentes e funcionais na AppBar do módulo Finanças.`);
+
+    // 5. Clicar no botão de Perfil permanente a partir do módulo Finanças e navegar para /perfil
+    console.log('5️⃣ Testando clique no botão de Perfil a partir do módulo Finanças para ir a /perfil...');
     await page.click('#btn-perfil');
-
     await page.waitForFunction(() => window.location.pathname === '/perfil', { timeout: 5000 });
-    const perfilTitle = await page.$eval('h1', (el) => el.textContent);
-    console.log(`   ✅ Tela de Perfil renderizada com sucesso: "${perfilTitle}"`);
+    console.log(`   ✅ Navegação para /perfil efetuada diretamente pelo cabeçalho permanente.`);
 
-    // 5. Testar início do fluxo de configuração de MFA (POST /api/v1/auth/mfa/enroll)
-    console.log('5️⃣ Testando clique em "Configurar / Habilitar MFA"...');
+    // 6. Testar início do fluxo de configuração de MFA
+    console.log('6️⃣ Testando clique em "Configurar / Habilitar MFA"...');
     await page.waitForSelector('#btn-mfa-enroll', { timeout: 3000 });
     await page.click('#btn-mfa-enroll');
 
     await page.waitForSelector('#mfa-verify-code', { timeout: 5000 });
-    console.log(`   ✅ Chave de segredo MFA e campo de verificação de 6 dígitos gerados pelo backend.`);
+    console.log(`   ✅ Chave de segredo MFA e verificação TOTP gerados com sucesso.`);
 
-    // Voltar para o Dashboard
-    await page.waitForSelector('#btn-voltar-dashboard', { timeout: 3000 });
-    await page.click('#btn-voltar-dashboard');
-    await page.waitForFunction(() => window.location.pathname === '/dashboard', { timeout: 5000 });
-    console.log(`   ✅ Retorno ao /dashboard concluído.`);
-
-    // Logout
-    const logoutUserBtn = await page.waitForSelector('button ::-p-text(Sair)', { timeout: 3000 });
-    await logoutUserBtn.click();
+    // 7. Logout permanente
+    console.log('7️⃣ Testando logout permanente via cabeçalho...');
+    await page.click('#btn-logout');
     await page.waitForFunction(() => window.location.pathname === '/', { timeout: 5000 });
-    console.log(`   ✅ Logout de usuário comum efetuado.`);
+    console.log(`   ✅ Logout de usuário efetuado.`);
 
-    // 6. Testar login de Administrador com E-mail ("admin@workbox.local") e senha ("admin")
-    console.log('6️⃣ Testando login com Administrador ("admin@workbox.local")...');
+    // 8. Testar login com Administrador e verificar Navbar no módulo Admin
+    console.log('8️⃣ Testando Administrador e AppBar no módulo /admin...');
     await page.$eval('#email', (el) => {
       el.focus();
       el.value = '';
@@ -94,15 +95,37 @@ async function runBrowserValidation() {
 
     await page.waitForFunction(() => window.location.pathname === '/dashboard', { timeout: 6000 });
 
-    const totalCardsAdmin = await page.$$eval('.MuiCard-root', (cards) => cards.length);
-    console.log(`   ✅ Total de cards para Administrador: ${totalCardsAdmin} (esperado 12)`);
+    const adminCard = await page.waitForSelector('.MuiCard-root ::-p-text(Administração)', { timeout: 3000 });
+    await adminCard.click();
+    await page.waitForFunction(() => window.location.pathname === '/admin', { timeout: 5000 });
 
-    const logoutAdminBtn = await page.waitForSelector('button ::-p-text(Sair)', { timeout: 3000 });
-    await logoutAdminBtn.click();
+    await page.waitForSelector('#btn-perfil', { timeout: 3000 });
+    await page.waitForSelector('#btn-logout', { timeout: 3000 });
+    console.log(`   ✅ Botões de Perfil e Sair presentes e funcionais no Painel de Administração.`);
+
+    // 9. Testar edição dos dados cadastrais (Nome Social) como Administrador
+    console.log('9️⃣ Testando edição de dados cadastrais como Administrador (/perfil)...');
+    await page.click('#btn-perfil');
+    await page.waitForFunction(() => window.location.pathname === '/perfil', { timeout: 5000 });
+
+    const updatedSocialName = `Administrador ${uniqueId}`;
+    await page.$eval('#edit-social-name', (el) => {
+      el.focus();
+      el.value = '';
+    });
+    await page.type('#edit-social-name', updatedSocialName);
+    await page.type('#edit-confirm-password', 'admin');
+
+    const saveBtn = await page.waitForSelector('button ::-p-text(Salvar Alterações)', { timeout: 3000 });
+    await saveBtn.click();
+    await page.waitForSelector('.MuiAlert-standardSuccess', { timeout: 5000 });
+    console.log(`   ✅ Informações cadastrais atualizadas com sucesso pelo Administrador.`);
+
+    await page.click('#btn-logout');
     await page.waitForFunction(() => window.location.pathname === '/', { timeout: 5000 });
     console.log(`   ✅ Logout final concluído.`);
 
-    console.log('\n🎉 TODAS AS VALIDAÇÕES DE CONTRATO OPENAPI (EMAIL + SOCIALNAME) PASSARAM COM SUCESSO!');
+    console.log('\n🎉 TODAS AS VALIDAÇÕES DE NAVBAR PERMANENTE E EDIÇÃO DE USUÁRIO PASSARAM COM SUCESSO!');
   } catch (error) {
     console.error('❌ Erro durante a validação no navegador:', error);
     process.exitCode = 1;

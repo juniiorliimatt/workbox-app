@@ -80,6 +80,34 @@ export const AuthProvider: FC<IAuthProviderProps> = ({ children }) => {
     return response.data;
   };
 
+  const updateProfile = async (socialName: string, email: string, password?: string): Promise<void> => {
+    if (!user?.id) {
+      throw new Error('Usuário não autenticado.');
+    }
+
+    await api.put(
+      '/api/v1/user/update',
+      {
+        id: user.id,
+        socialName,
+        email,
+        password: password || undefined,
+        isEnabled: user.enabled,
+      },
+      accessToken
+        ? {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+            },
+          }
+        : undefined
+    );
+
+    if (accessToken) {
+      await fetchUserProfile(accessToken);
+    }
+  };
+
   const changePassword = async (currentPassword: string, newPassword: string): Promise<void> => {
     await api.put(
       '/api/v1/auth/password',
@@ -238,6 +266,7 @@ export const AuthProvider: FC<IAuthProviderProps> = ({ children }) => {
         login,
         loginMfa,
         registerUser,
+        updateProfile,
         changePassword,
         enrollMfa,
         verifyMfa,

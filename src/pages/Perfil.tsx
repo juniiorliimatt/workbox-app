@@ -1,13 +1,11 @@
-import { FC, useState } from 'react';
+import { FC, useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import axios from 'axios';
 import {
   Alert,
-  AppBar,
   Avatar,
   Box,
   Button,
@@ -22,11 +20,9 @@ import {
   InputAdornment,
   Paper,
   TextField,
-  Toolbar,
   Typography,
 } from '@mui/material';
 import {
-  ArrowBack as ArrowBackIcon,
   Person as PersonIcon,
   Lock as LockIcon,
   Security as SecurityIcon,
@@ -34,15 +30,37 @@ import {
   CheckCircle as CheckCircleIcon,
   Visibility,
   VisibilityOff,
-  ExitToApp as LogoutIcon,
+  Save as SaveIcon,
 } from '@mui/icons-material';
+import AppNavbar from '@/components/AppNavbar';
 import { IMfaEnrollResponse } from '@/interfaces/IMfaEnrollResponse';
+
+interface IEditProfileInputs {
+  socialName: string;
+  email: string;
+  confirmPassword: string;
+}
 
 interface IChangePasswordInputs {
   currentPassword: string;
   newPassword: string;
   confirmNewPassword: string;
 }
+
+const editProfileSchema = yup.object().shape({
+  socialName: yup
+    .string()
+    .min(2, 'Nome social deve ter no mínimo 2 caracteres')
+    .max(120, 'Máximo de 120 caracteres')
+    .required('Nome social é obrigatório'),
+  email: yup
+    .string()
+    .email('Informe um e-mail válido')
+    .required('E-mail é obrigatório'),
+  confirmPassword: yup
+    .string()
+    .required('Informe sua senha atual para confirmar a alteração'),
+});
 
 const passwordSchema = yup.object().shape({
   currentPassword: yup.string().required('Senha atual é obrigatória'),
@@ -58,8 +76,12 @@ const passwordSchema = yup.object().shape({
 });
 
 const Perfil: FC = () => {
-  const { user, isAdmin, changePassword, enrollMfa, verifyMfa, disableMfa, logout } = useAuth();
-  const navigate = useNavigate();
+  const { user, isAdmin, updateProfile, changePassword, enrollMfa, verifyMfa, disableMfa } = useAuth();
+
+  // Estados de Edição de Perfil
+  const [profileSuccess, setProfileSuccess] = useState<string | null>(null);
+  const [profileError, setProfileError] = useState<string | null>(null);
+  const [showProfilePassword, setShowProfilePassword] = useState<boolean>(false);
 
   // Estados de Senha
   const [showCurrentPassword, setShowCurrentPassword] = useState<boolean>(false);
@@ -79,6 +101,33 @@ const Perfil: FC = () => {
   const [isDisablingMfa, setIsDisablingMfa] = useState<boolean>(false);
   const [disableCode, setDisableCode] = useState<string>('');
 
+  // Form de Perfil
+  const {
+    register: registerProfile,
+    handleSubmit: handleSubmitProfile,
+    reset: resetProfileForm,
+    formState: { errors: profileErrors, isSubmitting: isSubmittingProfile },
+  } = useForm<IEditProfileInputs>({
+    resolver: yupResolver(editProfileSchema),
+    defaultValues: {
+      socialName: user?.socialName || '',
+      email: user?.email || '',
+      confirmPassword: '',
+    },
+  });
+
+  // Atualiza valores do formulário de perfil se o usuário mudar
+  useEffect(() => {
+    if (user) {
+      resetProfileForm({
+        socialName: user.socialName || '',
+        email: user.email || '',
+        confirmPassword: '',
+      });
+    }
+  }, [user, resetProfileForm]);
+
+  // Form de Senha
   const {
     register: registerPassword,
     handleSubmit: handleSubmitPassword,
@@ -92,6 +141,34 @@ const Perfil: FC = () => {
       confirmNewPassword: '',
     },
   });
+
+  const onProfileSubmit = async (data: IEditProfileInputs) => {
+    setProfileSuccess(null);
+    setProfileError(null);
+    try {
+      await updateProfile(data.socialName, data.email, data.confirmPassword);
+      setProfileSuccess('Informações cadastrais atualizadas com sucesso!');
+      resetProfileForm({
+        socialName: data.socialName,
+        email: data.email,
+        confirmPassword: '',
+      });
+    } catch (err: unknown) {
+      if (axios.isAxiosError(err)) {
+        if (err.response?.status === 401 || err.response?.status === 400) {
+          setProfileError(err.response.data?.detail || 'Senha de confirmação incorreta.');
+        } else if (err.response?.status === 409) {
+          setProfileError(err.response.data?.detail || 'E-mail já está em uso por outro usuário.');
+        } else if (err.response?.data?.detail) {
+          setProfileError(err.response.data.detail);
+        } else {
+          setProfileError('Falha ao atualizar dados cadastrais. Verifique os campos.');
+        }
+      } else {
+        setProfileError('Ocorreu um erro inesperado ao atualizar o perfil.');
+      }
+    }
+  };
 
   const onPasswordSubmit = async (data: IChangePasswordInputs) => {
     setPasswordSuccess(null);
@@ -192,40 +269,16 @@ const Perfil: FC = () => {
     }
   };
 
-  const handleLogout = async () => {
-    await logout();
-    navigate('/');
-  };
-
   return (
     <Box sx={{ width: '100%', minHeight: '100vh', bgcolor: 'grey.50', display: 'flex', flexDirection: 'column' }}>
-      <AppBar position="static" color="primary" elevation={1} sx={{ width: '100%' }}>
-        <Toolbar>
-          <Button
-            id="btn-voltar-dashboard"
-            color="inherit"
-            startIcon={<ArrowBackIcon />}
-            onClick={() => navigate('/dashboard')}
-            sx={{ mr: 2 }}
-          >
-            Voltar aos Módulos
-          </Button>
-          <PersonIcon sx={{ mr: 1.5 }} />
-          <Typography variant="h6" component="h1" sx={{ flexGrow: 1, fontWeight: 600 }}>
-            Meu Perfil & Segurança
-          </Typography>
-          <Button
-            color="inherit"
-            variant="outlined"
-            size="small"
-            startIcon={<LogoutIcon />}
-            onClick={handleLogout}
-            sx={{ borderColor: 'rgba(255,255,255,0.5)' }}
-          >
-            Sair
-          </Button>
-        </Toolbar>
-      </AppBar>
+      {/* Barra de Navegação Permanente com Perfil e Logout */}
+      <AppNavbar
+        title="Meu Perfil & Segurança"
+        icon={<PersonIcon sx={{ fontSize: 28 }} />}
+        showBackButton
+        backPath="/dashboard"
+        backLabel="Voltar aos Módulos"
+      />
 
       <Container maxWidth="lg" sx={{ mt: 4, mb: 4, flexGrow: 1 }}>
         <Paper elevation={1} sx={{ p: 3, mb: 4, borderRadius: 2 }}>
@@ -245,55 +298,123 @@ const Perfil: FC = () => {
         </Paper>
 
         <Grid container spacing={3}>
-          {/* Card 1: Informações da Conta */}
+          {/* Card 1: Editar Informações do Usuário (Nome Social & E-mail) */}
           <Grid item xs={12} md={4}>
             <Card elevation={2} sx={{ height: '100%', borderRadius: 2 }}>
               <CardContent>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                   <PersonIcon color="primary" sx={{ mr: 1 }} />
                   <Typography variant="h6" component="h3" sx={{ fontWeight: 600 }}>
-                    Dados da Conta
+                    Editar Dados Cadastrais
                   </Typography>
                 </Box>
                 <Divider sx={{ mb: 2 }} />
 
-                <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-                  ID Único (UUID)
-                </Typography>
-                <Typography variant="body2" sx={{ fontFamily: 'monospace', mb: 2, wordBreak: 'break-all' }}>
-                  {user?.id || 'N/A'}
-                </Typography>
+                {profileSuccess && (
+                  <Alert severity="success" sx={{ mb: 2 }}>
+                    {profileSuccess}
+                  </Alert>
+                )}
 
-                <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-                  Nome Social / Exibição
-                </Typography>
-                <Typography variant="body1" sx={{ fontWeight: 500, mb: 2 }}>
-                  {user?.socialName || 'Não informado'}
-                </Typography>
+                {profileError && (
+                  <Alert severity="error" sx={{ mb: 2 }}>
+                    {profileError}
+                  </Alert>
+                )}
 
-                <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-                  Endereço de E-mail
-                </Typography>
-                <Typography variant="body1" sx={{ fontWeight: 500, mb: 2 }}>
-                  {user?.email || 'Não informado'}
-                </Typography>
-
-                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
-                  Status & Permissões
-                </Typography>
-                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                  <Chip
-                    icon={<CheckCircleIcon />}
-                    label={user?.enabled ? 'Conta Ativa' : 'Inativa'}
-                    color={user?.enabled ? 'success' : 'default'}
+                <Box
+                  component="form"
+                  onSubmit={handleSubmitProfile(onProfileSubmit)}
+                  noValidate
+                >
+                  <TextField
+                    margin="dense"
+                    fullWidth
+                    label="ID Único (UUID)"
+                    value={user?.id || ''}
+                    disabled
                     size="small"
+                    InputProps={{ sx: { fontFamily: 'monospace', fontSize: '0.8rem' } }}
+                    sx={{ mb: 1 }}
                   />
-                  <Chip
-                    label={isAdmin ? 'ROLE_ADMIN' : 'ROLE_USER'}
-                    color={isAdmin ? 'primary' : 'default'}
-                    size="small"
-                    variant="outlined"
+
+                  <TextField
+                    margin="dense"
+                    required
+                    fullWidth
+                    label="Nome Social / Como quer ser chamado"
+                    id="edit-social-name"
+                    {...registerProfile('socialName')}
+                    error={Boolean(profileErrors.socialName)}
+                    helperText={profileErrors.socialName?.message}
+                    disabled={isSubmittingProfile}
                   />
+
+                  <TextField
+                    margin="dense"
+                    required
+                    fullWidth
+                    label="Endereço de E-mail"
+                    type="email"
+                    id="edit-email"
+                    {...registerProfile('email')}
+                    error={Boolean(profileErrors.email)}
+                    helperText={profileErrors.email?.message}
+                    disabled={isSubmittingProfile}
+                  />
+
+                  <TextField
+                    margin="dense"
+                    required
+                    fullWidth
+                    label="Confirmar com Senha Atual"
+                    type={showProfilePassword ? 'text' : 'password'}
+                    id="edit-confirm-password"
+                    autoComplete="current-password"
+                    {...registerProfile('confirmPassword')}
+                    error={Boolean(profileErrors.confirmPassword)}
+                    helperText={profileErrors.confirmPassword?.message}
+                    disabled={isSubmittingProfile}
+                    InputProps={{
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <IconButton
+                            aria-label={showProfilePassword ? 'Ocultar senha' : 'Exibir senha'}
+                            onClick={() => setShowProfilePassword(!showProfilePassword)}
+                            edge="end"
+                          >
+                            {showProfilePassword ? <VisibilityOff /> : <Visibility />}
+                          </IconButton>
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+
+                  <Box sx={{ display: 'flex', gap: 1, my: 1.5, flexWrap: 'wrap' }}>
+                    <Chip
+                      icon={<CheckCircleIcon />}
+                      label={user?.enabled ? 'Conta Ativa' : 'Inativa'}
+                      color={user?.enabled ? 'success' : 'default'}
+                      size="small"
+                    />
+                    <Chip
+                      label={isAdmin ? 'ROLE_ADMIN' : 'ROLE_USER'}
+                      color={isAdmin ? 'primary' : 'default'}
+                      size="small"
+                      variant="outlined"
+                    />
+                  </Box>
+
+                  <Button
+                    type="submit"
+                    fullWidth
+                    variant="contained"
+                    startIcon={<SaveIcon />}
+                    sx={{ mt: 1 }}
+                    disabled={isSubmittingProfile}
+                  >
+                    {isSubmittingProfile ? <CircularProgress size={24} color="inherit" /> : 'Salvar Alterações'}
+                  </Button>
                 </Box>
               </CardContent>
             </Card>

@@ -32,6 +32,7 @@ const createMockAuthContext = (overrides?: Partial<IAuthContext>): IAuthContext 
   login: vi.fn().mockResolvedValue(undefined),
   loginMfa: vi.fn().mockResolvedValue(undefined),
   registerUser: vi.fn().mockResolvedValue({ id: '1', socialName: 'u', email: 'e@test.com', enabled: true }),
+  updateProfile: vi.fn().mockResolvedValue(undefined),
   changePassword: vi.fn().mockResolvedValue(undefined),
   enrollMfa: vi.fn().mockResolvedValue({ secret: 'JBSWY3DPEHPK3PXP', otpAuthUri: 'otpauth://totp/...' }),
   verifyMfa: vi.fn().mockResolvedValue(undefined),
@@ -60,14 +61,38 @@ describe('Perfil Component', () => {
     vi.clearAllMocks();
   });
 
-  it('renders user details and account cards', () => {
+  it('renders user details and account edit form with initial values', () => {
     renderPerfil();
 
     expect(screen.getByRole('heading', { name: /Meu Perfil & Segurança/i })).toBeInTheDocument();
-    expect(screen.getByText('user-uuid-1234')).toBeInTheDocument();
-    expect(screen.getByText('maria@workbox.local')).toBeInTheDocument();
-    expect(screen.getAllByText('Maria Silva')).toHaveLength(2);
+    expect(screen.getByDisplayValue('user-uuid-1234')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('Maria Silva')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('maria@workbox.local')).toBeInTheDocument();
     expect(screen.getByText('Conta Ativa')).toBeInTheDocument();
+  });
+
+  it('submits updated profile data successfully', async () => {
+    const user = userEvent.setup();
+    const { authValue } = renderPerfil();
+
+    const socialNameInput = screen.getByLabelText(/Nome Social \/ Como quer ser chamado/i);
+    await user.clear(socialNameInput);
+    await user.type(socialNameInput, 'Maria Silva Santos');
+
+    const passwordInput = screen.getByLabelText(/Confirmar com Senha Atual/i);
+    await user.type(passwordInput, 'SenhaAtual123!');
+
+    const saveBtn = screen.getByRole('button', { name: /Salvar Alterações/i });
+    await user.click(saveBtn);
+
+    await waitFor(() => {
+      expect(authValue.updateProfile).toHaveBeenCalledWith(
+        'Maria Silva Santos',
+        'maria@workbox.local',
+        'SenhaAtual123!'
+      );
+      expect(screen.getByText(/Informações cadastrais atualizadas com sucesso!/i)).toBeInTheDocument();
+    });
   });
 
   it('validates password change form when submitting mismatched passwords', async () => {

@@ -2,10 +2,7 @@ import { FC } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import {
-  AppBar,
-  Avatar,
   Box,
-  Button,
   Card,
   CardActionArea,
   CardContent,
@@ -13,12 +10,9 @@ import {
   Container,
   Grid,
   Paper,
-  Toolbar,
   Typography,
 } from '@mui/material';
 import {
-  ExitToApp as LogoutIcon,
-  Person as PersonIcon,
   Dashboard as DashboardIcon,
   AccountBalanceWallet as WalletIcon,
   AdminPanelSettings as AdminIcon,
@@ -33,6 +27,7 @@ import {
   Settings as SettingsIcon,
   SupportAgent as SupportIcon,
 } from '@mui/icons-material';
+import AppNavbar from '@/components/AppNavbar';
 
 interface IModuleCard {
   id: string;
@@ -135,13 +130,8 @@ const MODULES_LIST: IModuleCard[] = [
 ];
 
 const Dashboard: FC = () => {
-  const { user, isAdmin, logout } = useAuth();
+  const { user, isAdmin } = useAuth();
   const navigate = useNavigate();
-
-  const handleLogout = async () => {
-    await logout();
-    navigate('/');
-  };
 
   // Filtra cards de acordo com privilégios do usuário
   const visibleModules = MODULES_LIST.filter(
@@ -150,46 +140,8 @@ const Dashboard: FC = () => {
 
   return (
     <Box sx={{ width: '100%', minHeight: '100vh', bgcolor: 'grey.50', display: 'flex', flexDirection: 'column' }}>
-      <AppBar position="static" color="primary" elevation={1} sx={{ width: '100%' }}>
-        <Toolbar>
-          <DashboardIcon sx={{ mr: 2 }} />
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1, fontWeight: 600 }}>
-            Workbox Hub
-          </Typography>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <Button
-              id="btn-perfil"
-              color="inherit"
-              startIcon={
-                <Avatar sx={{ bgcolor: 'secondary.main', width: 28, height: 28 }}>
-                  <PersonIcon sx={{ fontSize: 18 }} />
-                </Avatar>
-              }
-              onClick={() => navigate('/perfil')}
-              sx={{ textTransform: 'none', color: 'inherit' }}
-            >
-              <Box sx={{ textAlign: 'left', ml: 0.5, display: { xs: 'none', sm: 'block' } }}>
-                <Typography variant="body2" sx={{ fontWeight: 600, lineHeight: 1.2 }}>
-                  {user?.socialName || user?.email || 'Usuário'}
-                </Typography>
-                <Typography variant="caption" sx={{ opacity: 0.8, display: 'block', fontSize: '0.7rem' }}>
-                  {isAdmin ? 'Administrador' : 'Meu Perfil'}
-                </Typography>
-              </Box>
-            </Button>
-            <Button
-              color="inherit"
-              variant="outlined"
-              size="small"
-              startIcon={<LogoutIcon />}
-              onClick={handleLogout}
-              sx={{ borderColor: 'rgba(255,255,255,0.5)' }}
-            >
-              Sair
-            </Button>
-          </Box>
-        </Toolbar>
-      </AppBar>
+      {/* Barra de Navegação Permanente com Perfil e Logout */}
+      <AppNavbar title="Workbox Hub" icon={<DashboardIcon sx={{ mr: 0.5 }} />} />
 
       <Container maxWidth="xl" sx={{ mt: 4, mb: 4, flexGrow: 1 }}>
         <Paper elevation={1} sx={{ p: 3, mb: 4, borderRadius: 2 }}>

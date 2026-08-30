@@ -1,47 +1,33 @@
 import { FC } from 'react';
-import { useNavigate } from 'react-router-dom';
 import {
-  AppBar,
   Box,
-  Button,
   Card,
   CardContent,
   Container,
   Divider,
   Grid,
   Paper,
-  Toolbar,
   Typography,
 } from '@mui/material';
 import {
-  ArrowBack as ArrowBackIcon,
   AdminPanelSettings as AdminIcon,
   PeopleAlt as UsersIcon,
   Security as SecurityIcon,
   History as HistoryIcon,
 } from '@mui/icons-material';
+import AppNavbar from '@/components/AppNavbar';
 
 const Admin: FC = () => {
-  const navigate = useNavigate();
-
   return (
     <Box sx={{ width: '100%', minHeight: '100vh', bgcolor: 'grey.50', display: 'flex', flexDirection: 'column' }}>
-      <AppBar position="static" color="primary" elevation={1} sx={{ width: '100%' }}>
-        <Toolbar>
-          <Button
-            color="inherit"
-            startIcon={<ArrowBackIcon />}
-            onClick={() => navigate('/dashboard')}
-            sx={{ mr: 2 }}
-          >
-            Voltar aos Módulos
-          </Button>
-          <AdminIcon sx={{ mr: 1.5 }} />
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1, fontWeight: 600 }}>
-            Painel de Administração
-          </Typography>
-        </Toolbar>
-      </AppBar>
+      {/* Barra de Navegação Permanente com Perfil e Logout */}
+      <AppNavbar
+        title="Painel de Administração"
+        icon={<AdminIcon sx={{ mr: 0.5 }} />}
+        showBackButton
+        backPath="/dashboard"
+        backLabel="Voltar aos Módulos"
+      />
 
       <Container maxWidth="lg" sx={{ mt: 4, mb: 4, flexGrow: 1 }}>
         <Paper elevation={1} sx={{ p: 3, mb: 4, borderRadius: 2 }}>
