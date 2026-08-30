@@ -157,19 +157,26 @@ const Dashboard: FC = () => {
             Workbox Hub
           </Typography>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Avatar sx={{ bgcolor: 'secondary.main', width: 34, height: 34 }}>
-                <PersonIcon fontSize="small" />
-              </Avatar>
-              <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
-                <Typography variant="body2" sx={{ fontWeight: 600 }}>
+            <Button
+              id="btn-perfil"
+              color="inherit"
+              startIcon={
+                <Avatar sx={{ bgcolor: 'secondary.main', width: 28, height: 28 }}>
+                  <PersonIcon sx={{ fontSize: 18 }} />
+                </Avatar>
+              }
+              onClick={() => navigate('/perfil')}
+              sx={{ textTransform: 'none', color: 'inherit' }}
+            >
+              <Box sx={{ textAlign: 'left', ml: 0.5, display: { xs: 'none', sm: 'block' } }}>
+                <Typography variant="body2" sx={{ fontWeight: 600, lineHeight: 1.2 }}>
                   {user?.username || 'Usuário'}
                 </Typography>
-                <Typography variant="caption" sx={{ opacity: 0.8, display: 'block' }}>
-                  {isAdmin ? 'Administrador' : 'Usuário'}
+                <Typography variant="caption" sx={{ opacity: 0.8, display: 'block', fontSize: '0.7rem' }}>
+                  {isAdmin ? 'Administrador' : 'Meu Perfil'}
                 </Typography>
               </Box>
-            </Box>
+            </Button>
             <Button
               color="inherit"
               variant="outlined"

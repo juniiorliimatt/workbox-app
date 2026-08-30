@@ -8,6 +8,7 @@ import { IAuthProviderProps } from '@/interfaces/IAuthProviderProps';
 import { IAuthResponse } from '@/interfaces/IAuthResponse';
 import { IUser } from '@/interfaces/IUser';
 import { IUserApiRegisterDTO } from '@/interfaces/IUserApiRegisterDTO';
+import { IMfaEnrollResponse } from '@/interfaces/IMfaEnrollResponse';
 import api from '@/services/api';
 import { AuthContext } from './AuthContextValue';
 
@@ -77,6 +78,72 @@ export const AuthProvider: FC<IAuthProviderProps> = ({ children }) => {
   const registerUser = async (dto: IUserApiRegisterDTO): Promise<IUser> => {
     const response = await api.post<IUser>('/api/v1/auth/register', dto);
     return response.data;
+  };
+
+  const changePassword = async (currentPassword: string, newPassword: string): Promise<void> => {
+    await api.put(
+      '/api/v1/auth/password',
+      {
+        currentPassword,
+        newPassword,
+      },
+      accessToken
+        ? {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+            },
+          }
+        : undefined
+    );
+  };
+
+  const enrollMfa = async (): Promise<IMfaEnrollResponse> => {
+    const response = await api.post<IMfaEnrollResponse>(
+      '/api/v1/auth/mfa/enroll',
+      {},
+      accessToken
+        ? {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+            },
+          }
+        : undefined
+    );
+    return response.data;
+  };
+
+  const verifyMfa = async (code: string): Promise<void> => {
+    await api.post(
+      '/api/v1/auth/mfa/verify',
+      { code },
+      accessToken
+        ? {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+            },
+          }
+        : undefined
+    );
+    if (accessToken) {
+      await fetchUserProfile(accessToken);
+    }
+  };
+
+  const disableMfa = async (code: string): Promise<void> => {
+    await api.post(
+      '/api/v1/auth/mfa/disable',
+      { code },
+      accessToken
+        ? {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+            },
+          }
+        : undefined
+    );
+    if (accessToken) {
+      await fetchUserProfile(accessToken);
+    }
   };
 
   const loginMfa = async (code: string): Promise<void> => {
@@ -171,6 +238,10 @@ export const AuthProvider: FC<IAuthProviderProps> = ({ children }) => {
         login,
         loginMfa,
         registerUser,
+        changePassword,
+        enrollMfa,
+        verifyMfa,
+        disableMfa,
         refresh,
         logout,
       }}

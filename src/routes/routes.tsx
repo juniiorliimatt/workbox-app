@@ -3,6 +3,7 @@ import Login from '@/pages/Login';
 import Dashboard from '@/pages/Dashboard';
 import Financas from '@/pages/Financas';
 import Admin from '@/pages/Admin';
+import Perfil from '@/pages/Perfil';
 import ProtectedRoute from '@/routes/ProtectedRoute';
 import PublicRoute from '@/routes/PublicRoute';
 
@@ -30,6 +31,10 @@ export const router = createBrowserRouter([
       {
         path: '/admin',
         element: <Admin />,
+      },
+      {
+        path: '/perfil',
+        element: <Perfil />,
       },
     ],
   },
