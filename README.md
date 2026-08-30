@@ -187,12 +187,14 @@ Arquivo `.env.development` (e `.env.production`):
 
 ## Contas de Teste (QA)
 
-Conforme documentado em [`workbox-api/README.md`](../workbox-api/README.md#contas-de-teste-qa), as contas fixas para validação e testes locais são:
+Contas fixas no banco local para uso **exclusivo dos dois agentes de IA (Claude Code e Antigravity)** durante testes manuais/exploratórios (ver [`workbox-api/README.md`](../workbox-api/README.md#contas-de-teste-qa)):
 
-| Papel | E-mail | Senha | Módulo Principal |
-|---|---|---|---|
-| **Administrador** | `admin@workbox.local` | `admin` | Painel de Administração (`/admin`) + Hub |
-| **Usuário Padrão** | `user@workbox.local` | `user` | Finanças (`/financas`) + Hub |
+| Papel | E-mail | Senha | Roles | Módulo Principal |
+|---|---|---|---|---|
+| **Admin QA** | `qa.admin@workbox.local` | `QaAdmin@123` | `ROLE_ADMIN`, `ROLE_USER` | Painel de Administração (`/admin`) + Hub |
+| **User QA** | `qa.user@workbox.local` | `QaUser@123` | `ROLE_USER` | Finanças (`/financas`) + Hub |
+
+> Contas seed originais para testes rápidos do desenvolvedor: `admin@workbox.local` / `admin` e `user@workbox.local` / `user`.
 
 ---
 
