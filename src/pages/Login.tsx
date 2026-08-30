@@ -30,33 +30,33 @@ import {
   PersonAddOutlined as PersonAddIcon,
 } from '@mui/icons-material';
 
-const STORAGE_REMEMBER_KEY = 'workbox_remembered_username';
+const STORAGE_REMEMBER_KEY = 'workbox_remembered_email';
 
 interface ILoginFormInputs {
-  username: string;
+  email: string;
   password: string;
   rememberMe?: boolean;
 }
 
 interface IRegisterFormInputs {
-  username: string;
+  socialName: string;
   email: string;
   password: string;
   confirmPassword: string;
 }
 
 const loginSchema = yup.object().shape({
-  username: yup.string().required('Usuário é obrigatório'),
+  email: yup.string().email('Informe um e-mail válido').required('E-mail é obrigatório'),
   password: yup.string().required('Senha é obrigatória'),
   rememberMe: yup.boolean().optional(),
 });
 
 const registerSchema = yup.object().shape({
-  username: yup
+  socialName: yup
     .string()
-    .min(5, 'O usuário deve ter no mínimo 5 caracteres')
-    .max(50, 'Máximo de 50 caracteres')
-    .required('Usuário é obrigatório'),
+    .min(2, 'Nome social deve ter no mínimo 2 caracteres')
+    .max(120, 'Máximo de 120 caracteres')
+    .required('Nome social é obrigatório'),
   email: yup
     .string()
     .email('Informe um e-mail válido')
@@ -95,7 +95,7 @@ const Login: FC = () => {
   } = useForm<ILoginFormInputs>({
     resolver: yupResolver(loginSchema),
     defaultValues: {
-      username: '',
+      email: '',
       password: '',
       rememberMe: false,
     },
@@ -110,7 +110,7 @@ const Login: FC = () => {
   } = useForm<IRegisterFormInputs>({
     resolver: yupResolver(registerSchema),
     defaultValues: {
-      username: '',
+      socialName: '',
       email: '',
       password: '',
       confirmPassword: '',
@@ -119,9 +119,9 @@ const Login: FC = () => {
 
   // Carrega "Lembrar de mim" do localStorage
   useEffect(() => {
-    const savedUsername = localStorage.getItem(STORAGE_REMEMBER_KEY);
-    if (savedUsername) {
-      setLoginValue('username', savedUsername);
+    const savedEmail = localStorage.getItem(STORAGE_REMEMBER_KEY);
+    if (savedEmail) {
+      setLoginValue('email', savedEmail);
       setLoginValue('rememberMe', true);
     }
   }, [setLoginValue]);
@@ -129,11 +129,11 @@ const Login: FC = () => {
   const onLoginSubmit = async (data: ILoginFormInputs) => {
     setErrorMessage(null);
     try {
-      await login(data.username, data.password);
+      await login(data.email, data.password);
 
       // Gerencia persistência de "Lembrar de mim"
       if (data.rememberMe) {
-        localStorage.setItem(STORAGE_REMEMBER_KEY, data.username);
+        localStorage.setItem(STORAGE_REMEMBER_KEY, data.email);
       } else {
         localStorage.removeItem(STORAGE_REMEMBER_KEY);
       }
@@ -144,7 +144,7 @@ const Login: FC = () => {
     } catch (err: unknown) {
       if (axios.isAxiosError(err)) {
         if (err.response?.status === 401) {
-          setErrorMessage('Credenciais inválidas. Verifique seu usuário e senha.');
+          setErrorMessage('Credenciais inválidas. Verifique seu e-mail e senha.');
         } else if (err.response?.status === 429) {
           setErrorMessage('Muitas tentativas de login. Tente novamente em alguns minutos.');
         } else if (err.response?.data?.detail) {
@@ -163,18 +163,18 @@ const Login: FC = () => {
     setSuccessMessage(null);
     try {
       await registerUser({
-        username: data.username,
+        socialName: data.socialName,
         email: data.email,
         password: data.password,
       });
       setSuccessMessage('Conta criada com sucesso! Faça login com suas credenciais.');
       resetSignUpForm();
       setActiveTab(0);
-      setLoginValue('username', data.username);
+      setLoginValue('email', data.email);
     } catch (err: unknown) {
       if (axios.isAxiosError(err)) {
         if (err.response?.status === 409) {
-          setErrorMessage(err.response.data?.detail || 'Usuário ou e-mail já cadastrado.');
+          setErrorMessage(err.response.data?.detail || 'E-mail já cadastrado no sistema.');
         } else if (err.response?.data?.detail) {
           setErrorMessage(err.response.data.detail);
         } else {
@@ -274,7 +274,7 @@ const Login: FC = () => {
               ? 'Digite o código de 6 dígitos do seu autenticador'
               : activeTab === 1
               ? 'Preencha os dados abaixo para cadastrar seu usuário'
-              : 'Faça login para acessar sua conta'}
+              : 'Faça login com seu e-mail para acessar sua conta'}
           </Typography>
 
           {!mfaRequired && (
@@ -339,7 +339,7 @@ const Login: FC = () => {
               </Button>
             </Box>
           ) : activeTab === 0 ? (
-            /* Formulário de Login */
+            /* Formulário de Login com E-mail */
             <Box
               component="form"
               onSubmit={handleSubmitLogin(onLoginSubmit)}
@@ -350,13 +350,14 @@ const Login: FC = () => {
                 margin="normal"
                 required
                 fullWidth
-                id="username"
-                label="Usuário"
-                autoComplete="username"
+                id="email"
+                label="E-mail"
+                type="email"
+                autoComplete="email"
                 autoFocus
-                {...registerLogin('username')}
-                error={Boolean(loginErrors.username)}
-                helperText={loginErrors.username?.message}
+                {...registerLogin('email')}
+                error={Boolean(loginErrors.email)}
+                helperText={loginErrors.email?.message}
                 disabled={isLoggingIn}
               />
 
@@ -421,7 +422,7 @@ const Login: FC = () => {
               </Box>
             </Box>
           ) : (
-            /* Formulário de Novo Usuário (Cadastro) */
+            /* Formulário de Novo Usuário (Cadastro com Nome Social e E-mail) */
             <Box
               component="form"
               onSubmit={handleSubmitSignUp(onSignUpSubmit)}
@@ -432,13 +433,14 @@ const Login: FC = () => {
                 margin="normal"
                 required
                 fullWidth
-                id="signup-username"
-                label="Usuário"
-                autoComplete="username"
+                id="signup-social-name"
+                label="Nome Social / Completo"
+                placeholder="Como prefere ser chamado"
+                autoComplete="name"
                 autoFocus
-                {...registerSignUp('username')}
-                error={Boolean(signUpErrors.username)}
-                helperText={signUpErrors.username?.message}
+                {...registerSignUp('socialName')}
+                error={Boolean(signUpErrors.socialName)}
+                helperText={signUpErrors.socialName?.message}
                 disabled={isSigningUp}
               />
 

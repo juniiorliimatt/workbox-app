@@ -1,5 +1,5 @@
 export interface IUserApiRegisterDTO {
-  username: string;
+  socialName: string;
   email: string;
   password: string;
 }

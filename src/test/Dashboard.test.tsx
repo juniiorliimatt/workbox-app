@@ -19,7 +19,7 @@ const createMockAuthContext = (overrides?: Partial<IAuthContext>): IAuthContext 
   accessToken: 'mock-access-token',
   user: {
     id: '123',
-    username: 'admin',
+    socialName: 'Administrador',
     email: 'admin@workbox.local',
     enabled: true,
     roles: ['ROLE_ADMIN'],
@@ -31,7 +31,11 @@ const createMockAuthContext = (overrides?: Partial<IAuthContext>): IAuthContext 
   mfaToken: null,
   login: vi.fn().mockResolvedValue(undefined),
   loginMfa: vi.fn().mockResolvedValue(undefined),
-  registerUser: vi.fn().mockResolvedValue({ id: '1', username: 'u', email: 'e', enabled: true }),
+  registerUser: vi.fn().mockResolvedValue({ id: '1', socialName: 'u', email: 'e@test.com', enabled: true }),
+  changePassword: vi.fn().mockResolvedValue(undefined),
+  enrollMfa: vi.fn().mockResolvedValue({ secret: 'mock', otpAuthUri: 'mock' }),
+  verifyMfa: vi.fn().mockResolvedValue(undefined),
+  disableMfa: vi.fn().mockResolvedValue(undefined),
   refresh: vi.fn().mockResolvedValue(null),
   logout: vi.fn().mockResolvedValue(undefined),
   ...overrides,
@@ -59,7 +63,7 @@ describe('Dashboard Component', () => {
   it('renders all 12 cards with Administração as the first card when user is an administrator', () => {
     renderDashboard({ isAdmin: true });
 
-    expect(screen.getByText(/Olá, admin! Selecione um módulo/i)).toBeInTheDocument();
+    expect(screen.getByText(/Olá, Administrador! Selecione um módulo/i)).toBeInTheDocument();
 
     const titles = screen.getAllByRole('heading', { level: 3 }).map((h) => h.textContent);
     expect(titles[0]).toBe('Administração');
@@ -87,14 +91,14 @@ describe('Dashboard Component', () => {
       isAdmin: false,
       user: {
         id: '456',
-        username: 'regular_user',
+        socialName: 'Usuário Padrão',
         email: 'user@workbox.local',
         enabled: true,
         roles: ['ROLE_USER'],
       },
     });
 
-    expect(screen.getByText(/Olá, regular_user! Selecione um módulo/i)).toBeInTheDocument();
+    expect(screen.getByText(/Olá, Usuário Padrão! Selecione um módulo/i)).toBeInTheDocument();
 
     const titles = screen.getAllByRole('heading', { level: 3 }).map((h) => h.textContent);
     expect(titles[0]).toBe('Finanças');

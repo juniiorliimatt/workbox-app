@@ -235,7 +235,7 @@ const Perfil: FC = () => {
             </Avatar>
             <Box>
               <Typography variant="h5" component="h2" sx={{ fontWeight: 600 }}>
-                {user?.username || 'Usuário'}
+                {user?.socialName || 'Usuário'}
               </Typography>
               <Typography variant="body2" color="text.secondary">
                 {user?.email || 'E-mail não cadastrado'} &bull; {isAdmin ? 'Administrador' : 'Usuário Padrão'}
@@ -265,10 +265,10 @@ const Perfil: FC = () => {
                 </Typography>
 
                 <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-                  Nome de Usuário
+                  Nome Social / Exibição
                 </Typography>
                 <Typography variant="body1" sx={{ fontWeight: 500, mb: 2 }}>
-                  {user?.username || 'N/A'}
+                  {user?.socialName || 'Não informado'}
                 </Typography>
 
                 <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>

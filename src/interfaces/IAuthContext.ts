@@ -10,7 +10,7 @@ export interface IAuthContext {
   isLoading: boolean;
   mfaRequired: boolean;
   mfaToken: string | null;
-  login: (username: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<void>;
   loginMfa: (code: string) => Promise<void>;
   registerUser: (dto: IUserApiRegisterDTO) => Promise<IUser>;
   changePassword: (currentPassword: string, newPassword: string) => Promise<void>;

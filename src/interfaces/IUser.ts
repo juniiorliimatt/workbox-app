@@ -1,7 +1,7 @@
 export interface IUser {
   id: string;
-  username: string;
-  email: string | null;
+  email: string;
+  socialName: string;
   enabled: boolean;
   roles?: string[];
 }

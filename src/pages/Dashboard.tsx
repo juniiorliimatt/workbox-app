@@ -170,7 +170,7 @@ const Dashboard: FC = () => {
             >
               <Box sx={{ textAlign: 'left', ml: 0.5, display: { xs: 'none', sm: 'block' } }}>
                 <Typography variant="body2" sx={{ fontWeight: 600, lineHeight: 1.2 }}>
-                  {user?.username || 'Usuário'}
+                  {user?.socialName || user?.email || 'Usuário'}
                 </Typography>
                 <Typography variant="caption" sx={{ opacity: 0.8, display: 'block', fontSize: '0.7rem' }}>
                   {isAdmin ? 'Administrador' : 'Meu Perfil'}
@@ -194,7 +194,7 @@ const Dashboard: FC = () => {
       <Container maxWidth="xl" sx={{ mt: 4, mb: 4, flexGrow: 1 }}>
         <Paper elevation={1} sx={{ p: 3, mb: 4, borderRadius: 2 }}>
           <Typography variant="h5" component="h2" sx={{ fontWeight: 600, mb: 1 }}>
-            Olá, {user?.username || 'Usuário'}! Selecione um módulo
+            Olá, {user?.socialName || user?.email || 'Usuário'}! Selecione um módulo
           </Typography>
           <Typography variant="body2" color="text.secondary">
             Navegue pelos serviços e ferramentas do ecossistema Workbox.

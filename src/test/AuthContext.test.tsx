@@ -29,13 +29,13 @@ const TestConsumer = () => {
     <div>
       <div data-testid="auth-status">{isAuthenticated ? 'Autenticado' : 'Não autenticado'}</div>
       <div data-testid="is-admin">{isAdmin ? 'Admin' : 'Regular'}</div>
-      <div data-testid="user-name">{user?.username || 'Anônimo'}</div>
+      <div data-testid="user-name">{user?.socialName || 'Anônimo'}</div>
       <div data-testid="token">{accessToken || 'Sem token'}</div>
-      <button onClick={() => login('admin', 'admin')}>Fazer Login</button>
+      <button onClick={() => login('admin@workbox.local', 'admin')}>Fazer Login</button>
       <button onClick={() => logout()}>Fazer Logout</button>
       <button
         onClick={() =>
-          registerUser({ username: 'new_user', email: 'new@test.com', password: 'password123' })
+          registerUser({ socialName: 'Novo Usuário', email: 'new@test.com', password: 'password123' })
         }
       >
         Registrar
@@ -55,7 +55,7 @@ describe('AuthContext & AuthProvider', () => {
     );
 
     vi.mocked(api.get).mockResolvedValueOnce(
-      mockAxiosResponse<IUser>({ id: '1', username: 'admin', email: null, enabled: true })
+      mockAxiosResponse<IUser>({ id: '1', socialName: 'Administrador', email: 'admin@workbox.local', enabled: true })
     );
 
     render(
@@ -66,7 +66,7 @@ describe('AuthContext & AuthProvider', () => {
 
     await waitFor(() => {
       expect(screen.getByTestId('auth-status')).toHaveTextContent('Autenticado');
-      expect(screen.getByTestId('user-name')).toHaveTextContent('admin');
+      expect(screen.getByTestId('user-name')).toHaveTextContent('Administrador');
       expect(screen.getByTestId('token')).toHaveTextContent('initial-jwt-token');
     });
   });
@@ -87,7 +87,7 @@ describe('AuthContext & AuthProvider', () => {
     });
 
     vi.mocked(api.post).mockResolvedValueOnce(
-      mockAxiosResponse<IUser>({ id: '1', username: 'new_user', email: 'new@test.com', enabled: true })
+      mockAxiosResponse<IUser>({ id: '1', socialName: 'Novo Usuário', email: 'new@test.com', enabled: true })
     );
 
     const registerBtn = screen.getByRole('button', { name: /Registrar/i });
@@ -95,7 +95,7 @@ describe('AuthContext & AuthProvider', () => {
 
     await waitFor(() => {
       expect(api.post).toHaveBeenCalledWith('/api/v1/auth/register', {
-        username: 'new_user',
+        socialName: 'Novo Usuário',
         email: 'new@test.com',
         password: 'password123',
       });
@@ -126,7 +126,7 @@ describe('AuthContext & AuthProvider', () => {
     vi.mocked(api.get).mockResolvedValueOnce(
       mockAxiosResponse<IUser>({
         id: '2',
-        username: 'admin',
+        socialName: 'Administrador',
         email: 'admin@workbox.local',
         enabled: true,
       })
@@ -137,7 +137,7 @@ describe('AuthContext & AuthProvider', () => {
 
     await waitFor(() => {
       expect(screen.getByTestId('auth-status')).toHaveTextContent('Autenticado');
-      expect(screen.getByTestId('user-name')).toHaveTextContent('admin');
+      expect(screen.getByTestId('user-name')).toHaveTextContent('Administrador');
       expect(screen.getByTestId('token')).toHaveTextContent('new-jwt-token');
     });
   });
@@ -150,7 +150,7 @@ describe('AuthContext & AuthProvider', () => {
     );
 
     vi.mocked(api.get).mockResolvedValueOnce(
-      mockAxiosResponse<IUser>({ id: '1', username: 'admin', email: null, enabled: true })
+      mockAxiosResponse<IUser>({ id: '1', socialName: 'Administrador', email: 'admin@workbox.local', enabled: true })
     );
 
     render(

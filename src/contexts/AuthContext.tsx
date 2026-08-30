@@ -53,9 +53,9 @@ export const AuthProvider: FC<IAuthProviderProps> = ({ children }) => {
     }
   }, []);
 
-  const login = async (username: string, password: string): Promise<void> => {
+  const login = async (email: string, password: string): Promise<void> => {
     const response = await api.post<IAuthResponse>('/api/v1/auth/login', {
-      username,
+      email,
       password,
     });
 

@@ -1,7 +1,7 @@
 import puppeteer from 'puppeteer-core';
 
 async function runBrowserValidation() {
-  console.log('🚀 Iniciando validação no Google Chrome headless...');
+  console.log('🚀 Iniciando validação no Google Chrome headless com contrato atualizado (Email + SocialName)...');
   const browser = await puppeteer.launch({
     executablePath: '/usr/bin/google-chrome',
     headless: true,
@@ -20,27 +20,28 @@ async function runBrowserValidation() {
     const title = await page.$eval('h1', (el) => el.textContent);
     console.log(`   ✅ Título da página renderizado: "${title}"`);
 
-    // 2. Auto-cadastro de usuário comum (ROLE_USER)
-    console.log('2️⃣ Testando auto-cadastro de novo usuário padrão...');
-    const uniqueUser = `usr_${Date.now()}`;
-    const uniqueEmail = `${uniqueUser}@workbox.local`;
+    // 2. Auto-cadastro de novo usuário com socialName e email
+    console.log('2️⃣ Testando auto-cadastro de novo usuário padrão com Nome Social e E-mail...');
+    const uniqueId = Date.now();
+    const uniqueSocialName = `Dev Tester ${uniqueId}`;
+    const uniqueEmail = `dev_${uniqueId}@workbox.local`;
     const uniquePass = 'SenhaForte123!';
 
     const tabs = await page.$$('button[role="tab"]');
     await tabs[1].click();
-    await page.waitForSelector('#signup-username', { timeout: 3000 });
+    await page.waitForSelector('#signup-social-name', { timeout: 3000 });
 
-    await page.type('#signup-username', uniqueUser);
+    await page.type('#signup-social-name', uniqueSocialName);
     await page.type('#signup-email', uniqueEmail);
     await page.type('#signup-password', uniquePass);
     await page.type('#signup-confirm-password', uniquePass);
 
     await page.click('button[type="submit"]');
     await page.waitForSelector('.MuiAlert-standardSuccess', { timeout: 5000 });
-    console.log(`   ✅ Usuário comum cadastrado com sucesso.`);
+    console.log(`   ✅ Usuário cadastrado com sucesso.`);
 
-    // 3. Login com usuário comum e verificação dos cards no Dashboard
-    console.log(`3️⃣ Testando login e navegação para /dashboard (${uniqueUser})...`);
+    // 3. Login com email do usuário comum e verificação do Dashboard
+    console.log(`3️⃣ Testando login com E-mail (${uniqueEmail}) e navegação para /dashboard...`);
     await page.type('#password', uniquePass);
     await page.click('button[type="submit"]');
 
@@ -76,13 +77,13 @@ async function runBrowserValidation() {
     await page.waitForFunction(() => window.location.pathname === '/', { timeout: 5000 });
     console.log(`   ✅ Logout de usuário comum efetuado.`);
 
-    // 6. Testar login com Administrador ("admin") e visualização do card de Administração em primeiro
-    console.log('6️⃣ Testando login com Administrador ("admin")...');
-    await page.$eval('#username', (el) => {
+    // 6. Testar login de Administrador com E-mail ("admin@workbox.local") e senha ("admin")
+    console.log('6️⃣ Testando login com Administrador ("admin@workbox.local")...');
+    await page.$eval('#email', (el) => {
       el.focus();
       el.value = '';
     });
-    await page.type('#username', 'admin');
+    await page.type('#email', 'admin@workbox.local');
 
     await page.$eval('#password', (el) => {
       el.focus();
@@ -101,7 +102,7 @@ async function runBrowserValidation() {
     await page.waitForFunction(() => window.location.pathname === '/', { timeout: 5000 });
     console.log(`   ✅ Logout final concluído.`);
 
-    console.log('\n🎉 TODAS AS VALIDAÇÕES DE PERFIL, SENHA, MFA E NAVEGAÇÃO PASSARAM COM SUCESSO!');
+    console.log('\n🎉 TODAS AS VALIDAÇÕES DE CONTRATO OPENAPI (EMAIL + SOCIALNAME) PASSARAM COM SUCESSO!');
   } catch (error) {
     console.error('❌ Erro durante a validação no navegador:', error);
     process.exitCode = 1;

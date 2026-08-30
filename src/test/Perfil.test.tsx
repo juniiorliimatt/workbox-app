@@ -19,8 +19,8 @@ const createMockAuthContext = (overrides?: Partial<IAuthContext>): IAuthContext 
   accessToken: 'mock-access-token',
   user: {
     id: 'user-uuid-1234',
-    username: 'test_user',
-    email: 'test@workbox.local',
+    socialName: 'Maria Silva',
+    email: 'maria@workbox.local',
     enabled: true,
     roles: ['ROLE_USER'],
   },
@@ -31,7 +31,7 @@ const createMockAuthContext = (overrides?: Partial<IAuthContext>): IAuthContext 
   mfaToken: null,
   login: vi.fn().mockResolvedValue(undefined),
   loginMfa: vi.fn().mockResolvedValue(undefined),
-  registerUser: vi.fn().mockResolvedValue({ id: '1', username: 'u', email: 'e', enabled: true }),
+  registerUser: vi.fn().mockResolvedValue({ id: '1', socialName: 'u', email: 'e@test.com', enabled: true }),
   changePassword: vi.fn().mockResolvedValue(undefined),
   enrollMfa: vi.fn().mockResolvedValue({ secret: 'JBSWY3DPEHPK3PXP', otpAuthUri: 'otpauth://totp/...' }),
   verifyMfa: vi.fn().mockResolvedValue(undefined),
@@ -65,7 +65,8 @@ describe('Perfil Component', () => {
 
     expect(screen.getByRole('heading', { name: /Meu Perfil & Segurança/i })).toBeInTheDocument();
     expect(screen.getByText('user-uuid-1234')).toBeInTheDocument();
-    expect(screen.getByText('test@workbox.local')).toBeInTheDocument();
+    expect(screen.getByText('maria@workbox.local')).toBeInTheDocument();
+    expect(screen.getAllByText('Maria Silva')).toHaveLength(2);
     expect(screen.getByText('Conta Ativa')).toBeInTheDocument();
   });
 
