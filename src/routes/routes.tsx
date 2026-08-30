@@ -1,15 +1,31 @@
-import {createBrowserRouter} from "react-router-dom";
-import Login from "@/pages/Login.tsx";
-import {Dashboard} from "@mui/icons-material";
+import { createBrowserRouter, Navigate } from 'react-router-dom';
+import Login from '@/pages/Login';
+import Dashboard from '@/pages/Dashboard';
+import ProtectedRoute from '@/routes/ProtectedRoute';
+import PublicRoute from '@/routes/PublicRoute';
 
-const router = createBrowserRouter([
+export const router = createBrowserRouter([
   {
-    path: "/",
-    element: <Login />,
+    element: <PublicRoute />,
+    children: [
+      {
+        path: '/',
+        element: <Login />,
+      },
+    ],
   },
   {
-    path: "/dashboard",
-    element: <Dashboard />,
+    element: <ProtectedRoute />,
+    children: [
+      {
+        path: '/dashboard',
+        element: <Dashboard />,
+      },
+    ],
+  },
+  {
+    path: '*',
+    element: <Navigate to="/" replace />,
   },
 ]);
 
