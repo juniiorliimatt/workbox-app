@@ -47,11 +47,17 @@ const TestConsumer = () => {
 describe('AuthContext & AuthProvider', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    localStorage.clear();
   });
 
-  it('initializes and attempts token refresh on mount', async () => {
+  it('initializes and attempts token refresh with JSON body on mount', async () => {
+    localStorage.setItem('workbox_refresh_token', 'saved-refresh-token');
+
     vi.mocked(api.post).mockResolvedValueOnce(
-      mockAxiosResponse<IAuthResponse>({ access_token: 'initial-jwt-token' })
+      mockAxiosResponse<IAuthResponse>({
+        access_token: 'initial-jwt-token',
+        refresh_token: 'rotated-refresh-token',
+      })
     );
 
     vi.mocked(api.get).mockResolvedValueOnce(
@@ -65,6 +71,10 @@ describe('AuthContext & AuthProvider', () => {
     );
 
     await waitFor(() => {
+      expect(api.post).toHaveBeenCalledWith('/api/v1/auth/refresh', {
+        refreshToken: 'saved-refresh-token',
+      });
+      expect(localStorage.getItem('workbox_refresh_token')).toBe('rotated-refresh-token');
       expect(screen.getByTestId('auth-status')).toHaveTextContent('Autenticado');
       expect(screen.getByTestId('user-name')).toHaveTextContent('Administrador');
       expect(screen.getByTestId('token')).toHaveTextContent('initial-jwt-token');
@@ -73,8 +83,6 @@ describe('AuthContext & AuthProvider', () => {
 
   it('calls register endpoint on registerUser', async () => {
     const user = userEvent.setup();
-
-    vi.mocked(api.post).mockRejectedValueOnce(new Error('No token'));
 
     render(
       <AuthProvider>
@@ -105,9 +113,6 @@ describe('AuthContext & AuthProvider', () => {
   it('performs login successfully and fetches user profile', async () => {
     const user = userEvent.setup();
 
-    // initial refresh fails
-    vi.mocked(api.post).mockRejectedValueOnce(new Error('No token'));
-
     render(
       <AuthProvider>
         <TestConsumer />
@@ -120,7 +125,10 @@ describe('AuthContext & AuthProvider', () => {
 
     // login succeeds
     vi.mocked(api.post).mockResolvedValueOnce(
-      mockAxiosResponse<IAuthResponse>({ access_token: 'new-jwt-token' })
+      mockAxiosResponse<IAuthResponse>({
+        access_token: 'new-jwt-token',
+        refresh_token: 'new-refresh-token',
+      })
     );
 
     vi.mocked(api.get).mockResolvedValueOnce(
@@ -136,17 +144,22 @@ describe('AuthContext & AuthProvider', () => {
     await user.click(loginBtn);
 
     await waitFor(() => {
+      expect(localStorage.getItem('workbox_refresh_token')).toBe('new-refresh-token');
       expect(screen.getByTestId('auth-status')).toHaveTextContent('Autenticado');
       expect(screen.getByTestId('user-name')).toHaveTextContent('Administrador');
       expect(screen.getByTestId('token')).toHaveTextContent('new-jwt-token');
     });
   });
 
-  it('performs logout and clears state', async () => {
+  it('performs logout and clears state and stored tokens', async () => {
     const user = userEvent.setup();
+    localStorage.setItem('workbox_refresh_token', 'jwt-refresh-to-logout');
 
     vi.mocked(api.post).mockResolvedValueOnce(
-      mockAxiosResponse<IAuthResponse>({ access_token: 'jwt-to-logout' })
+      mockAxiosResponse<IAuthResponse>({
+        access_token: 'jwt-to-logout',
+        refresh_token: 'jwt-refresh-to-logout',
+      })
     );
 
     vi.mocked(api.get).mockResolvedValueOnce(
@@ -169,6 +182,7 @@ describe('AuthContext & AuthProvider', () => {
     await user.click(logoutBtn);
 
     await waitFor(() => {
+      expect(localStorage.getItem('workbox_refresh_token')).toBeNull();
       expect(screen.getByTestId('auth-status')).toHaveTextContent('Não autenticado');
       expect(screen.getByTestId('user-name')).toHaveTextContent('Anônimo');
       expect(screen.getByTestId('token')).toHaveTextContent('Sem token');

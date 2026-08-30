@@ -12,6 +12,8 @@ import { IMfaEnrollResponse } from '@/interfaces/IMfaEnrollResponse';
 import api from '@/services/api';
 import { AuthContext } from './AuthContextValue';
 
+const REFRESH_TOKEN_STORAGE_KEY = 'workbox_refresh_token';
+
 const extractRolesFromToken = (token: string): string[] => {
   try {
     const payloadBase64 = token.split('.')[1];
@@ -28,6 +30,9 @@ const extractRolesFromToken = (token: string): string[] => {
 
 export const AuthProvider: FC<IAuthProviderProps> = ({ children }) => {
   const [accessToken, setAccessToken] = useState<string | null>(null);
+  const [, setRefreshTokenState] = useState<string | null>(() => {
+    return localStorage.getItem(REFRESH_TOKEN_STORAGE_KEY);
+  });
   const [user, setUser] = useState<IUser | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [mfaRequired, setMfaRequired] = useState<boolean>(false);
@@ -69,6 +74,10 @@ export const AuthProvider: FC<IAuthProviderProps> = ({ children }) => {
 
     if (response.data.access_token) {
       setAccessToken(response.data.access_token);
+      if (response.data.refresh_token) {
+        setRefreshTokenState(response.data.refresh_token);
+        localStorage.setItem(REFRESH_TOKEN_STORAGE_KEY, response.data.refresh_token);
+      }
       setMfaRequired(false);
       setMfaToken(null);
       await fetchUserProfile(response.data.access_token);
@@ -225,6 +234,10 @@ export const AuthProvider: FC<IAuthProviderProps> = ({ children }) => {
 
     if (response.data.access_token) {
       setAccessToken(response.data.access_token);
+      if (response.data.refresh_token) {
+        setRefreshTokenState(response.data.refresh_token);
+        localStorage.setItem(REFRESH_TOKEN_STORAGE_KEY, response.data.refresh_token);
+      }
       setMfaRequired(false);
       setMfaToken(null);
       await fetchUserProfile(response.data.access_token);
@@ -232,19 +245,35 @@ export const AuthProvider: FC<IAuthProviderProps> = ({ children }) => {
   };
 
   const refresh = useCallback(async (): Promise<string | null> => {
+    const currentRefreshToken = localStorage.getItem(REFRESH_TOKEN_STORAGE_KEY);
+    if (!currentRefreshToken) {
+      setAccessToken(null);
+      setUser(null);
+      return null;
+    }
+
     try {
-      const response = await api.post<IAuthResponse>('/api/v1/auth/refresh');
+      const response = await api.post<IAuthResponse>(
+        '/api/v1/auth/refresh',
+        { refreshToken: currentRefreshToken }
+      );
       if (response.data.access_token) {
         setAccessToken(response.data.access_token);
+        if (response.data.refresh_token) {
+          setRefreshTokenState(response.data.refresh_token);
+          localStorage.setItem(REFRESH_TOKEN_STORAGE_KEY, response.data.refresh_token);
+        }
         await fetchUserProfile(response.data.access_token);
         return response.data.access_token;
       }
       setAccessToken(null);
       setUser(null);
+      localStorage.removeItem(REFRESH_TOKEN_STORAGE_KEY);
       return null;
     } catch {
       setAccessToken(null);
       setUser(null);
+      localStorage.removeItem(REFRESH_TOKEN_STORAGE_KEY);
       return null;
     }
   }, [fetchUserProfile]);
@@ -266,9 +295,11 @@ export const AuthProvider: FC<IAuthProviderProps> = ({ children }) => {
       // Falha no logout de backend ainda limpa o estado local
     } finally {
       setAccessToken(null);
+      setRefreshTokenState(null);
       setUser(null);
       setMfaRequired(false);
       setMfaToken(null);
+      localStorage.removeItem(REFRESH_TOKEN_STORAGE_KEY);
     }
   };
 
