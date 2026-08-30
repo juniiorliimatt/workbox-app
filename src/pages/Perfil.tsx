@@ -76,7 +76,22 @@ const passwordSchema = yup.object().shape({
 });
 
 const Perfil: FC = () => {
-  const { user, isAdmin, updateProfile, changePassword, enrollMfa, verifyMfa, disableMfa } = useAuth();
+  const {
+    user,
+    isAdmin,
+    updateProfile,
+    uploadAvatar,
+    deleteAvatar,
+    changePassword,
+    enrollMfa,
+    verifyMfa,
+    disableMfa,
+  } = useAuth();
+
+  // Estados de Avatar
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState<boolean>(false);
+  const [avatarSuccess, setAvatarSuccess] = useState<string | null>(null);
+  const [avatarError, setAvatarError] = useState<string | null>(null);
 
   // Estados de Edição de Perfil
   const [profileSuccess, setProfileSuccess] = useState<string | null>(null);
@@ -269,6 +284,51 @@ const Perfil: FC = () => {
     }
   };
 
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      setAvatarError('A imagem deve ter no máximo 2MB.');
+      return;
+    }
+
+    setAvatarError(null);
+    setAvatarSuccess(null);
+    setIsUploadingAvatar(true);
+    try {
+      await uploadAvatar(file);
+      setAvatarSuccess('Foto de perfil atualizada com sucesso!');
+    } catch (err: unknown) {
+      if (axios.isAxiosError(err)) {
+        setAvatarError(err.response?.data?.detail || 'Falha ao enviar imagem. Use formatos PNG, JPEG ou WEBP.');
+      } else {
+        setAvatarError('Erro ao processar imagem de perfil.');
+      }
+    } finally {
+      setIsUploadingAvatar(false);
+      e.target.value = '';
+    }
+  };
+
+  const handleRemoveAvatar = async () => {
+    setAvatarError(null);
+    setAvatarSuccess(null);
+    setIsUploadingAvatar(true);
+    try {
+      await deleteAvatar();
+      setAvatarSuccess('Foto de perfil removida com sucesso.');
+    } catch (err: unknown) {
+      if (axios.isAxiosError(err)) {
+        setAvatarError(err.response?.data?.detail || 'Falha ao remover foto.');
+      } else {
+        setAvatarError('Erro ao remover imagem de perfil.');
+      }
+    } finally {
+      setIsUploadingAvatar(false);
+    }
+  };
+
   return (
     <Box sx={{ width: '100%', minHeight: '100vh', bgcolor: 'grey.50', display: 'flex', flexDirection: 'column' }}>
       {/* Barra de Navegação Permanente com Perfil e Logout */}
@@ -282,17 +342,65 @@ const Perfil: FC = () => {
 
       <Container maxWidth="lg" sx={{ mt: 4, mb: 4, flexGrow: 1 }}>
         <Paper elevation={1} sx={{ p: 3, mb: 4, borderRadius: 2 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <Avatar sx={{ bgcolor: 'secondary.main', width: 56, height: 56 }}>
-              <PersonIcon sx={{ fontSize: 32 }} />
-            </Avatar>
-            <Box>
-              <Typography variant="h5" component="h2" sx={{ fontWeight: 600 }}>
-                {user?.socialName || 'Usuário'}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                {user?.email || 'E-mail não cadastrado'} &bull; {isAdmin ? 'Administrador' : 'Usuário Padrão'}
-              </Typography>
+          {avatarSuccess && (
+            <Alert severity="success" sx={{ mb: 2 }}>
+              {avatarSuccess}
+            </Alert>
+          )}
+          {avatarError && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {avatarError}
+            </Alert>
+          )}
+
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 2 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <Avatar
+                src={user?.avatarUrl ? user.avatarUrl : undefined}
+                sx={{ bgcolor: 'secondary.main', width: 72, height: 72, fontSize: 32 }}
+              >
+                {!user?.avatarUrl && <PersonIcon sx={{ fontSize: 40 }} />}
+              </Avatar>
+              <Box>
+                <Typography variant="h5" component="h2" sx={{ fontWeight: 600 }}>
+                  {user?.socialName || 'Usuário'}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {user?.email || 'E-mail não cadastrado'} &bull; {isAdmin ? 'Administrador' : 'Usuário Padrão'}
+                </Typography>
+              </Box>
+            </Box>
+
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <input
+                id="avatar-file-input"
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                style={{ display: 'none' }}
+                onChange={handleAvatarChange}
+                disabled={isUploadingAvatar}
+              />
+              <label htmlFor="avatar-file-input">
+                <Button
+                  variant="outlined"
+                  component="span"
+                  size="small"
+                  disabled={isUploadingAvatar}
+                >
+                  {isUploadingAvatar ? <CircularProgress size={20} /> : 'Alterar Foto'}
+                </Button>
+              </label>
+              {user?.avatarUrl && (
+                <Button
+                  variant="text"
+                  color="error"
+                  size="small"
+                  onClick={handleRemoveAvatar}
+                  disabled={isUploadingAvatar}
+                >
+                  Remover Foto
+                </Button>
+              )}
             </Box>
           </Box>
         </Paper>

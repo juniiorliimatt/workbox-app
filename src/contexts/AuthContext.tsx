@@ -108,6 +108,45 @@ export const AuthProvider: FC<IAuthProviderProps> = ({ children }) => {
     }
   };
 
+  const uploadAvatar = async (file: File): Promise<void> => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    await api.post(
+      '/api/v1/auth/avatar',
+      formData,
+      accessToken
+        ? {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+              'Content-Type': 'multipart/form-data',
+            },
+          }
+        : undefined
+    );
+
+    if (accessToken) {
+      await fetchUserProfile(accessToken);
+    }
+  };
+
+  const deleteAvatar = async (): Promise<void> => {
+    await api.delete(
+      '/api/v1/auth/avatar',
+      accessToken
+        ? {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+            },
+          }
+        : undefined
+    );
+
+    if (accessToken) {
+      await fetchUserProfile(accessToken);
+    }
+  };
+
   const changePassword = async (currentPassword: string, newPassword: string): Promise<void> => {
     await api.put(
       '/api/v1/auth/password',
@@ -267,6 +306,8 @@ export const AuthProvider: FC<IAuthProviderProps> = ({ children }) => {
         loginMfa,
         registerUser,
         updateProfile,
+        uploadAvatar,
+        deleteAvatar,
         changePassword,
         enrollMfa,
         verifyMfa,

@@ -14,6 +14,8 @@ export interface IAuthContext {
   loginMfa: (code: string) => Promise<void>;
   registerUser: (dto: IUserApiRegisterDTO) => Promise<IUser>;
   updateProfile: (socialName: string, email: string, password?: string) => Promise<void>;
+  uploadAvatar: (file: File) => Promise<void>;
+  deleteAvatar: () => Promise<void>;
   changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
   enrollMfa: () => Promise<IMfaEnrollResponse>;
   verifyMfa: (code: string) => Promise<void>;

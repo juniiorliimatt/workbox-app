@@ -65,8 +65,11 @@ export const AppNavbar: FC<IAppNavbarProps> = ({
             id="btn-perfil"
             color="inherit"
             startIcon={
-              <Avatar sx={{ bgcolor: 'secondary.main', width: 28, height: 28 }}>
-                <PersonIcon sx={{ fontSize: 18 }} />
+              <Avatar
+                src={user?.avatarUrl ? user.avatarUrl : undefined}
+                sx={{ bgcolor: 'secondary.main', width: 28, height: 28 }}
+              >
+                {!user?.avatarUrl && <PersonIcon sx={{ fontSize: 18 }} />}
               </Avatar>
             }
             onClick={() => navigate('/perfil')}

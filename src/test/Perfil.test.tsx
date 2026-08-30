@@ -33,6 +33,8 @@ const createMockAuthContext = (overrides?: Partial<IAuthContext>): IAuthContext 
   loginMfa: vi.fn().mockResolvedValue(undefined),
   registerUser: vi.fn().mockResolvedValue({ id: '1', socialName: 'u', email: 'e@test.com', enabled: true }),
   updateProfile: vi.fn().mockResolvedValue(undefined),
+  uploadAvatar: vi.fn().mockResolvedValue(undefined),
+  deleteAvatar: vi.fn().mockResolvedValue(undefined),
   changePassword: vi.fn().mockResolvedValue(undefined),
   enrollMfa: vi.fn().mockResolvedValue({ secret: 'JBSWY3DPEHPK3PXP', otpAuthUri: 'otpauth://totp/...' }),
   verifyMfa: vi.fn().mockResolvedValue(undefined),
