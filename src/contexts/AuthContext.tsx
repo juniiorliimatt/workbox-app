@@ -7,6 +7,7 @@ import {
 import { IAuthProviderProps } from '@/interfaces/IAuthProviderProps';
 import { IAuthResponse } from '@/interfaces/IAuthResponse';
 import { IUser } from '@/interfaces/IUser';
+import { IUserApiRegisterDTO } from '@/interfaces/IUserApiRegisterDTO';
 import api from '@/services/api';
 import { AuthContext } from './AuthContextValue';
 
@@ -54,12 +55,9 @@ export const AuthProvider: FC<IAuthProviderProps> = ({ children }) => {
     }
   };
 
-  const registerUser = async (username: string, email: string, password: string): Promise<void> => {
-    await api.post('/api/v1/auth/register', {
-      username,
-      email,
-      password,
-    });
+  const registerUser = async (dto: IUserApiRegisterDTO): Promise<IUser> => {
+    const response = await api.post<IUser>('/api/v1/auth/register', dto);
+    return response.data;
   };
 
   const loginMfa = async (code: string): Promise<void> => {

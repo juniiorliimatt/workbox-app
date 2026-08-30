@@ -24,7 +24,7 @@ const createMockAuthContext = (overrides?: Partial<IAuthContext>): IAuthContext 
   mfaToken: null,
   login: vi.fn().mockResolvedValue(undefined),
   loginMfa: vi.fn().mockResolvedValue(undefined),
-  registerUser: vi.fn().mockResolvedValue(undefined),
+  registerUser: vi.fn().mockResolvedValue({ id: '1', username: 'newuser', email: 'user@example.com', enabled: true }),
   refresh: vi.fn().mockResolvedValue(null),
   logout: vi.fn().mockResolvedValue(undefined),
   ...overrides,
@@ -118,8 +118,8 @@ describe('Login Component', () => {
 
     await user.type(screen.getByLabelText(/^Usuário/i), 'newuser');
     await user.type(screen.getByLabelText(/^E-mail/i), 'user@example.com');
-    await user.type(screen.getByLabelText(/^Senha/i), '123456');
-    await user.type(screen.getByLabelText(/^Confirmar Senha/i), '654321');
+    await user.type(screen.getByLabelText(/^Senha/i), 'password123');
+    await user.type(screen.getByLabelText(/^Confirmar Senha/i), 'different123');
 
     await user.click(screen.getByRole('button', { name: /Criar Conta/i }));
 
@@ -136,13 +136,17 @@ describe('Login Component', () => {
 
     await user.type(screen.getByLabelText(/^Usuário/i), 'newuser');
     await user.type(screen.getByLabelText(/^E-mail/i), 'user@example.com');
-    await user.type(screen.getByLabelText(/^Senha/i), '123456');
-    await user.type(screen.getByLabelText(/^Confirmar Senha/i), '123456');
+    await user.type(screen.getByLabelText(/^Senha/i), 'password123');
+    await user.type(screen.getByLabelText(/^Confirmar Senha/i), 'password123');
 
     await user.click(screen.getByRole('button', { name: /Criar Conta/i }));
 
     await waitFor(() => {
-      expect(authValue.registerUser).toHaveBeenCalledWith('newuser', 'user@example.com', '123456');
+      expect(authValue.registerUser).toHaveBeenCalledWith({
+        username: 'newuser',
+        email: 'user@example.com',
+        password: 'password123',
+      });
       expect(screen.getByText(/Conta criada com sucesso!/i)).toBeInTheDocument();
     });
   });

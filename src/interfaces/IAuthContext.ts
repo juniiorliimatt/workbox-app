@@ -1,4 +1,5 @@
 import { IUser } from './IUser';
+import { IUserApiRegisterDTO } from './IUserApiRegisterDTO';
 
 export interface IAuthContext {
   accessToken: string | null;
@@ -9,7 +10,7 @@ export interface IAuthContext {
   mfaToken: string | null;
   login: (username: string, password: string) => Promise<void>;
   loginMfa: (code: string) => Promise<void>;
-  registerUser: (username: string, email: string, password: string) => Promise<void>;
+  registerUser: (dto: IUserApiRegisterDTO) => Promise<IUser>;
   refresh: () => Promise<string | null>;
   logout: () => Promise<void>;
 }

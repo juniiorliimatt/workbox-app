@@ -54,7 +54,7 @@ const loginSchema = yup.object().shape({
 const registerSchema = yup.object().shape({
   username: yup
     .string()
-    .min(3, 'O usuário deve ter pelo menos 3 caracteres')
+    .min(5, 'O usuário deve ter no mínimo 5 caracteres')
     .max(50, 'Máximo de 50 caracteres')
     .required('Usuário é obrigatório'),
   email: yup
@@ -63,7 +63,8 @@ const registerSchema = yup.object().shape({
     .required('E-mail é obrigatório'),
   password: yup
     .string()
-    .min(6, 'A senha deve ter pelo menos 6 caracteres')
+    .min(8, 'A senha deve ter no mínimo 8 caracteres')
+    .max(100, 'Máximo de 100 caracteres')
     .required('Senha é obrigatória'),
   confirmPassword: yup
     .string()
@@ -161,17 +162,19 @@ const Login: FC = () => {
     setErrorMessage(null);
     setSuccessMessage(null);
     try {
-      await registerUser(data.username, data.email, data.password);
-      setSuccessMessage('Conta criada com sucesso! Você já pode realizar login.');
+      await registerUser({
+        username: data.username,
+        email: data.email,
+        password: data.password,
+      });
+      setSuccessMessage('Conta criada com sucesso! Faça login com suas credenciais.');
       resetSignUpForm();
       setActiveTab(0);
       setLoginValue('username', data.username);
     } catch (err: unknown) {
       if (axios.isAxiosError(err)) {
-        if (err.response?.status === 403 || err.response?.status === 401) {
-          setErrorMessage('Cadastro público indisponível ou restrito a administradores no backend.');
-        } else if (err.response?.status === 409) {
-          setErrorMessage('Usuário ou e-mail já cadastrado no sistema.');
+        if (err.response?.status === 409) {
+          setErrorMessage(err.response.data?.detail || 'Usuário ou e-mail já cadastrado.');
         } else if (err.response?.data?.detail) {
           setErrorMessage(err.response.data.detail);
         } else {
@@ -270,7 +273,7 @@ const Login: FC = () => {
             {mfaRequired
               ? 'Digite o código de 6 dígitos do seu autenticador'
               : activeTab === 1
-              ? 'Preencha os dados abaixo para cadastrar um novo usuário'
+              ? 'Preencha os dados abaixo para cadastrar seu usuário'
               : 'Faça login para acessar sua conta'}
           </Typography>
 

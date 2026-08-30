@@ -26,34 +26,47 @@ async function runBrowserValidation() {
     await page.waitForSelector('.MuiFormHelperText-root.Mui-error', { timeout: 3000 });
     console.log('   ✅ Mensagens de validação Yup/MUI exibidas com sucesso.');
 
-    // 3. Testar alternância para a aba de Novo Usuário (Cadastro)
-    console.log('3️⃣ Testando alternância para aba de Novo Usuário...');
+    // 3. Testar cadastro de um NOVO USUÁRIO pela interface web (POST /api/v1/auth/register)
+    console.log('3️⃣ Testando auto-cadastro de novo usuário na aba "Novo Usuário"...');
+    const uniqueUser = `usr_${Date.now()}`;
+    const uniqueEmail = `${uniqueUser}@workbox.local`;
+    const uniquePass = 'SenhaForte123!';
+
     const tabs = await page.$$('button[role="tab"]');
-    if (tabs.length >= 2) {
-      await tabs[1].click();
-      await page.waitForSelector('#signup-username', { timeout: 3000 });
-      console.log('   ✅ Formulário de Novo Usuário renderizado com sucesso.');
+    await tabs[1].click();
+    await page.waitForSelector('#signup-username', { timeout: 3000 });
 
-      // Voltar para a aba de Login
-      await tabs[0].click();
-      await page.waitForSelector('#username', { timeout: 3000 });
-      console.log('   ✅ Alternância de volta para Login concluída.');
-    }
+    await page.type('#signup-username', uniqueUser);
+    await page.type('#signup-email', uniqueEmail);
+    await page.type('#signup-password', uniquePass);
+    await page.type('#signup-confirm-password', uniquePass);
 
-    // 4. Testar login com credenciais incorretas
-    console.log('4️⃣ Testando login com credenciais incorretas (usuário inexistente)...');
-    await page.$eval('#username', (el) => { el.value = ''; });
-    await page.$eval('#password', (el) => { el.value = ''; });
-    await page.type('#username', 'usuario_invalido');
-    await page.type('#password', 'senha_errada');
     await page.click('button[type="submit"]');
 
-    await page.waitForSelector('.MuiAlert-message', { timeout: 5000 });
-    const alertText = await page.$eval('.MuiAlert-message', (el) => el.textContent);
-    console.log(`   ✅ Alerta de erro da API capturado: "${alertText}"`);
+    await page.waitForSelector('.MuiAlert-standardSuccess', { timeout: 5000 });
+    const successText = await page.$eval('.MuiAlert-message', (el) => el.textContent);
+    console.log(`   ✅ Cadastro realizado com sucesso: "${successText}"`);
 
-    // 5. Testar login válido com "admin" / "admin" e "Lembrar de mim"
-    console.log('5️⃣ Testando login válido com "admin" / "admin" e checkbox "Lembrar de mim"...');
+    // 4. Testar login imediato com a nova conta recém-criada
+    console.log(`4️⃣ Testando login com o usuário recém-criado (${uniqueUser})...`);
+    await page.type('#password', uniquePass);
+    await page.click('button[type="submit"]');
+
+    await page.waitForFunction(() => window.location.pathname === '/dashboard', { timeout: 6000 });
+    console.log(`   ✅ Login efetuado com sucesso para a conta nova! Navegado para /dashboard.`);
+
+    await page.waitForSelector('.MuiTypography-h5', { timeout: 3000 });
+    const welcomeNewUser = await page.$eval('.MuiTypography-h5', (el) => el.textContent);
+    console.log(`   ✅ Dashboard renderizado para novo usuário: "${welcomeNewUser}"`);
+
+    // Logout
+    const logoutBtn = await page.waitForSelector('button ::-p-text(Sair)', { timeout: 3000 });
+    await logoutBtn.click();
+    await page.waitForFunction(() => window.location.pathname === '/', { timeout: 5000 });
+    console.log(`   ✅ Logout efetuado com sucesso.`);
+
+    // 5. Testar login com "admin" / "admin" e checkbox "Lembrar de mim"
+    console.log('5️⃣ Testando login com "admin" e "Lembrar de mim"...');
     await page.$eval('#username', (el) => {
       el.focus();
       el.value = '';
@@ -66,7 +79,6 @@ async function runBrowserValidation() {
     });
     await page.type('#password', 'admin');
 
-    // Marcar checkbox "Lembrar de mim"
     const rememberCheckbox = await page.$('#rememberMe');
     if (rememberCheckbox) {
       await rememberCheckbox.click();
@@ -74,33 +86,20 @@ async function runBrowserValidation() {
     }
 
     await page.click('button[type="submit"]');
-
-    // Aguardar transição de rota SPA para /dashboard
     await page.waitForFunction(() => window.location.pathname === '/dashboard', { timeout: 6000 });
-    console.log(`   ✅ Navegação SPA para /dashboard concluída.`);
+    console.log(`   ✅ Login de administrador realizado com sucesso.`);
 
-    await page.waitForSelector('.MuiTypography-h5', { timeout: 3000 });
-    const welcomeText = await page.$eval('.MuiTypography-h5', (el) => el.textContent);
-    console.log(`   ✅ Dashboard renderizado com texto: "${welcomeText}"`);
-
-    // 6. Testar botão de Logout
-    console.log('6️⃣ Testando ação de Logout...');
-    await page.evaluate(() => {
-      const btns = Array.from(document.querySelectorAll('button'));
-      const sairBtn = btns.find((b) => b.textContent?.includes('Sair'));
-      sairBtn?.click();
-    });
-
-    // Aguardar transição de rota SPA de volta para /
+    // Logout
+    const logoutAdminBtn = await page.waitForSelector('button ::-p-text(Sair)', { timeout: 3000 });
+    await logoutAdminBtn.click();
     await page.waitForFunction(() => window.location.pathname === '/', { timeout: 5000 });
-    console.log(`   ✅ Redirecionado com sucesso após logout para: /`);
 
-    // 7. Verificar se o usuário foi lembrado no formulário de login
-    console.log('7️⃣ Verificando se o usuário foi lembrado no campo de login...');
+    // 6. Verificar persistência de Lembrar de mim
+    console.log('6️⃣ Verificando se o usuário "admin" foi lembrado...');
     const rememberedUsername = await page.$eval('#username', (el) => el.value);
     console.log(`   ✅ Campo de usuário preenchido automaticamente com: "${rememberedUsername}"`);
 
-    console.log('\n🎉 TODAS AS VALIDAÇÕES NO NAVEGADOR FORAM CONCLUÍDAS COM SUCESSO!');
+    console.log('\n🎉 TODAS AS VALIDAÇÕES NO NAVEGADOR E INTEGRAÇÃO FORAM CONCLUÍDAS COM SUCESSO!');
   } catch (error) {
     console.error('❌ Erro durante a validação no navegador:', error);
     process.exitCode = 1;

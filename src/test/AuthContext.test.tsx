@@ -32,7 +32,13 @@ const TestConsumer = () => {
       <div data-testid="token">{accessToken || 'Sem token'}</div>
       <button onClick={() => login('admin', 'admin')}>Fazer Login</button>
       <button onClick={() => logout()}>Fazer Logout</button>
-      <button onClick={() => registerUser('new_user', 'new@test.com', 'password123')}>Registrar</button>
+      <button
+        onClick={() =>
+          registerUser({ username: 'new_user', email: 'new@test.com', password: 'password123' })
+        }
+      >
+        Registrar
+      </button>
     </div>
   );
 };
@@ -79,7 +85,9 @@ describe('AuthContext & AuthProvider', () => {
       expect(screen.getByTestId('auth-status')).toHaveTextContent('Não autenticado');
     });
 
-    vi.mocked(api.post).mockResolvedValueOnce(mockAxiosResponse({}));
+    vi.mocked(api.post).mockResolvedValueOnce(
+      mockAxiosResponse<IUser>({ id: '1', username: 'new_user', email: 'new@test.com', enabled: true })
+    );
 
     const registerBtn = screen.getByRole('button', { name: /Registrar/i });
     await user.click(registerBtn);
