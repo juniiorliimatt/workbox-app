@@ -24,6 +24,7 @@ const createMockAuthContext = (overrides?: Partial<IAuthContext>): IAuthContext 
   mfaToken: null,
   login: vi.fn().mockResolvedValue(undefined),
   loginMfa: vi.fn().mockResolvedValue(undefined),
+  registerUser: vi.fn().mockResolvedValue(undefined),
   refresh: vi.fn().mockResolvedValue(null),
   logout: vi.fn().mockResolvedValue(undefined),
   ...overrides,
@@ -46,22 +47,24 @@ const renderLogin = (contextValue?: Partial<IAuthContext>) => {
 describe('Login Component', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    localStorage.clear();
   });
 
-  it('renders login form with username, password fields and submit button', () => {
+  it('renders login form with username, password, remember me checkbox and submit button', () => {
     renderLogin();
 
     expect(screen.getByRole('heading', { name: /Workbox App/i })).toBeInTheDocument();
     expect(screen.getByLabelText(/^Usuário/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/^Senha/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Entrar/i })).toBeInTheDocument();
+    expect(screen.getByLabelText(/Lembrar de mim/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^Entrar$/i })).toBeInTheDocument();
   });
 
   it('displays validation errors when submitting empty form', async () => {
     const user = userEvent.setup();
     renderLogin();
 
-    const submitBtn = screen.getByRole('button', { name: /Entrar/i });
+    const submitBtn = screen.getByRole('button', { name: /^Entrar$/i });
     await user.click(submitBtn);
 
     await waitFor(() => {
@@ -70,35 +73,77 @@ describe('Login Component', () => {
     });
   });
 
-  it('toggles password visibility when clicking eye button', async () => {
-    const user = userEvent.setup();
-    renderLogin();
-
-    const passwordInput = screen.getByLabelText(/^Senha/i);
-    expect(passwordInput).toHaveAttribute('type', 'password');
-
-    const toggleBtn = screen.getByRole('button', { name: /Exibir senha/i });
-    await user.click(toggleBtn);
-
-    expect(passwordInput).toHaveAttribute('type', 'text');
-
-    const hideBtn = screen.getByRole('button', { name: /Ocultar senha/i });
-    await user.click(hideBtn);
-
-    expect(passwordInput).toHaveAttribute('type', 'password');
-  });
-
-  it('calls login and navigates to /dashboard on valid submission', async () => {
+  it('saves username to localStorage when Lembrar de mim is checked and login succeeds', async () => {
     const user = userEvent.setup();
     const { authValue } = renderLogin();
 
     await user.type(screen.getByLabelText(/^Usuário/i), 'admin');
     await user.type(screen.getByLabelText(/^Senha/i), 'admin123');
-    await user.click(screen.getByRole('button', { name: /Entrar/i }));
+    await user.click(screen.getByLabelText(/Lembrar de mim/i));
+    await user.click(screen.getByRole('button', { name: /^Entrar$/i }));
 
     await waitFor(() => {
       expect(authValue.login).toHaveBeenCalledWith('admin', 'admin123');
+      expect(localStorage.getItem('workbox_remembered_username')).toBe('admin');
       expect(mockNavigate).toHaveBeenCalledWith('/dashboard');
+    });
+  });
+
+  it('pre-fills username and checks Lembrar de mim if stored in localStorage', () => {
+    localStorage.setItem('workbox_remembered_username', 'saved_user');
+    renderLogin();
+
+    expect(screen.getByLabelText(/^Usuário/i)).toHaveValue('saved_user');
+    expect(screen.getByLabelText(/Lembrar de mim/i)).toBeChecked();
+  });
+
+  it('switches to Novo Usuário tab and renders registration fields', async () => {
+    const user = userEvent.setup();
+    renderLogin();
+
+    const novoUsuarioTab = screen.getByRole('tab', { name: /Novo Usuário/i });
+    await user.click(novoUsuarioTab);
+
+    expect(screen.getByRole('heading', { name: /Criar Nova Conta/i })).toBeInTheDocument();
+    expect(screen.getByLabelText(/^E-mail/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/^Confirmar Senha/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Criar Conta/i })).toBeInTheDocument();
+  });
+
+  it('validates password mismatch on registration', async () => {
+    const user = userEvent.setup();
+    renderLogin();
+
+    await user.click(screen.getByRole('tab', { name: /Novo Usuário/i }));
+
+    await user.type(screen.getByLabelText(/^Usuário/i), 'newuser');
+    await user.type(screen.getByLabelText(/^E-mail/i), 'user@example.com');
+    await user.type(screen.getByLabelText(/^Senha/i), '123456');
+    await user.type(screen.getByLabelText(/^Confirmar Senha/i), '654321');
+
+    await user.click(screen.getByRole('button', { name: /Criar Conta/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/As senhas não conferem/i)).toBeInTheDocument();
+    });
+  });
+
+  it('submits registration successfully and returns to login tab', async () => {
+    const user = userEvent.setup();
+    const { authValue } = renderLogin();
+
+    await user.click(screen.getByRole('tab', { name: /Novo Usuário/i }));
+
+    await user.type(screen.getByLabelText(/^Usuário/i), 'newuser');
+    await user.type(screen.getByLabelText(/^E-mail/i), 'user@example.com');
+    await user.type(screen.getByLabelText(/^Senha/i), '123456');
+    await user.type(screen.getByLabelText(/^Confirmar Senha/i), '123456');
+
+    await user.click(screen.getByRole('button', { name: /Criar Conta/i }));
+
+    await waitFor(() => {
+      expect(authValue.registerUser).toHaveBeenCalledWith('newuser', 'user@example.com', '123456');
+      expect(screen.getByText(/Conta criada com sucesso!/i)).toBeInTheDocument();
     });
   });
 

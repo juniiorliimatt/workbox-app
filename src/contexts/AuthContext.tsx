@@ -54,6 +54,14 @@ export const AuthProvider: FC<IAuthProviderProps> = ({ children }) => {
     }
   };
 
+  const registerUser = async (username: string, email: string, password: string): Promise<void> => {
+    await api.post('/api/v1/auth/register', {
+      username,
+      email,
+      password,
+    });
+  };
+
   const loginMfa = async (code: string): Promise<void> => {
     if (!mfaToken) {
       throw new Error('Token de MFA não encontrado.');
@@ -143,6 +151,7 @@ export const AuthProvider: FC<IAuthProviderProps> = ({ children }) => {
         mfaToken,
         login,
         loginMfa,
+        registerUser,
         refresh,
         logout,
       }}

@@ -9,6 +9,7 @@ export interface IAuthContext {
   mfaToken: string | null;
   login: (username: string, password: string) => Promise<void>;
   loginMfa: (code: string) => Promise<void>;
+  registerUser: (username: string, email: string, password: string) => Promise<void>;
   refresh: () => Promise<string | null>;
   logout: () => Promise<void>;
 }
