@@ -64,23 +64,29 @@ export const AuthProvider: FC<IAuthProviderProps> = ({ children }) => {
       password,
     });
 
-    if (response.data.mfa_required && response.data.mfa_token) {
+    const isMfa = response.data.mfa_required || response.data.mfaRequired;
+    const tokenMfa = response.data.mfa_token || response.data.mfaToken;
+
+    if (isMfa && tokenMfa) {
       setMfaRequired(true);
-      setMfaToken(response.data.mfa_token);
+      setMfaToken(tokenMfa);
       setAccessToken(null);
       setUser(null);
       return;
     }
 
-    if (response.data.access_token) {
-      setAccessToken(response.data.access_token);
-      if (response.data.refresh_token) {
-        setRefreshTokenState(response.data.refresh_token);
-        localStorage.setItem(REFRESH_TOKEN_STORAGE_KEY, response.data.refresh_token);
+    const token = response.data.access_token || response.data.accessToken;
+    const refreshToken = response.data.refresh_token || response.data.refreshToken;
+
+    if (token) {
+      setAccessToken(token);
+      if (refreshToken) {
+        setRefreshTokenState(refreshToken);
+        localStorage.setItem(REFRESH_TOKEN_STORAGE_KEY, refreshToken);
       }
       setMfaRequired(false);
       setMfaToken(null);
-      await fetchUserProfile(response.data.access_token);
+      await fetchUserProfile(token);
     }
   };
 
@@ -228,19 +234,22 @@ export const AuthProvider: FC<IAuthProviderProps> = ({ children }) => {
     }
 
     const response = await api.post<IAuthResponse>('/api/v1/auth/mfa/login', {
-      mfa_token: mfaToken,
+      mfaToken,
       code,
     });
 
-    if (response.data.access_token) {
-      setAccessToken(response.data.access_token);
-      if (response.data.refresh_token) {
-        setRefreshTokenState(response.data.refresh_token);
-        localStorage.setItem(REFRESH_TOKEN_STORAGE_KEY, response.data.refresh_token);
+    const token = response.data.access_token || response.data.accessToken;
+    const refreshToken = response.data.refresh_token || response.data.refreshToken;
+
+    if (token) {
+      setAccessToken(token);
+      if (refreshToken) {
+        setRefreshTokenState(refreshToken);
+        localStorage.setItem(REFRESH_TOKEN_STORAGE_KEY, refreshToken);
       }
       setMfaRequired(false);
       setMfaToken(null);
-      await fetchUserProfile(response.data.access_token);
+      await fetchUserProfile(token);
     }
   };
 
@@ -257,14 +266,18 @@ export const AuthProvider: FC<IAuthProviderProps> = ({ children }) => {
         '/api/v1/auth/refresh',
         { refreshToken: currentRefreshToken }
       );
-      if (response.data.access_token) {
-        setAccessToken(response.data.access_token);
-        if (response.data.refresh_token) {
-          setRefreshTokenState(response.data.refresh_token);
-          localStorage.setItem(REFRESH_TOKEN_STORAGE_KEY, response.data.refresh_token);
+
+      const token = response.data.access_token || response.data.accessToken;
+      const refreshToken = response.data.refresh_token || response.data.refreshToken;
+
+      if (token) {
+        setAccessToken(token);
+        if (refreshToken) {
+          setRefreshTokenState(refreshToken);
+          localStorage.setItem(REFRESH_TOKEN_STORAGE_KEY, refreshToken);
         }
-        await fetchUserProfile(response.data.access_token);
-        return response.data.access_token;
+        await fetchUserProfile(token);
+        return token;
       }
       setAccessToken(null);
       setUser(null);

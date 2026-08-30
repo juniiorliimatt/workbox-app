@@ -165,4 +165,19 @@ describe('Login Component', () => {
     expect(screen.getByLabelText(/^Código MFA/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Verificar/i })).toBeInTheDocument();
   });
+
+  it('submits MFA code successfully and navigates to dashboard', async () => {
+    const user = userEvent.setup();
+    const { authValue } = renderLogin({ mfaRequired: true, mfaToken: 'mock-mfa-token' });
+
+    const mfaInput = screen.getByLabelText(/^Código MFA/i);
+    await user.type(mfaInput, '123456');
+
+    const verifyBtn = screen.getByRole('button', { name: /Verificar/i });
+    await user.click(verifyBtn);
+
+    await waitFor(() => {
+      expect(authValue.loginMfa).toHaveBeenCalledWith('123456');
+    });
+  });
 });

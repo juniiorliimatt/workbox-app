@@ -82,17 +82,16 @@ async function runBrowserValidation() {
 
     // 8. Testar login com Administrador
     console.log('8️⃣ Testando Administrador no Painel de Administração...');
-    await page.$eval('#email', (el) => {
-      el.focus();
-      el.value = '';
-    });
-    await page.type('#email', 'admin@workbox.local');
+    const emailInput = await page.waitForSelector('#email', { timeout: 3000 });
+    await emailInput.click({ clickCount: 3 });
+    await emailInput.press('Backspace');
+    await emailInput.type('admin@workbox.local');
 
-    await page.$eval('#password', (el) => {
-      el.focus();
-      el.value = '';
-    });
-    await page.type('#password', 'admin');
+    const passInput = await page.waitForSelector('#password', { timeout: 3000 });
+    await passInput.click({ clickCount: 3 });
+    await passInput.press('Backspace');
+    await passInput.type('admin');
+
     await page.click('button[type="submit"]');
 
     await page.waitForFunction(() => window.location.pathname === '/dashboard', { timeout: 6000 });
