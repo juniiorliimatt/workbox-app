@@ -38,8 +38,6 @@ src/
 ├── assets/          # Ícones e recursos estáticos
 ├── components/      # Componentes reutilizáveis globais
 │   ├── AppNavbar.tsx     # Barra de navegação persistente com avatar e logout
-│   ├── ProtectedRoute.tsx # Guarda de rota autenticada
-│   ├── PublicRoute.tsx    # Guarda de rota pública (redireciona autenticados)
 │   └── UserAvatar.tsx     # Componente de exibição de avatar autenticado
 ├── contexts/        # Contextos React e State Management
 │   ├── AuthContext.tsx    # Provedor de autenticação, tokens, MFA e perfis
@@ -58,13 +56,15 @@ src/
 │   ├── Login.tsx          # Login, auto-cadastro e desafio MFA TOTP
 │   ├── Dashboard.tsx      # Hub central de módulos (12 cards temáticos)
 │   ├── Perfil.tsx         # Edição cadastral, foto de perfil, troca de senha e MFA
-│   ├── AdminHub.tsx       # Hub de acesso aos módulos administrativos
+│   ├── Admin.tsx          # Hub de acesso aos módulos administrativos
 │   ├── AdminUsuarios.tsx  # Gestão completa de usuários (CRUD + fotos + papéis)
 │   ├── AdminPapeis.tsx    # Gestão de papéis e permissões
 │   ├── AdminAuditoria.tsx # Trilha de auditoria e segurança de logins
-│   ├── Financas.tsx       # Módulo de Finanças Pessoais (budget)
-│   └── NotFound.tsx       # Página 404
-├── routes/          # Definição e configuração das rotas (routes.tsx)
+│   └── Financas.tsx       # Módulo de Finanças Pessoais (budget)
+├── routes/          # Definição e configuração das rotas
+│   ├── routes.tsx         # Rotas (catch-all "*" redireciona pra "/")
+│   ├── ProtectedRoute.tsx # Guarda de rota autenticada
+│   └── PublicRoute.tsx    # Guarda de rota pública (redireciona autenticados)
 ├── services/        # Configuração de clientes HTTP
 │   ├── api.ts             # Instância configurada do Axios
 │   └── useAxiosWithAuth.ts # Interceptors de requisição e renovação de token (401 retry)
@@ -74,14 +74,15 @@ src/
     ├── Dashboard.test.tsx
     ├── Login.test.tsx
     ├── Perfil.test.tsx
-    ├── ProtectedRoute.test.tsx
-    ├── PublicRoute.test.tsx
     ├── UserAvatar.test.tsx
+    ├── setupTests.ts
     └── browser-e2e.mjs     # Teste ponta a ponta no Google Chrome headless
 ```
 
-Aliases de import configurados em `vite.config.js` (`@`, `@components`, `@pages`,
-`@services`, `@contexts`, `@hooks`, `@interfaces`, `@routes`, etc.).
+Aliases de import configurados em `vite.config.ts` (`@`, `@components`, `@pages`,
+`@services`, `@contexts`, `@hooks`, `@interfaces`, `@routes`, etc. — alguns aliases
+declarados lá, como `@i18n`/`@models`/`@themes`, ainda não têm diretório correspondente
+em uso).
 
 ---
 
@@ -173,17 +174,30 @@ npm run build
 npm run preview
 ```
 
+## CI/CD
+
+`.gitlab-ci.yml`: um único job, `sonarcloud-check` (stage `test`), análise estática via
+`sonar-scanner` — dispara em merge requests e em pushes diretos à `main` (não `develop`).
+Não há job de build/teste automatizado no CI deste repo hoje — `npm test`/`npm run lint`
+rodam só localmente.
+
 ---
 
 ## Variáveis de Ambiente
 
-Arquivo `.env.development` (e `.env.production`):
+Arquivos `.env` e `.env.development` (não existe `.env.production` neste repo — build de
+produção usa os mesmos defaults do `.env`, servido pelo Nginx do container).
 
 | Variável | Descrição | Padrão |
 |---|---|---|
-| `VITE_PUBLIC_URL_API` | Base URL da API (`workbox-api`). Em dev, vazio utiliza o proxy do Vite `/api`. | `""` |
-| `VITE_PUBLIC_URL_API_ORIGIN` | Origem da API para comunicação direta | `http://localhost:8080` |
-| `VITE_INITIAL_PATH` | Caminho inicial pós-autenticação | `/dashboard` |
+| `VITE_PUBLIC_URL_API` | Única variável efetivamente lida pelo código (`src/services/api.ts`) — base URL da API (`workbox-api`). Em dev, vazio utiliza o proxy do Vite `/api`. | `""` |
+
+As demais chaves em `.env`/`.env.development` (`VITE_PUBLIC_URL_API_ORIGIN`,
+`VITE_INITIAL_PATH`, `VITE_PUBLIC_SSO_LOGIN_URL`, `VITE_PUBLIC_SSO_LOGOUT_URL`,
+`VITE_PUBLIC_URL_API_PUBLIC`, `VITE_BASE_URL`) não são lidas por nenhum código atual
+(confirmado via busca por `import.meta.env` — só `VITE_PUBLIC_URL_API` aparece); redirect
+pós-login é hardcoded pra `/dashboard` em `Login.tsx`, não vem de env var. Resíduo de
+scaffold — remover ou implementar de fato antes de documentar como comportamento real.
 
 ---
 
