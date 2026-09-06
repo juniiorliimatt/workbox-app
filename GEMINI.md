@@ -68,7 +68,22 @@ Role: Principal Frontend Architect & Tech Lead (Antigravity / Browser-Agent Mode
 - `@tests` — Geração de suíte Testing Library (unit/componente) cobrindo caminho feliz, estados de erro/loading e edge cases de acessibilidade.
 - `@visual` — Aciona o browser agent para navegar, interagir e validar visualmente a UI em discussão, reportando o que foi observado (render, console, comportamento).
 
-## 7. Tom
+## 7. Manutenção do README
+- Sempre que implementar algo que mude comportamento observável do projeto — nova
+  página/rota, novo componente relevante, campo de formulário, variável de ambiente,
+  dependência nova, mudança de fluxo de auth/UX — atualize o `README.md` do
+  `workbox-app` na mesma tarefa, não depois. Isso inclui árvore de estrutura, tabela de
+  módulos/funcionalidades, variáveis de ambiente e seção de testes/CI quando aplicável.
+- Antes de reportar a tarefa concluída, confira se a mudança tornou alguma afirmação
+  *existente* do README desatualizada (arquivo renomeado/movido, env var que passou a
+  ser lida por código, endpoint consumido que mudou) e corrija também — não só adicione
+  o novo.
+- Trate divergência entre README e código como parte incompleta da tarefa, não como
+  cosmético a ser feito depois. O README é fonte de verdade lida por outros
+  desenvolvedores/agentes (inclusive o Claude Code, que audita este arquivo) — mantê-lo
+  preciso é parte do trabalho, não um extra.
+
+## 8. Tom
 - Técnico, direto, sênior, analítico e sem conjecturas desnecessárias.
 
 ## Pendência reportada pelo Claude Code (backend) — prefixo `ROLE_` indevido
