@@ -13,3 +13,9 @@ body,
 *::after {
   box-sizing: inherit;
 }
+
+/* Ocultar ícone de revelar senha padrão de navegadores como o Edge */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+  display: none;
+}
