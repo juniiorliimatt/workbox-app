@@ -181,6 +181,18 @@ npm run preview
 Não há job de build/teste automatizado no CI deste repo hoje — `npm test`/`npm run lint`
 rodam só localmente.
 
+## Convenção de commits
+
+Sempre em português (pt-BR), Conventional Commits com o prefixo de tipo em inglês:
+
+```
+<tipo>(<escopo opcional>): <descrição curta e objetiva em português>
+```
+
+Tipos aceitos: `feat`, `fix`, `docs`, `chore`, `test`, `refactor`, `style`, `perf`, `ci`,
+`revert`. Vale pros quatro repositórios do monorepo — regra completa e exemplo em
+[AGENTS.md](../AGENTS.md#convenção-de-mensagens-de-commit).
+
 ---
 
 ## Variáveis de Ambiente
