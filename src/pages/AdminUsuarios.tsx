@@ -29,6 +29,7 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  TablePagination,
   TextField,
   Tooltip,
   Typography,
@@ -58,6 +59,18 @@ export const AdminUsuarios: FC = () => {
   const [roles, setRoles] = useState<IRoleDTO[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [debouncedSearch, setDebouncedSearch] = useState<string>('');
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [totalElements, setTotalElements] = useState(0);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+      setPage(0);
+    }, 300);
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
   const [feedbackSuccess, setFeedbackSuccess] = useState<string | null>(null);
   const [feedbackError, setFeedbackError] = useState<string | null>(null);
 
@@ -89,14 +102,19 @@ export const AdminUsuarios: FC = () => {
     setIsLoading(true);
     setFeedbackError(null);
     try {
-      const response = await api.get<{ _embedded?: { userApiDTOList?: IUserAdminDTO[] } }>(
-        '/api/v1/user/find-all',
+      const response = await api.get<{ content: IUserAdminDTO[]; totalElements: number }>(
+        '/api/v1/user/pageable',
         {
           headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
+          params: {
+            search: debouncedSearch || undefined,
+            page,
+            size: rowsPerPage,
+          },
         }
       );
-      const userList = response.data?._embedded?.userApiDTOList || [];
-      setUsers(userList);
+      setUsers(response.data?.content || []);
+      setTotalElements(response.data?.totalElements || 0);
     } catch (err: unknown) {
       if (axios.isAxiosError(err)) {
         setFeedbackError(err.response?.data?.detail || 'Falha ao carregar lista de usuários.');
@@ -106,7 +124,7 @@ export const AdminUsuarios: FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [accessToken]);
+  }, [accessToken, debouncedSearch, page, rowsPerPage]);
 
   const fetchRoles = useCallback(async () => {
     try {
@@ -286,12 +304,7 @@ export const AdminUsuarios: FC = () => {
     }
   };
 
-  const filteredUsers = users.filter((u) => {
-    const term = searchQuery.toLowerCase();
-    const nameMatch = u.socialName ? u.socialName.toLowerCase().includes(term) : false;
-    const emailMatch = u.email ? u.email.toLowerCase().includes(term) : false;
-    return nameMatch || emailMatch;
-  });
+  const filteredUsers = users; // Filtragem agora é no backend
 
   const getRevisionTypeChip = (type: string) => {
     switch (type) {
@@ -378,6 +391,7 @@ export const AdminUsuarios: FC = () => {
                 <CircularProgress />
               </Box>
             ) : (
+              <>
               <TableContainer component={Paper} elevation={0} sx={{ border: '1px solid', borderColor: 'grey.200' }}>
                 <Table id="tabela-usuarios" aria-label="Tabela de usuários">
                   <TableHead sx={{ bgcolor: 'grey.100' }}>
@@ -477,6 +491,20 @@ export const AdminUsuarios: FC = () => {
                   </TableBody>
                 </Table>
               </TableContainer>
+              <TablePagination
+                rowsPerPageOptions={[5, 10, 25, 50]}
+                component="div"
+                count={totalElements}
+                rowsPerPage={rowsPerPage}
+                page={page}
+                onPageChange={(_, newPage) => setPage(newPage)}
+                onRowsPerPageChange={(e) => {
+                  setRowsPerPage(parseInt(e.target.value, 10));
+                  setPage(0);
+                }}
+                labelRowsPerPage="Linhas por página:"
+              />
+            </>
             )}
           </CardContent>
         </Card>
