@@ -94,7 +94,8 @@ const Login: FC = () => {
   const [isSubmittingForgot, setIsSubmittingForgot] = useState(false);
   const [forgotFeedback, setForgotFeedback] = useState<{ type: 'success' | 'error', msg: string } | null>(null);
 
-  const handleForgotPassword = async () => {
+  const handleForgotPassword = async (e?: FormEvent) => {
+    if (e) e.preventDefault();
     if (!forgotEmail) return;
     setIsSubmittingForgot(true);
     setForgotFeedback(null);
@@ -581,6 +582,7 @@ const Login: FC = () => {
         {/* Dialog Esqueci minha senha */}
         <Dialog open={forgotPasswordOpen} onClose={() => !isSubmittingForgot && setForgotPasswordOpen(false)} maxWidth="sm" fullWidth>
           <DialogTitle sx={{ fontWeight: 600 }}>Recuperar Senha</DialogTitle>
+          <form onSubmit={handleForgotPassword}>
           <DialogContent dividers>
             <DialogContentText sx={{ mb: 2 }}>
               Digite o e-mail associado à sua conta. Se ele estiver cadastrado no sistema, enviaremos um link para você redefinir sua senha.
@@ -608,11 +610,12 @@ const Login: FC = () => {
               {forgotFeedback?.type === 'success' ? 'Fechar' : 'Cancelar'}
             </Button>
             {forgotFeedback?.type !== 'success' && (
-              <Button onClick={handleForgotPassword} variant="contained" disabled={isSubmittingForgot || !forgotEmail}>
+              <Button type="submit" variant="contained" disabled={isSubmittingForgot || !forgotEmail}>
                 {isSubmittingForgot ? <CircularProgress size={20} color="inherit" /> : 'Enviar E-mail'}
               </Button>
             )}
           </DialogActions>
+          </form>
         </Dialog>
 
       </Container>
