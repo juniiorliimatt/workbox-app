@@ -243,6 +243,67 @@ async function runBrowserValidation() {
     await page.waitForSelector('#tabela-auditoria', { timeout: 5000 });
     console.log(`   ✅ Trilha de Auditoria de Logins e monitoramento de segurança carregada com sucesso.`);
 
+    // 12. Cleanup (Excluir usuários de teste gerados nesta execução)
+    console.log('1️⃣2️⃣ Limpando usuários de teste para evitar poluição da tabela...');
+    const backBtn3 = await page.waitForSelector('#btn-voltar-dashboard', { timeout: 3000 });
+    await backBtn3.click();
+    await page.waitForFunction(() => window.location.pathname === '/admin', { timeout: 5000 });
+
+    const gestaoCleanupCard = await page.waitForSelector('.MuiCard-root ::-p-text(Gestão de Usuários)', { timeout: 3000 });
+    await gestaoCleanupCard.click();
+    await page.waitForFunction(() => window.location.pathname === '/admin/usuarios', { timeout: 5000 });
+    
+    const deleteE2EUser = async (emailToSearch) => {
+      await page.waitForSelector('input[placeholder*="Pesquisar por nome"]', { timeout: 3000 });
+      await page.evaluate((email) => {
+        const setNativeValue = (element, value) => {
+          const valueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')?.set;
+          const prototype = Object.getPrototypeOf(element);
+          const prototypeValueSetter = Object.getOwnPropertyDescriptor(prototype, 'value')?.set;
+          if (valueSetter && valueSetter !== prototypeValueSetter) {
+            prototypeValueSetter?.call(element, value);
+          } else {
+            valueSetter?.call(element, value);
+          }
+          element.dispatchEvent(new Event('input', { bubbles: true }));
+          element.dispatchEvent(new Event('change', { bubbles: true }));
+        };
+        const searchInput = document.querySelector('input[placeholder*="Pesquisar por nome"]');
+        if (searchInput) setNativeValue(searchInput, email);
+      }, emailToSearch);
+
+      await new Promise(r => setTimeout(r, 500));
+      
+      const deleteBtn = await page.$('button[aria-label="Excluir usuário"]');
+      if (deleteBtn) {
+        await deleteBtn.click();
+        const confirmBtn = await page.waitForSelector('.MuiDialogActions-root button', { timeout: 3000 });
+        // Encontrar o botão Excluir no modal
+        await page.evaluate(() => {
+          const btns = Array.from(document.querySelectorAll('.MuiDialogActions-root button'));
+          const delBtn = btns.find(b => b.textContent.includes('Excluir'));
+          if (delBtn) delBtn.click();
+        });
+        await new Promise(r => setTimeout(r, 1000));
+        console.log(`   🧹 Usuário ${emailToSearch} excluído com sucesso.`);
+      } else {
+        console.log(`   ⚠️ Botão de excluir não encontrado para ${emailToSearch}.`);
+      }
+      
+      await page.evaluate(() => {
+        const searchInput = document.querySelector('input[placeholder*="Pesquisar por nome"]');
+        if (searchInput) {
+          searchInput.value = '';
+          searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+          searchInput.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+      });
+      await new Promise(r => setTimeout(r, 500));
+    };
+
+    await deleteE2EUser(testEmail);
+    await deleteE2EUser(adminCreatedEmail);
+
     await page.click('#btn-logout');
     await page.waitForFunction(() => window.location.pathname === '/', { timeout: 5000 });
     console.log(`   ✅ Logout final concluído.`);
