@@ -5,6 +5,7 @@ import * as yup from 'yup';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import api from '@/services/api';
 import {
   Alert,
   Box,
@@ -21,6 +22,11 @@ import {
   Tabs,
   TextField,
   Typography,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
 } from '@mui/material';
 import {
   Visibility,
@@ -83,6 +89,24 @@ const Login: FC = () => {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const [mfaCode, setMfaCode] = useState<string>('');
+  const [forgotPasswordOpen, setForgotPasswordOpen] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [isSubmittingForgot, setIsSubmittingForgot] = useState(false);
+  const [forgotFeedback, setForgotFeedback] = useState<{ type: 'success' | 'error', msg: string } | null>(null);
+
+  const handleForgotPassword = async () => {
+    if (!forgotEmail) return;
+    setIsSubmittingForgot(true);
+    setForgotFeedback(null);
+    try {
+      await api.post('/api/v1/auth/forgot-password', { email: forgotEmail });
+      setForgotFeedback({ type: 'success', msg: 'Se o e-mail existir no sistema, você receberá um link de recuperação.' });
+    } catch (err: unknown) {
+      setForgotFeedback({ type: 'error', msg: 'Ocorreu um erro ao tentar recuperar a senha.' });
+    } finally {
+      setIsSubmittingForgot(false);
+    }
+  };
   const [mfaError, setMfaError] = useState<string | null>(null);
   const [isSubmittingMfa, setIsSubmittingMfa] = useState<boolean>(false);
 
@@ -388,11 +412,21 @@ const Login: FC = () => {
                 }}
               />
 
-              <FormControlLabel
-                control={<Checkbox id="rememberMe" {...registerLogin('rememberMe')} color="primary" />}
-                label={<Typography variant="body2">Lembrar de mim</Typography>}
-                sx={{ mt: 1, width: '100%', userSelect: 'none' }}
-              />
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1, width: '100%' }}>
+                <FormControlLabel
+                  control={<Checkbox id="rememberMe" {...registerLogin('rememberMe')} color="primary" />}
+                  label={<Typography variant="body2">Lembrar de mim</Typography>}
+                  sx={{ userSelect: 'none' }}
+                />
+                <Button
+                  variant="text"
+                  size="small"
+                  onClick={() => { setForgotPasswordOpen(true); setForgotFeedback(null); setForgotEmail(''); }}
+                  sx={{ textTransform: 'none' }}
+                >
+                  Esqueci minha senha
+                </Button>
+              </Box>
 
               <Button
                 type="submit"
@@ -543,6 +577,44 @@ const Login: FC = () => {
             </Box>
           )}
         </Paper>
+
+        {/* Dialog Esqueci minha senha */}
+        <Dialog open={forgotPasswordOpen} onClose={() => !isSubmittingForgot && setForgotPasswordOpen(false)} maxWidth="sm" fullWidth>
+          <DialogTitle sx={{ fontWeight: 600 }}>Recuperar Senha</DialogTitle>
+          <DialogContent dividers>
+            <DialogContentText sx={{ mb: 2 }}>
+              Digite o e-mail associado à sua conta. Se ele estiver cadastrado no sistema, enviaremos um link para você redefinir sua senha.
+            </DialogContentText>
+            {forgotFeedback && (
+              <Alert severity={forgotFeedback.type} sx={{ mb: 2 }}>
+                {forgotFeedback.msg}
+              </Alert>
+            )}
+            <TextField
+              autoFocus
+              margin="dense"
+              id="forgot-email"
+              label="Endereço de E-mail"
+              type="email"
+              fullWidth
+              variant="outlined"
+              value={forgotEmail}
+              onChange={(e) => setForgotEmail(e.target.value)}
+              disabled={isSubmittingForgot || forgotFeedback?.type === 'success'}
+            />
+          </DialogContent>
+          <DialogActions sx={{ p: 2 }}>
+            <Button onClick={() => setForgotPasswordOpen(false)} disabled={isSubmittingForgot}>
+              {forgotFeedback?.type === 'success' ? 'Fechar' : 'Cancelar'}
+            </Button>
+            {forgotFeedback?.type !== 'success' && (
+              <Button onClick={handleForgotPassword} variant="contained" disabled={isSubmittingForgot || !forgotEmail}>
+                {isSubmittingForgot ? <CircularProgress size={20} color="inherit" /> : 'Enviar E-mail'}
+              </Button>
+            )}
+          </DialogActions>
+        </Dialog>
+
       </Container>
     </Box>
   );

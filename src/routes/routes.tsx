@@ -9,6 +9,7 @@ import AdminAuditoria from '@/pages/AdminAuditoria';
 import Perfil from '@/pages/Perfil';
 import ProtectedRoute from '@/routes/ProtectedRoute';
 import PublicRoute from '@/routes/PublicRoute';
+import ResetPassword from '@/pages/ResetPassword';
 
 export const router = createBrowserRouter([
   {
@@ -17,6 +18,10 @@ export const router = createBrowserRouter([
       {
         path: '/',
         element: <Login />,
+      },
+      {
+        path: '/reset-password',
+        element: <ResetPassword />,
       },
     ],
   },
