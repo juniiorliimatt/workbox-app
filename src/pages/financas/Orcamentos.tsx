@@ -7,6 +7,8 @@ import { TotalDTO, FiftyThirtyTwentyDTO, MonthlySummaryDTO, YearlySummaryDTO, Ty
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28'];
 
+const formatCurrency = (val: any) => Number(val || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
 const Orcamentos: FC = () => {
   const api = useAxiosWithAuth();
   const today = new Date();
@@ -114,7 +116,7 @@ const Orcamentos: FC = () => {
                           <Cell key={`cell-rs-${index}`} fill={entry.fill} />
                         ))}
                       </Pie>
-                      <RechartsTooltip formatter={(value: any) => `R$ ${Number(value || 0).toFixed(2)}`} />
+                      <RechartsTooltip formatter={(value: any) => formatCurrency(value)} />
                       <Legend verticalAlign="bottom" height={36} />
                     </PieChart>
                   </ResponsiveContainer>
@@ -154,7 +156,7 @@ const Orcamentos: FC = () => {
                           <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                         ))}
                       </Pie>
-                      <RechartsTooltip formatter={(value: any) => `R$ ${Number(value || 0).toFixed(2)}`} />
+                      <RechartsTooltip formatter={(value: any) => formatCurrency(value)} />
                       <Legend verticalAlign="bottom" height={36} />
                     </PieChart>
                   </ResponsiveContainer>
@@ -170,31 +172,31 @@ const Orcamentos: FC = () => {
                   <Grid item xs={12} sm={6} md={2.4}>
                     <Paper variant="outlined" sx={{ p: 2, textAlign: 'center', bgcolor: 'success.light', color: 'success.contrastText' }}>
                       <Typography variant="subtitle2">Total de Receitas</Typography>
-                      <Typography variant="h6">R$ {summary?.totalRevenue.toFixed(2) || '0.00'}</Typography>
+                      <Typography variant="h6">{formatCurrency(summary?.totalRevenue)}</Typography>
                     </Paper>
                   </Grid>
                   <Grid item xs={12} sm={6} md={2.4}>
                     <Paper variant="outlined" sx={{ p: 2, textAlign: 'center', bgcolor: 'error.light', color: 'error.contrastText' }}>
                       <Typography variant="subtitle2">Total de Despesas</Typography>
-                      <Typography variant="h6">R$ {summary?.totalSpending.toFixed(2) || '0.00'}</Typography>
+                      <Typography variant="h6">{formatCurrency(summary?.totalSpending)}</Typography>
                     </Paper>
                   </Grid>
                   <Grid item xs={12} sm={6} md={2.4}>
                     <Paper variant="outlined" sx={{ p: 2, textAlign: 'center' }}>
                       <Typography variant="subtitle2">Total Pago</Typography>
-                      <Typography variant="h6">R$ {summary?.totalPaid.toFixed(2) || '0.00'}</Typography>
+                      <Typography variant="h6">{formatCurrency(summary?.totalPaid)}</Typography>
                     </Paper>
                   </Grid>
                   <Grid item xs={12} sm={6} md={2.4}>
                     <Paper variant="outlined" sx={{ p: 2, textAlign: 'center' }}>
                       <Typography variant="subtitle2">Falta Pagar</Typography>
-                      <Typography variant="h6" color="warning.main">R$ {summary?.totalPending.toFixed(2) || '0.00'}</Typography>
+                      <Typography variant="h6" color="warning.main">{formatCurrency(summary?.totalPending)}</Typography>
                     </Paper>
                   </Grid>
                   <Grid item xs={12} sm={12} md={2.4}>
                     <Paper variant="outlined" sx={{ p: 2, textAlign: 'center', bgcolor: (summary?.projectedBalance || 0) >= 0 ? 'info.light' : 'warning.light' }}>
                       <Typography variant="subtitle2">Previsão Saldo Final</Typography>
-                      <Typography variant="h6">R$ {summary?.projectedBalance.toFixed(2) || '0.00'}</Typography>
+                      <Typography variant="h6">{formatCurrency(summary?.projectedBalance)}</Typography>
                     </Paper>
                   </Grid>
                 </Grid>
@@ -251,19 +253,19 @@ const Orcamentos: FC = () => {
                   <Grid item xs={12} sm={4}>
                     <Paper variant="outlined" sx={{ p: 2, textAlign: 'center', bgcolor: 'success.light', color: 'success.contrastText' }}>
                       <Typography variant="subtitle2">Total de Receitas (Ano)</Typography>
-                      <Typography variant="h6">R$ {yearlySummary?.totalRevenue.toFixed(2) || '0.00'}</Typography>
+                      <Typography variant="h6">{formatCurrency(yearlySummary?.totalRevenue)}</Typography>
                     </Paper>
                   </Grid>
                   <Grid item xs={12} sm={4}>
                     <Paper variant="outlined" sx={{ p: 2, textAlign: 'center', bgcolor: 'error.light', color: 'error.contrastText' }}>
                       <Typography variant="subtitle2">Total de Despesas (Ano)</Typography>
-                      <Typography variant="h6">R$ {yearlySummary?.totalSpending.toFixed(2) || '0.00'}</Typography>
+                      <Typography variant="h6">{formatCurrency(yearlySummary?.totalSpending)}</Typography>
                     </Paper>
                   </Grid>
                   <Grid item xs={12} sm={4}>
                     <Paper variant="outlined" sx={{ p: 2, textAlign: 'center', bgcolor: (yearlySummary?.balance || 0) >= 0 ? 'info.light' : 'warning.light' }}>
                       <Typography variant="subtitle2">Saldo (Ano)</Typography>
-                      <Typography variant="h6">R$ {yearlySummary?.balance.toFixed(2) || '0.00'}</Typography>
+                      <Typography variant="h6">{formatCurrency(yearlySummary?.balance)}</Typography>
                     </Paper>
                   </Grid>
                 </Grid>
