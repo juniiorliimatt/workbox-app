@@ -1,7 +1,7 @@
 import { FC, useState, useEffect, useCallback } from 'react';
 import {
   Box, Container, Button, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-  IconButton, Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem, CircularProgress, Chip, Typography,
+  IconButton, Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem, CircularProgress, Autocomplete, Chip, Typography,
   FormControlLabel, Checkbox, TablePagination, TableSortLabel
 } from '@mui/material';
 import { Add as AddIcon, Delete as DeleteIcon, Edit as EditIcon, History as HistoryIcon } from '@mui/icons-material';
@@ -198,8 +198,10 @@ const Despesas: FC = () => {
   };
 
   
+  
   const handleAddBatchLine = () => {
-    setBatchItems([...batchItems, { date: dayjs(), referenceDate: null, typeId: '', description: '', value: '', wasPaid: false }]);
+    const lastItem = batchItems.length > 0 ? batchItems[batchItems.length - 1] : null;
+    setBatchItems([...batchItems, { date: lastItem ? lastItem.date : dayjs(), referenceDate: lastItem ? lastItem.referenceDate : null, typeId: '', description: '', value: '', wasPaid: false }]);
   };
 
   const handleRemoveBatchLine = (index: number) => {
@@ -432,9 +434,14 @@ const Despesas: FC = () => {
               <Box key={index} sx={{ display: 'flex', gap: 1, alignItems: 'center', mb: 2 }}>
                 <DatePicker label="Data" value={item.date} onChange={(val) => handleBatchChange(index, 'date', val)} format="DD/MM/YYYY" slotProps={{ textField: { required: true, size: 'small', sx: { width: 140 } } }} />
                 <DatePicker label="Comp." value={item.referenceDate} onChange={(val) => handleBatchChange(index, 'referenceDate', val)} format="MM/YYYY" views={['year', 'month']} slotProps={{ textField: { size: 'small', sx: { width: 120 } } }} />
-                <TextField select label="Tipo" value={item.typeId} onChange={e => handleBatchChange(index, 'typeId', e.target.value)} required size="small" sx={{ width: 160 }}>
-                  {types.map(t => <MenuItem key={t.id} value={t.id}>{t.name}</MenuItem>)}
-                </TextField>
+                <Autocomplete
+                  options={types}
+                  getOptionLabel={(option) => option.name}
+                  value={types.find(t => t.id === item.typeId) || null}
+                  onChange={(_, newValue) => handleBatchChange(index, 'typeId', newValue ? newValue.id : '')}
+                  renderInput={(params) => <TextField {...params} label="Tipo" required size="small" />}
+                  sx={{ width: 180 }}
+                />
                 <TextField label="Descrição" value={item.description} onChange={e => handleBatchChange(index, 'description', e.target.value)} required size="small" sx={{ flexGrow: 1 }} />
                 <TextField type="number" label="Valor" value={item.value} onChange={e => handleBatchChange(index, 'value', e.target.value)} required size="small" inputProps={{ step: '0.01' }} sx={{ width: 110 }} />
                 <FormControlLabel control={<Checkbox checked={item.wasPaid} onChange={e => handleBatchChange(index, 'wasPaid', e.target.checked)} size="small" />} label="Pago" sx={{ ml: 1, mr: 0 }} />
