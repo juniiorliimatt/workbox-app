@@ -4,14 +4,39 @@ server {
     root /usr/share/nginx/html;
     index index.html;
 
-    # Front e API no mesmo origin do ponto de vista do browser (evita CORS) —
-    # workbox-api resolve pelo nome do serviço na rede do docker compose.
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header Authorization $http_authorization;
+
+    # Front e cada backend no mesmo origin do ponto de vista do browser (evita CORS) —
+    # cada serviço resolve pelo nome no docker compose. Nginx escolhe o prefixo mais
+    # específico automaticamente (não importa a ordem dos location abaixo), então
+    # /api/v1/revenues etc sempre ganham de /api/ quando os dois batem a requisição —
+    # sem essas rotas específicas, tudo caía no workbox-api (que não tem esses
+    # endpoints) e voltava 500 em vez de ir pro budget-service de verdade.
+    location /api/v1/revenues {
+        proxy_pass ${BUDGET_SERVICE_UPSTREAM}/api/v1/revenues;
+    }
+
+    location /api/v1/spendings {
+        proxy_pass ${BUDGET_SERVICE_UPSTREAM}/api/v1/spendings;
+    }
+
+    location /api/v1/revenue-types {
+        proxy_pass ${BUDGET_SERVICE_UPSTREAM}/api/v1/revenue-types;
+    }
+
+    location /api/v1/spending-types {
+        proxy_pass ${BUDGET_SERVICE_UPSTREAM}/api/v1/spending-types;
+    }
+
+    location /api/v1/budget-rules {
+        proxy_pass ${BUDGET_SERVICE_UPSTREAM}/api/v1/budget-rules;
+    }
+
     location /api/ {
         proxy_pass ${WORKBOX_API_UPSTREAM}/api/;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header Authorization $http_authorization;
     }
 
     location / {
