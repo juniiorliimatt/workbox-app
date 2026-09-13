@@ -10,6 +10,7 @@ import AppNavbar from '@/components/AppNavbar';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { useSnackbar } from '@/hooks/useSnackbar';
 import { SpendingDTO, SpendingTypeDTO , SpendingRevisionDTO } from '@/interfaces/budget';
+import { getErrorMessage } from '@/utils/errors';
 import dayjs, { Dayjs } from 'dayjs';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 
@@ -56,7 +57,7 @@ const BatchSpendingModal = ({ open, onClose, types, onSaved, api, showSnackbar }
       onClose();
       onSaved();
     } catch (e: unknown) {
-      showSnackbar(`Erro ao salvar lote: ${e?.response?.data?.message || e?.message}`, 'error');
+      showSnackbar(`Erro ao salvar lote: ${getErrorMessage(e)}`, 'error');
     } finally {
       setBatchLoading(false);
     }
@@ -249,7 +250,7 @@ const Despesas: FC = () => {
       loadData();
     } catch (e: unknown) {
       console.error(e);
-      showSnackbar(`Erro ao salvar despesa: ${e?.response?.data?.message || e?.message || 'Desconhecido'}`, 'error');
+      showSnackbar(`Erro ao salvar despesa: ${getErrorMessage(e) || 'Desconhecido'}`, 'error');
     }
   };
 
@@ -260,7 +261,7 @@ const Despesas: FC = () => {
       showSnackbar('Despesa excluída com sucesso!', 'success');
     } catch (e: unknown) {
       console.error(e);
-      showSnackbar(`Erro ao excluir despesa: ${e?.response?.data?.message || 'Desconhecido'}`, 'error');
+      showSnackbar(`Erro ao excluir despesa: ${getErrorMessage(e) || 'Desconhecido'}`, 'error');
     } finally {
       setConfirmTarget(null);
     }
@@ -279,7 +280,7 @@ const Despesas: FC = () => {
       showSnackbar('Tipo salvo com sucesso!', 'success');
     } catch (e: unknown) {
       console.error(e);
-      showSnackbar(`Erro: ${e?.response?.data?.message || e?.message || 'Desconhecido'}`, 'error');
+      showSnackbar(`Erro: ${getErrorMessage(e) || 'Desconhecido'}`, 'error');
     } finally {
       setTypeLoading(false);
     }
@@ -299,7 +300,7 @@ const Despesas: FC = () => {
       showSnackbar('Tipo excluído com sucesso!', 'success');
     } catch (e: unknown) {
       console.error(e);
-      showSnackbar(`Erro ao excluir tipo: ${e?.response?.data?.message || 'Em uso por despesas existentes'}`, 'error');
+      showSnackbar(`Erro ao excluir tipo: ${getErrorMessage(e) || 'Em uso por despesas existentes'}`, 'error');
     } finally {
       setConfirmTarget(null);
     }

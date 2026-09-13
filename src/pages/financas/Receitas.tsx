@@ -9,6 +9,7 @@ import AppNavbar from '@/components/AppNavbar';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { useSnackbar } from '@/hooks/useSnackbar';
 import { RevenueDTO, RevenueTypeDTO , RevenueRevisionDTO } from '@/interfaces/budget';
+import { getErrorMessage } from '@/utils/errors';
 import dayjs, { Dayjs } from 'dayjs';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 
@@ -55,7 +56,7 @@ const BatchRevenueModal = ({ open, onClose, types, onSaved, api, showSnackbar }:
       onClose();
       onSaved();
     } catch (e: unknown) {
-      showSnackbar(`Erro ao salvar lote: ${e?.response?.data?.message || e?.message}`, 'error');
+      showSnackbar(`Erro ao salvar lote: ${getErrorMessage(e)}`, 'error');
     } finally {
       setBatchLoading(false);
     }
@@ -238,7 +239,7 @@ const Receitas: FC = () => {
       loadData();
     } catch (e: unknown) {
       console.error(e);
-      showSnackbar(`Erro: ${e?.response?.data?.message || e?.message || 'Desconhecido'}`, 'error');
+      showSnackbar(`Erro: ${getErrorMessage(e) || 'Desconhecido'}`, 'error');
     }
   };
 
@@ -269,7 +270,7 @@ const Receitas: FC = () => {
       showSnackbar('Tipo criado com sucesso!', 'success');
     } catch (e: unknown) {
       console.error(e);
-      showSnackbar(`Erro: ${e?.response?.data?.message || e?.message || 'Desconhecido'}`, 'error');
+      showSnackbar(`Erro: ${getErrorMessage(e) || 'Desconhecido'}`, 'error');
     } finally {
       setTypeLoading(false);
     }
@@ -289,7 +290,7 @@ const Receitas: FC = () => {
       showSnackbar('Tipo excluído com sucesso!', 'success');
     } catch (e: unknown) {
       console.error(e);
-      showSnackbar(`Erro ao excluir tipo: ${e?.response?.data?.message || 'Em uso por receitas existentes'}`, 'error');
+      showSnackbar(`Erro ao excluir tipo: ${getErrorMessage(e) || 'Em uso por receitas existentes'}`, 'error');
     } finally {
       setConfirmTarget(null);
     }

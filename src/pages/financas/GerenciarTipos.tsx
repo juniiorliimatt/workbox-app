@@ -10,6 +10,7 @@ import AppNavbar from '@/components/AppNavbar';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { useSnackbar } from '@/hooks/useSnackbar';
 import { RevenueTypeDTO, SpendingTypeDTO, RevenueTypeRevisionDTO, SpendingTypeRevisionDTO } from '@/interfaces/budget';
+import { getErrorMessage } from '@/utils/errors';
 
 const GerenciarTipos: FC = () => {
   const api = useAxiosWithAuth();
@@ -122,7 +123,7 @@ const GerenciarTipos: FC = () => {
       loadData();
     } catch (e: unknown) {
       console.error(e);
-      showSnackbar(`Erro: ${e?.response?.data?.message || 'Falha ao salvar'}`, 'error');
+      showSnackbar(`Erro: ${getErrorMessage(e) || 'Falha ao salvar'}`, 'error');
     } finally {
       setActionLoading(false);
     }
@@ -135,7 +136,7 @@ const GerenciarTipos: FC = () => {
       loadData();
     } catch (e: unknown) {
       console.error(e);
-      showSnackbar(`Erro: ${e?.response?.data?.message || 'Em uso ou não encontrado'}`, 'error');
+      showSnackbar(`Erro: ${getErrorMessage(e) || 'Em uso ou não encontrado'}`, 'error');
     } finally {
       setConfirmTarget(null);
     }
@@ -171,7 +172,7 @@ const GerenciarTipos: FC = () => {
       loadData();
     } catch (e: unknown) {
       console.error(e);
-      showSnackbar(`Erro: ${e?.response?.data?.message || 'Falha ao salvar'}`, 'error');
+      showSnackbar(`Erro: ${getErrorMessage(e) || 'Falha ao salvar'}`, 'error');
     } finally {
       setActionLoading(false);
     }
@@ -184,7 +185,7 @@ const GerenciarTipos: FC = () => {
       loadData();
     } catch (e: unknown) {
       console.error(e);
-      showSnackbar(`Erro: ${e?.response?.data?.message || 'Em uso ou não encontrado'}`, 'error');
+      showSnackbar(`Erro: ${getErrorMessage(e) || 'Em uso ou não encontrado'}`, 'error');
     } finally {
       setConfirmTarget(null);
     }

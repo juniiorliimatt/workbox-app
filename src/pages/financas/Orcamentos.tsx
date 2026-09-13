@@ -111,7 +111,7 @@ const Orcamentos: FC = () => {
                 <Box sx={{ height: 350, width: "100%", mt: 2 }}>
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
-                      <Pie data={revSpendPieData} cx="50%" cy="50%" outerRadius={100} dataKey="value" label={({ name, percent }: { name: string, percent: number }) => `${name} (${(Number(percent || 0) * 100).toFixed(0)}%)`}>
+                      <Pie data={revSpendPieData} cx="50%" cy="50%" outerRadius={100} dataKey="value" label={({ name, percent }: { name?: string; percent?: number }) => `${name ?? ''} (${(Number(percent || 0) * 100).toFixed(0)}%)`}>
                         {revSpendPieData.map((entry, index) => (
                           <Cell key={`cell-rs-${index}`} fill={entry.fill} />
                         ))}
@@ -151,7 +151,7 @@ const Orcamentos: FC = () => {
                 <Box sx={{ flexGrow: 1, minHeight: 0 }}>
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
-                      <Pie data={pieData} cx="50%" cy="50%" outerRadius={100} fill="#8884d8" dataKey="value" label={({ name, percent }: { name: string, percent: number }) => `${name} (${(Number(percent || 0) * 100).toFixed(0)}%)`}>
+                      <Pie data={pieData} cx="50%" cy="50%" outerRadius={100} fill="#8884d8" dataKey="value" label={({ name, percent }: { name?: string; percent?: number }) => `${name ?? ''} (${(Number(percent || 0) * 100).toFixed(0)}%)`}>
                         {pieData.map((_, index) => (
                           <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                         ))}
