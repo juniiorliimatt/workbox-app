@@ -79,3 +79,22 @@ export interface SpendingRevisionDTO {
   value?: number;
   wasPaid?: boolean;
 }
+
+export interface RevenueTypeRevisionDTO {
+  changedAt?: string;
+  changedBy?: string;
+  id?: string;
+  name?: string;
+  revision: number;
+  revisionType: string;
+}
+
+export interface SpendingTypeRevisionDTO {
+  changedAt?: string;
+  changedBy?: string;
+  id?: string;
+  name?: string;
+  category?: 'ESSENTIAL' | 'PERSONAL' | 'SAVINGS';
+  revision: number;
+  revisionType: string;
+}

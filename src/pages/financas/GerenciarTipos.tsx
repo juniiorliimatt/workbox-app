@@ -2,14 +2,14 @@ import { FC, useState, useEffect, useCallback } from 'react';
 import {
   Box, Container, Button, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
   IconButton, Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem, CircularProgress,
-  Grid, Typography
+  Grid, Typography, Chip
 } from '@mui/material';
-import { Add as AddIcon, Delete as DeleteIcon, Edit as EditIcon } from '@mui/icons-material';
+import { Add as AddIcon, Delete as DeleteIcon, Edit as EditIcon, History as HistoryIcon } from '@mui/icons-material';
 import { useAxiosWithAuth } from '@/services/useAxiosWithAuth';
 import AppNavbar from '@/components/AppNavbar';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { useSnackbar } from '@/hooks/useSnackbar';
-import { RevenueTypeDTO, SpendingTypeDTO } from '@/interfaces/budget';
+import { RevenueTypeDTO, SpendingTypeDTO, RevenueTypeRevisionDTO, SpendingTypeRevisionDTO } from '@/interfaces/budget';
 
 const GerenciarTipos: FC = () => {
   const api = useAxiosWithAuth();
@@ -32,6 +32,42 @@ const GerenciarTipos: FC = () => {
   
   const [confirmTarget, setConfirmTarget] = useState<{ origin: 'rev' | 'spend', id: string } | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
+
+  const [auditTarget, setAuditTarget] = useState<{ origin: 'rev' | 'spend', id: string, name: string } | null>(null);
+  const [revAuditHistory, setRevAuditHistory] = useState<RevenueTypeRevisionDTO[]>([]);
+  const [spendAuditHistory, setSpendAuditHistory] = useState<SpendingTypeRevisionDTO[]>([]);
+  const [isLoadingAudit, setIsLoadingAudit] = useState(false);
+
+
+  
+  const handleOpenAudit = async (origin: 'rev' | 'spend', id: string, name: string) => {
+    setAuditTarget({ origin, id, name });
+    setIsLoadingAudit(true);
+    setRevAuditHistory([]);
+    setSpendAuditHistory([]);
+    try {
+      const endpoint = origin === 'rev' 
+        ? `/api/v1/revenue-types/${id}/history`
+        : `/api/v1/spending-types/${id}/history`;
+      const res = await api.get(endpoint);
+      if (origin === 'rev') setRevAuditHistory(res.data || []);
+      else setSpendAuditHistory(res.data || []);
+    } catch (e: any) {
+      console.error(e);
+      showSnackbar('Erro ao carregar histórico de auditoria', 'error');
+    } finally {
+      setIsLoadingAudit(false);
+    }
+  };
+
+  const getRevisionTypeChip = (type: string) => {
+    switch (type) {
+      case 'ADD': return <Chip label="Criação (ADD)" color="success" size="small" />;
+      case 'MOD': return <Chip label="Alteração (MOD)" color="primary" size="small" />;
+      case 'DEL': return <Chip label="Exclusão (DEL)" color="error" size="small" />;
+      default: return <Chip label={type} size="small" />;
+    }
+  };
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -181,6 +217,7 @@ const GerenciarTipos: FC = () => {
                         <TableRow key={r.id} hover>
                           <TableCell>{r.name}</TableCell>
                           <TableCell align="right">
+                            <IconButton size="small" color="info" onClick={() => handleOpenAudit('rev', r.id, r.name)} title="Ver Histórico"><HistoryIcon fontSize="small" /></IconButton>
                             <IconButton size="small" color="primary" onClick={() => handleOpenRev(r)}><EditIcon fontSize="small" /></IconButton>
                             <IconButton size="small" color="error" onClick={() => setConfirmTarget({ origin: 'rev', id: r.id })}><DeleteIcon fontSize="small" /></IconButton>
                           </TableCell>
@@ -224,6 +261,7 @@ const GerenciarTipos: FC = () => {
                              s.category === 'SAVINGS' ? 'Economia (20%)' : s.category}
                           </TableCell>
                           <TableCell align="right">
+                            <IconButton size="small" color="info" onClick={() => handleOpenAudit('spend', s.id, s.name)} title="Ver Histórico"><HistoryIcon fontSize="small" /></IconButton>
                             <IconButton size="small" color="primary" onClick={() => handleOpenSpend(s)}><EditIcon fontSize="small" /></IconButton>
                             <IconButton size="small" color="error" onClick={() => setConfirmTarget({ origin: 'spend', id: s.id })}><DeleteIcon fontSize="small" /></IconButton>
                           </TableCell>
@@ -274,6 +312,60 @@ const GerenciarTipos: FC = () => {
         </Dialog>
       </Container>
       
+      
+      <Dialog open={Boolean(auditTarget)} onClose={() => setAuditTarget(null)} maxWidth="md" fullWidth>
+        <DialogTitle sx={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
+          <HistoryIcon color="primary" /> Histórico de Auditoria: {auditTarget?.name}
+        </DialogTitle>
+        <DialogContent dividers>
+          {isLoadingAudit ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 5 }}><CircularProgress /></Box>
+          ) : (auditTarget?.origin === 'rev' ? revAuditHistory : spendAuditHistory).length === 0 ? (
+            <Typography variant="body2" color="text.secondary" sx={{ py: 3, textAlign: 'center' }}>
+              Nenhum registro de auditoria encontrado para este tipo.
+            </Typography>
+          ) : (
+            <TableContainer component={Paper} elevation={0} sx={{ border: '1px solid', borderColor: 'grey.200' }}>
+              <Table size="small">
+                <TableHead sx={{ bgcolor: 'grey.100' }}>
+                  <TableRow>
+                    <TableCell sx={{ fontWeight: 600 }}>Rev. #</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>Operação</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>Data/Hora (Modificação)</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>Autor</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>Nome Salvo</TableCell>
+                    {auditTarget?.origin === 'spend' && <TableCell sx={{ fontWeight: 600 }}>Regra</TableCell>}
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {(auditTarget?.origin === 'rev' ? revAuditHistory : spendAuditHistory).map((rev: any) => (
+                    <TableRow key={rev.revision} hover>
+                      <TableCell sx={{ fontWeight: 600 }}>#{rev.revision}</TableCell>
+                      <TableCell>{getRevisionTypeChip(rev.revisionType)}</TableCell>
+                      <TableCell sx={{ fontFamily: 'monospace', fontSize: '0.8rem' }}>
+                        {rev.changedAt ? new Date(rev.changedAt).toLocaleString('pt-BR') : '-'}
+                      </TableCell>
+                      <TableCell sx={{ fontSize: '0.85rem' }}>{rev.changedBy || 'Sistema'}</TableCell>
+                      <TableCell>{rev.name || '-'}</TableCell>
+                      {auditTarget?.origin === 'spend' && (
+                        <TableCell>
+                          {rev.category === 'ESSENTIAL' ? 'Essencial (50%)' :
+                           rev.category === 'PERSONAL' ? 'Pessoal (30%)' :
+                           rev.category === 'SAVINGS' ? 'Economia (20%)' : rev.category || '-'}
+                        </TableCell>
+                      )}
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button onClick={() => setAuditTarget(null)}>Fechar</Button>
+        </DialogActions>
+      </Dialog>
+
       <ConfirmDialog
         open={confirmTarget !== null}
         title="Confirmar Exclusão"
