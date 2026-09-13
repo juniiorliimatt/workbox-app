@@ -399,9 +399,14 @@ const Despesas: FC = () => {
               </Box>
               <TextField fullWidth label="Descrição" value={formDesc} onChange={e => setFormDesc(e.target.value)} margin="normal" />
               <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mt: 2, mb: 1 }}>
-                <TextField fullWidth select label="Tipo" value={formTypeId} onChange={e => setFormTypeId(e.target.value)} required margin="none">
-                  {types.map(t => <MenuItem key={t.id} value={t.id}>{t.name}</MenuItem>)}
-                </TextField>
+                <Autocomplete
+                  options={types}
+                  getOptionLabel={(option) => option.name}
+                  value={types.find((t: any) => t.id === formTypeId) || null}
+                  onChange={(_, newValue) => setFormTypeId(newValue ? newValue.id : '')}
+                  renderInput={(params) => <TextField {...params} label="Tipo" required margin="none" />}
+                  sx={{ flexGrow: 1 }}
+                />
                 <IconButton color="primary" onClick={() => setOpenTypeModal(true)} sx={{ bgcolor: 'action.hover', borderRadius: 1 }} title="Adicionar novo tipo">
                   <AddIcon />
                 </IconButton>
@@ -411,8 +416,10 @@ const Despesas: FC = () => {
                   </IconButton>
                 )}
               </Box>
-              <TextField fullWidth type="number" label="Valor" value={formValue} onChange={e => setFormValue(e.target.value)} required margin="normal" inputProps={{ step: '0.01' }} />
-              <FormControlLabel control={<Checkbox checked={formWasPaid} onChange={e => setFormWasPaid(e.target.checked)} />} label="Já foi pago" sx={{ mt: 1 }} />
+              <Box sx={{ display: 'flex', gap: 2, mt: 2, alignItems: 'center' }}>
+                <TextField fullWidth type="number" label="Valor" value={formValue} onChange={e => setFormValue(e.target.value)} required margin="none" inputProps={{ step: '0.01' }} />
+                <FormControlLabel control={<Checkbox checked={formWasPaid} onChange={e => setFormWasPaid(e.target.checked)} />} label="Já foi pago" sx={{ whiteSpace: 'nowrap' }} />
+              </Box>
             </DialogContent>
             <DialogActions>
               <Button onClick={() => setOpen(false)}>Cancelar</Button>

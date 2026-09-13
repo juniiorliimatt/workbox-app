@@ -378,9 +378,14 @@ const Receitas: FC = () => {
                 <DatePicker label="Competência (Opcional)" value={formRefDate} onChange={(newValue) => setFormRefDate(newValue)} format="MM/YYYY" views={['year', 'month']} slotProps={{ textField: { fullWidth: true, margin: 'normal' } }} />
               </Box>
               <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mt: 2, mb: 1 }}>
-                <TextField fullWidth select label="Tipo" value={formTypeId} onChange={e => setFormTypeId(e.target.value)} required margin="none">
-                  {types.map(t => <MenuItem key={t.id} value={t.id}>{t.name}</MenuItem>)}
-                </TextField>
+                <Autocomplete
+                  options={types}
+                  getOptionLabel={(option) => option.name}
+                  value={types.find((t: any) => t.id === formTypeId) || null}
+                  onChange={(_, newValue) => setFormTypeId(newValue ? newValue.id : '')}
+                  renderInput={(params) => <TextField {...params} label="Tipo" required margin="none" />}
+                  sx={{ flexGrow: 1 }}
+                />
                 <IconButton color="primary" onClick={() => setOpenTypeModal(true)} sx={{ bgcolor: 'action.hover', borderRadius: 1 }} title="Adicionar novo tipo">
                   <AddIcon />
                 </IconButton>
