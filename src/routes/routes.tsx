@@ -5,6 +5,7 @@ import Financas from '@/pages/Financas';
 import Receitas from '@/pages/financas/Receitas';
 import Despesas from '@/pages/financas/Despesas';
 import Orcamentos from '@/pages/financas/Orcamentos';
+import GerenciarTipos from '@/pages/financas/GerenciarTipos';
 import Admin from '@/pages/Admin';
 import AdminUsuarios from '@/pages/AdminUsuarios';
 import AdminPapeis from '@/pages/AdminPapeis';
@@ -47,9 +48,14 @@ export const router = createBrowserRouter([
         path: '/financas/despesas',
         element: <Despesas />,
       },
+      
       {
         path: '/financas/orcamentos',
         element: <Orcamentos />,
+      },
+      {
+        path: '/financas/tipos',
+        element: <GerenciarTipos />,
       },
       {
         path: '/admin',

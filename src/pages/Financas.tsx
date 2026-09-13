@@ -5,6 +5,7 @@ import {
   TrendingUp as TrendingUpIcon,
   TrendingDown as TrendingDownIcon,
   Savings as SavingsIcon,
+  Category as CategoryIcon,
 } from '@mui/icons-material';
 import AppNavbar from '@/components/AppNavbar';
 import { useNavigate } from 'react-router-dom';
@@ -33,7 +34,7 @@ const Financas: FC = () => {
         </Paper>
 
         <Grid container spacing={3}>
-          <Grid item xs={12} md={4}>
+          <Grid item xs={12} md={6}>
             <Card elevation={2} sx={{ height: '100%', borderRadius: 2 }}>
               <CardActionArea sx={{ height: '100%' }} onClick={() => navigate('/financas/receitas')}>
                 <CardContent>
@@ -50,7 +51,7 @@ const Financas: FC = () => {
             </Card>
           </Grid>
 
-          <Grid item xs={12} md={4}>
+          <Grid item xs={12} md={6}>
             <Card elevation={2} sx={{ height: '100%', borderRadius: 2 }}>
               <CardActionArea sx={{ height: '100%' }} onClick={() => navigate('/financas/despesas')}>
                 <CardContent>
@@ -67,7 +68,7 @@ const Financas: FC = () => {
             </Card>
           </Grid>
 
-          <Grid item xs={12} md={4}>
+          <Grid item xs={12} md={6}>
             <Card elevation={2} sx={{ height: '100%', borderRadius: 2 }}>
               <CardActionArea sx={{ height: '100%' }} onClick={() => navigate('/financas/orcamentos')}>
                 <CardContent>
@@ -83,7 +84,25 @@ const Financas: FC = () => {
               </CardActionArea>
             </Card>
           </Grid>
+        
+          <Grid item xs={12} md={6}>
+            <Card elevation={2} sx={{ height: '100%', borderRadius: 2 }}>
+              <CardActionArea sx={{ height: '100%' }} onClick={() => navigate('/financas/tipos')}>
+                <CardContent>
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                    <CategoryIcon color="secondary" sx={{ mr: 1 }} />
+                    <Typography variant="h6">Gerenciamento de Tipos</Typography>
+                  </Box>
+                  <Divider sx={{ mb: 2 }} />
+                  <Typography variant="body2" color="text.secondary">
+                    Gestão centralizada dos tipos de receitas e despesas.
+                  </Typography>
+                </CardContent>
+              </CardActionArea>
+            </Card>
+          </Grid>
         </Grid>
+
       </Container>
     </Box>
   );
