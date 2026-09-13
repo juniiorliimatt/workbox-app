@@ -53,7 +53,7 @@ const ResetPassword: FC = () => {
     },
   });
 
-  const onSubmit = async (data: any) => {
+  const onSubmit = async (data: { newPassword: string }) => {
     if (!token) {
       setFeedback({ type: 'error', msg: 'Token de recuperação não encontrado na URL.' });
       return;

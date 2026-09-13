@@ -15,15 +15,17 @@ import dayjs, { Dayjs } from 'dayjs';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 
 
-const BatchSpendingModal = ({ open, onClose, types, onSaved, api, showSnackbar }: any) => {
-  const [batchItems, setBatchItems] = useState<any[]>([{ date: dayjs(), referenceDate: null, typeId: '', description: '', value: '', wasPaid: false }]);
+interface BatchItem { date: dayjs.Dayjs | null; referenceDate: dayjs.Dayjs | null; typeId: string; description: string; value: string; wasPaid: boolean; }
+interface BatchSpendingModalProps { open: boolean; onClose: () => void; types: SpendingTypeDTO[]; onSaved: () => void; api: import('axios').AxiosInstance; showSnackbar: (msg: string, sev: 'success' | 'error') => void; }
+const BatchSpendingModal = ({ open, onClose, types, onSaved, api, showSnackbar }: BatchSpendingModalProps) => {
+  const [batchItems, setBatchItems] = useState<BatchItem[]>([{ date: dayjs(), referenceDate: null, typeId: '', description: '', value: '', wasPaid: false }]);
   const [batchLoading, setBatchLoading] = useState(false);
 
   useEffect(() => {
     if (open) setBatchItems([{ date: dayjs(), referenceDate: null, typeId: '', description: '', value: '', wasPaid: false }]);
   }, [open]);
 
-  const handleBatchChange = (index: number, field: string, val: any) => {
+  const handleBatchChange = (index: number, field: string, val: unknown) => {
     setBatchItems(prev => prev.map((item, i) => i === index ? { ...item, [field]: val } : item));
   };
 
@@ -76,7 +78,7 @@ const BatchSpendingModal = ({ open, onClose, types, onSaved, api, showSnackbar }
                 <Autocomplete
                   options={types}
                   getOptionLabel={(option) => option.name}
-                  value={types.find((t: any) => t.id === item.typeId) || null}
+                  value={types.find((t: SpendingTypeDTO) => t.id === item.typeId) || null}
                   onChange={(_, newValue) => handleBatchChange(index, 'typeId', newValue ? newValue.id : '')}
                   renderInput={(params) => <TextField {...params} label="Tipo" required size="small" />}
                   sx={{ width: 180 }}
@@ -403,7 +405,7 @@ const Despesas: FC = () => {
                 <Autocomplete
                   options={types}
                   getOptionLabel={(option) => option.name}
-                  value={types.find((t: any) => t.id === formTypeId) || null}
+                  value={types.find((t: SpendingTypeDTO) => t.id === formTypeId) || null}
                   onChange={(_, newValue) => setFormTypeId(newValue ? newValue.id : '')}
                   renderInput={(params) => <TextField {...params} label="Tipo" required margin="none" />}
                   sx={{ flexGrow: 1 }}

@@ -137,7 +137,7 @@ export const AdminUsuarios: FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [accessToken, debouncedSearch, page, rowsPerPage]);
+  }, [accessToken, debouncedSearch, page, rowsPerPage, orderBy, orderDirection]);
 
   const fetchRoles = useCallback(async () => {
     try {

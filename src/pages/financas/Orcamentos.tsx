@@ -7,7 +7,7 @@ import { TotalDTO, FiftyThirtyTwentyDTO, MonthlySummaryDTO, YearlySummaryDTO, Ty
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28'];
 
-const formatCurrency = (val: any) => Number(val || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+const formatCurrency = (val: number | undefined | null) => Number(val || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
 const Orcamentos: FC = () => {
   const api = useAxiosWithAuth();
@@ -116,7 +116,7 @@ const Orcamentos: FC = () => {
                           <Cell key={`cell-rs-${index}`} fill={entry.fill} />
                         ))}
                       </Pie>
-                      <RechartsTooltip formatter={(value: unknown) => formatCurrency(value)} />
+                      <RechartsTooltip formatter={(value: unknown) => formatCurrency(value as number)} />
                       <Legend verticalAlign="bottom" height={36} />
                     </PieChart>
                   </ResponsiveContainer>
@@ -156,7 +156,7 @@ const Orcamentos: FC = () => {
                           <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                         ))}
                       </Pie>
-                      <RechartsTooltip formatter={(value: unknown) => formatCurrency(value)} />
+                      <RechartsTooltip formatter={(value: unknown) => formatCurrency(value as number)} />
                       <Legend verticalAlign="bottom" height={36} />
                     </PieChart>
                   </ResponsiveContainer>

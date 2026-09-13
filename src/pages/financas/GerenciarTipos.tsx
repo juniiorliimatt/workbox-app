@@ -345,7 +345,7 @@ const GerenciarTipos: FC = () => {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {(auditTarget?.origin === 'rev' ? revAuditHistory : spendAuditHistory).map((rev: any) => (
+                  {(auditTarget?.origin === 'rev' ? revAuditHistory : spendAuditHistory).map((rev: RevenueTypeRevisionDTO & SpendingTypeRevisionDTO) => (
                     <TableRow key={rev.revision} hover>
                       <TableCell sx={{ fontWeight: 600 }}>#{rev.revision}</TableCell>
                       <TableCell>{getRevisionTypeChip(rev.revisionType)}</TableCell>
@@ -380,7 +380,7 @@ const GerenciarTipos: FC = () => {
         onCancel={() => setConfirmTarget(null)}
         onConfirm={() => {
           if (!confirmTarget) return;
-          confirmTarget.origin === 'rev' ? executeDeleteRev(confirmTarget.id) : executeDeleteSpend(confirmTarget.id);
+          if (confirmTarget.origin === 'rev') { executeDeleteRev(confirmTarget.id); } else { executeDeleteSpend(confirmTarget.id); }
         }}
       />
     </Box>

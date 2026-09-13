@@ -102,7 +102,7 @@ const Login: FC = () => {
     try {
       await api.post('/api/v1/auth/forgot-password', { email: forgotEmail });
       setForgotFeedback({ type: 'success', msg: 'Se o e-mail existir no sistema, você receberá um link de recuperação.' });
-    } catch (err: unknown) {
+    } catch (_err: unknown) {
       setForgotFeedback({ type: 'error', msg: 'Ocorreu um erro ao tentar recuperar a senha.' });
     } finally {
       setIsSubmittingForgot(false);

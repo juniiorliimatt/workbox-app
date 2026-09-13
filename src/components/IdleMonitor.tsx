@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useLocation } from 'react-router-dom';
 
@@ -9,7 +9,7 @@ export const IdleMonitor = () => {
   const location = useLocation();
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  const resetTimer = () => {
+  const resetTimer = useCallback(() => {
     if (timerRef.current) {
       clearTimeout(timerRef.current);
     }
@@ -18,7 +18,7 @@ export const IdleMonitor = () => {
         logout();
       }, IDLE_TIMEOUT_MS);
     }
-  };
+  }, [isAuthenticated, logout]);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -44,7 +44,7 @@ export const IdleMonitor = () => {
         window.removeEventListener(event, handleActivity);
       });
     };
-  }, [isAuthenticated, logout, location.pathname]);
+  }, [isAuthenticated, location.pathname, resetTimer]);
 
   return null;
 };

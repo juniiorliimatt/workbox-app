@@ -14,15 +14,17 @@ import dayjs, { Dayjs } from 'dayjs';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 
 
-const BatchRevenueModal = ({ open, onClose, types, onSaved, api, showSnackbar }: any) => {
-  const [batchItems, setBatchItems] = useState<any[]>([{ date: dayjs(), referenceDate: null, typeId: '', value: '' }]);
+interface BatchItem { date: dayjs.Dayjs | null; referenceDate: dayjs.Dayjs | null; typeId: string; value: string; }
+interface BatchRevenueModalProps { open: boolean; onClose: () => void; types: RevenueTypeDTO[]; onSaved: () => void; api: import('axios').AxiosInstance; showSnackbar: (msg: string, sev: 'success' | 'error') => void; }
+const BatchRevenueModal = ({ open, onClose, types, onSaved, api, showSnackbar }: BatchRevenueModalProps) => {
+  const [batchItems, setBatchItems] = useState<BatchItem[]>([{ date: dayjs(), referenceDate: null, typeId: '', value: '' }]);
   const [batchLoading, setBatchLoading] = useState(false);
 
   useEffect(() => {
     if (open) setBatchItems([{ date: dayjs(), referenceDate: null, typeId: '', value: '' }]);
   }, [open]);
 
-  const handleBatchChange = (index: number, field: string, val: any) => {
+  const handleBatchChange = (index: number, field: string, val: unknown) => {
     setBatchItems(prev => prev.map((item, i) => i === index ? { ...item, [field]: val } : item));
   };
 
@@ -75,7 +77,7 @@ const BatchRevenueModal = ({ open, onClose, types, onSaved, api, showSnackbar }:
                 <Autocomplete
                   options={types}
                   getOptionLabel={(option) => option.name}
-                  value={types.find((t: any) => t.id === item.typeId) || null}
+                  value={types.find((t: RevenueTypeDTO) => t.id === item.typeId) || null}
                   onChange={(_, newValue) => handleBatchChange(index, 'typeId', newValue ? newValue.id : '')}
                   renderInput={(params) => <TextField {...params} label="Tipo" required size="small" />}
                   sx={{ flexGrow: 1 }}
@@ -386,7 +388,7 @@ const Receitas: FC = () => {
                 <Autocomplete
                   options={types}
                   getOptionLabel={(option) => option.name}
-                  value={types.find((t: any) => t.id === formTypeId) || null}
+                  value={types.find((t: RevenueTypeDTO) => t.id === formTypeId) || null}
                   onChange={(_, newValue) => setFormTypeId(newValue ? newValue.id : '')}
                   renderInput={(params) => <TextField {...params} label="Tipo" required margin="none" />}
                   sx={{ flexGrow: 1 }}
