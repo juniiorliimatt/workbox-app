@@ -98,3 +98,15 @@ export interface SpendingTypeRevisionDTO {
   revision: number;
   revisionType: string;
 }
+
+export interface YearlySummaryDTO {
+  totalRevenue: number;
+  totalSpending: number;
+  balance: number;
+}
+
+export interface TypeTotalDTO {
+  typeId: string;
+  typeName: string;
+  total: number;
+}

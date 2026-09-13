@@ -3,7 +3,7 @@ import { Box, Container, Paper, Typography, Grid, CircularProgress, TextField, M
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { useAxiosWithAuth } from '@/services/useAxiosWithAuth';
 import AppNavbar from '@/components/AppNavbar';
-import { TotalDTO, FiftyThirtyTwentyDTO, MonthlySummaryDTO } from '@/interfaces/budget';
+import { TotalDTO, FiftyThirtyTwentyDTO, MonthlySummaryDTO, YearlySummaryDTO, TypeTotalDTO } from '@/interfaces/budget';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28'];
 
@@ -17,22 +17,36 @@ const Orcamentos: FC = () => {
   const [revTotal, setRevTotal] = useState(0);
   const [spendTotal, setSpendTotal] = useState(0);
   const [ruleData, setRuleData] = useState<FiftyThirtyTwentyDTO | null>(null);
+  
   const [summary, setSummary] = useState<MonthlySummaryDTO | null>(null);
+  const [yearlySummary, setYearlySummary] = useState<YearlySummaryDTO | null>(null);
+  const [revenuesByType, setRevenuesByType] = useState<TypeTotalDTO[]>([]);
+  const [spendingsByType, setSpendingsByType] = useState<TypeTotalDTO[]>([]);
+
 
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
+      
       const p = { month, year };
-      const [revRes, spendRes, ruleRes, summaryRes] = await Promise.all([
+      const pYear = { year };
+      const [revRes, spendRes, ruleRes, summaryRes, yearlyRes, revByTypeRes, spendByTypeRes] = await Promise.all([
         api.get<TotalDTO>('/api/v1/revenues/total', { params: p }),
         api.get<TotalDTO>('/api/v1/spendings/total', { params: p }),
         api.get<FiftyThirtyTwentyDTO>('/api/v1/budget-rules/fifty-thirty-twenty', { params: p }),
-        api.get<MonthlySummaryDTO>('/api/v1/budget-rules/monthly-summary', { params: p })
+        api.get<MonthlySummaryDTO>('/api/v1/budget-rules/monthly-summary', { params: p }),
+        api.get<YearlySummaryDTO>('/api/v1/budget-rules/yearly-summary', { params: pYear }),
+        api.get<TypeTotalDTO[]>('/api/v1/revenues/by-type', { params: pYear }),
+        api.get<TypeTotalDTO[]>('/api/v1/spendings/by-type', { params: pYear })
       ]);
       setRevTotal(revRes.data.total || 0);
       setSpendTotal(spendRes.data.total || 0);
       setRuleData(ruleRes.data);
       setSummary(summaryRes.data);
+      setYearlySummary(yearlyRes.data);
+      setRevenuesByType(revByTypeRes.data || []);
+      setSpendingsByType(spendByTypeRes.data || []);
+
     } catch (e) {
       console.error(e);
     } finally {
@@ -172,7 +186,76 @@ const Orcamentos: FC = () => {
                   ))}
                 </Grid>
               </Paper>
+
             </Grid>
+
+            {/* SEÇÃO ANUAL */}
+            <Grid item xs={12} sx={{ mt: 2 }}>
+              <Typography variant="h5" gutterBottom color="primary.main" sx={{ fontWeight: 'bold' }}>
+                Visão Anual ({year})
+              </Typography>
+            </Grid>
+
+            <Grid item xs={12}>
+              <Paper sx={{ p: 3, mb: 3 }}>
+                <Typography variant="h6" gutterBottom>Resumo Geral do Ano</Typography>
+                <Grid container spacing={2}>
+                  <Grid item xs={12} sm={4}>
+                    <Paper variant="outlined" sx={{ p: 2, textAlign: 'center', bgcolor: 'success.light', color: 'success.contrastText' }}>
+                      <Typography variant="subtitle2">Total de Receitas (Ano)</Typography>
+                      <Typography variant="h6">R$ {yearlySummary?.totalRevenue.toFixed(2) || '0.00'}</Typography>
+                    </Paper>
+                  </Grid>
+                  <Grid item xs={12} sm={4}>
+                    <Paper variant="outlined" sx={{ p: 2, textAlign: 'center', bgcolor: 'error.light', color: 'error.contrastText' }}>
+                      <Typography variant="subtitle2">Total de Despesas (Ano)</Typography>
+                      <Typography variant="h6">R$ {yearlySummary?.totalSpending.toFixed(2) || '0.00'}</Typography>
+                    </Paper>
+                  </Grid>
+                  <Grid item xs={12} sm={4}>
+                    <Paper variant="outlined" sx={{ p: 2, textAlign: 'center', bgcolor: (yearlySummary?.balance || 0) >= 0 ? 'info.light' : 'warning.light' }}>
+                      <Typography variant="subtitle2">Saldo (Ano)</Typography>
+                      <Typography variant="h6">R$ {yearlySummary?.balance.toFixed(2) || '0.00'}</Typography>
+                    </Paper>
+                  </Grid>
+                </Grid>
+              </Paper>
+            </Grid>
+
+            <Grid item xs={12} md={6}>
+              <Paper sx={{ p: 3, height: 400, display: 'flex', flexDirection: 'column' }}>
+                <Typography variant="h6" align="center" gutterBottom>Receitas por Tipo ({year})</Typography>
+                <Box sx={{ flexGrow: 1, minHeight: 0 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={revenuesByType} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="typeName" />
+                      <YAxis />
+                      <RechartsTooltip formatter={(value: any) => `R$ ${Number(value || 0).toFixed(2)}`} />
+                      <Bar dataKey="total" fill="#4caf50" name="Valor Arrecadado" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </Box>
+              </Paper>
+            </Grid>
+
+            <Grid item xs={12} md={6}>
+              <Paper sx={{ p: 3, height: 400, display: 'flex', flexDirection: 'column' }}>
+                <Typography variant="h6" align="center" gutterBottom>Despesas por Tipo ({year})</Typography>
+                <Box sx={{ flexGrow: 1, minHeight: 0 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={spendingsByType} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="typeName" />
+                      <YAxis />
+                      <RechartsTooltip formatter={(value: any) => `R$ ${Number(value || 0).toFixed(2)}`} />
+                      <Bar dataKey="total" fill="#f44336" name="Valor Gasto" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </Box>
+              </Paper>
+            </Grid>
+
           </Grid>
         )}
       </Container>
