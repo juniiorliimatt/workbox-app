@@ -1,5 +1,5 @@
 import { FC, useState, useEffect, useCallback } from 'react';
-import { Box, Container, Paper, Typography, Grid, CircularProgress, TextField, MenuItem, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Tabs, Tab } from '@mui/material';
+import { Box, Container, Button, Paper, Typography, Grid, CircularProgress, TextField, MenuItem, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Tabs, Tab } from '@mui/material';
 import { Tooltip as RechartsTooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { useAxiosWithAuth } from '@/services/useAxiosWithAuth';
 import AppNavbar from '@/components/AppNavbar';
@@ -14,6 +14,8 @@ const Orcamentos: FC = () => {
   const today = new Date();
   const [month, setMonth] = useState(today.getMonth() + 1);
   const [year, setYear] = useState(today.getFullYear());
+  const [appliedMonth, setAppliedMonth] = useState(today.getMonth() + 1);
+  const [appliedYear, setAppliedYear] = useState(today.getFullYear());
   const [tabValue, setTabValue] = useState(0);
   
   const [loading, setLoading] = useState(false);
@@ -31,8 +33,8 @@ const Orcamentos: FC = () => {
     setLoading(true);
     try {
       
-      const p = { month, year };
-      const pYear = { year };
+      const p = { month: appliedMonth, year: appliedYear };
+      const pYear = { year: appliedYear };
       const [revRes, spendRes, ruleRes, summaryRes, yearlyRes, revByTypeRes, spendByTypeRes] = await Promise.all([
         api.get<TotalDTO>('/api/v1/revenues/total', { params: p }),
         api.get<TotalDTO>('/api/v1/spendings/total', { params: p }),
@@ -55,7 +57,7 @@ const Orcamentos: FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [api, month, year]);
+  }, [api, appliedMonth, appliedYear]);
 
   useEffect(() => {
     loadData();
@@ -82,16 +84,6 @@ const Orcamentos: FC = () => {
     <Box sx={{ width: '100%', minHeight: '100vh', bgcolor: 'grey.50', display: 'flex', flexDirection: 'column' }}>
       <AppNavbar title="Metas e Orçamentos" showBackButton backPath="/financas" backLabel="Voltar" />
       <Container maxWidth="xl" sx={{ mt: 4, mb: 4, flexGrow: 1 }}>
-        <Paper sx={{ p: 2, mb: 3, display: 'flex', gap: 2, alignItems: 'center' }}>
-          <Typography variant="subtitle1">Filtro:</Typography>
-          <TextField select label="Mês" value={month} onChange={e => setMonth(Number(e.target.value))} size="small">
-            {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
-              <MenuItem key={m} value={m}>{m.toString().padStart(2, '0')}</MenuItem>
-            ))}
-          </TextField>
-          <TextField type="number" label="Ano" value={year} onChange={e => setYear(Number(e.target.value))} size="small" />
-        </Paper>
-
         <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
           <Tabs value={tabValue} onChange={(_, newValue) => setTabValue(newValue)} variant="fullWidth" centered>
             <Tab label="Visão Mensal" />
@@ -104,7 +96,7 @@ const Orcamentos: FC = () => {
         ) : (
           <>
             <Box sx={{ display: tabValue === 0 ? 'block' : 'none' }}>
-              <Paper elevation={0} variant="outlined" sx={{ p: 2, mb: 3, display: 'flex', gap: 2, alignItems: 'center', bgcolor: 'grey.50' }}>
+              <Paper elevation={0} variant="outlined" sx={{ p: 2, mb: 3, display: 'flex', gap: 2, alignItems: 'center', justifyContent: 'flex-end', bgcolor: 'grey.50' }}>
                 <Typography variant="subtitle2" color="text.secondary">Filtro Mensal:</Typography>
                 <TextField select label="Mês" value={month} onChange={e => setMonth(Number(e.target.value))} size="small" sx={{ minWidth: 100 }}>
                   {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
@@ -112,6 +104,7 @@ const Orcamentos: FC = () => {
                   ))}
                 </TextField>
                 <TextField type="number" label="Ano" value={year} onChange={e => setYear(Number(e.target.value))} size="small" sx={{ width: 100 }} />
+                <Button variant="contained" onClick={() => { setAppliedMonth(month); setAppliedYear(year); }}>Filtrar</Button>
               </Paper>
               <Grid container spacing={3}>
             <Grid item xs={12} md={6}>
@@ -252,9 +245,10 @@ const Orcamentos: FC = () => {
             </Grid>
             </Box>
             <Box sx={{ display: tabValue === 1 ? 'block' : 'none' }}>
-              <Paper elevation={0} variant="outlined" sx={{ p: 2, mb: 3, display: 'flex', gap: 2, alignItems: 'center', bgcolor: 'grey.50' }}>
+              <Paper elevation={0} variant="outlined" sx={{ p: 2, mb: 3, display: 'flex', gap: 2, alignItems: 'center', justifyContent: 'flex-end', bgcolor: 'grey.50' }}>
                 <Typography variant="subtitle2" color="text.secondary">Filtro Anual:</Typography>
                 <TextField type="number" label="Ano" value={year} onChange={e => setYear(Number(e.target.value))} size="small" sx={{ width: 100 }} />
+                <Button variant="contained" onClick={() => { setAppliedYear(year); setAppliedMonth(month); }}>Filtrar</Button>
               </Paper>
               <Grid container spacing={3}>
             
