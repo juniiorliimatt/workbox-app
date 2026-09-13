@@ -91,7 +91,7 @@ const Orcamentos: FC = () => {
         </Paper>
 
         <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
-          <Tabs value={tabValue} onChange={(_, newValue) => setTabValue(newValue)}>
+          <Tabs value={tabValue} onChange={(_, newValue) => setTabValue(newValue)} variant="fullWidth" centered>
             <Tab label="Visão Mensal" />
             <Tab label="Visão Anual" />
           </Tabs>
