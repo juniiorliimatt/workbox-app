@@ -33,7 +33,7 @@ const Receitas: FC = () => {
       ]);
       setRevenues(Array.isArray(revRes.data?.content) ? revRes.data.content : []);
       setTypes(Array.isArray(typeRes.data) ? typeRes.data : []);
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
     } finally {
       setLoading(false);
@@ -54,7 +54,7 @@ const Receitas: FC = () => {
       });
       setOpen(false);
       loadData();
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
       alert('Erro ao salvar receita');
     }
@@ -69,9 +69,9 @@ const Receitas: FC = () => {
       setFormTypeId(res.data.id);
       setOpenTypeModal(false);
       setNewTypeName('');
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
-      alert('Erro ao salvar tipo de receita');
+      alert(`Erro: ${e?.response?.data?.message || e?.message || "Desconhecido"}`);
     } finally {
       setTypeLoading(false);
     }
@@ -82,7 +82,7 @@ const Receitas: FC = () => {
     try {
       await api.delete(`/api/v1/revenues/${id}`);
       loadData();
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
     }
   };
