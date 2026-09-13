@@ -55,7 +55,7 @@ const BatchSpendingModal = ({ open, onClose, types, onSaved, api, showSnackbar }
       showSnackbar('Despesas em lote cadastradas com sucesso!', 'success');
       onClose();
       onSaved();
-    } catch (e: any) {
+    } catch (e: unknown) {
       showSnackbar(`Erro ao salvar lote: ${e?.response?.data?.message || e?.message}`, 'error');
     } finally {
       setBatchLoading(false);
@@ -149,7 +149,7 @@ const Despesas: FC = () => {
     try {
       const res = await api.get(`/api/v1/spendings/${item.id}/history`);
       setAuditHistory(res.data || []);
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error(e);
       showSnackbar('Erro ao carregar histórico de auditoria', 'error');
     } finally {
@@ -176,7 +176,7 @@ const Despesas: FC = () => {
       setSpendings(Array.isArray(spendRes.data?.content) ? spendRes.data.content : []);
       setTotalElements(spendRes.data?.totalElements || 0);
       setTypes(Array.isArray(typeRes.data) ? typeRes.data : []);
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error(e);
     } finally {
       setLoading(false);
@@ -247,7 +247,7 @@ const Despesas: FC = () => {
       
       setOpen(false);
       loadData();
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error(e);
       showSnackbar(`Erro ao salvar despesa: ${e?.response?.data?.message || e?.message || 'Desconhecido'}`, 'error');
     }
@@ -258,7 +258,7 @@ const Despesas: FC = () => {
       await api.delete(`/api/v1/spendings/${id}`);
       loadData();
       showSnackbar('Despesa excluída com sucesso!', 'success');
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error(e);
       showSnackbar(`Erro ao excluir despesa: ${e?.response?.data?.message || 'Desconhecido'}`, 'error');
     } finally {
@@ -277,7 +277,7 @@ const Despesas: FC = () => {
       setNewTypeName('');
       setNewTypeCategory('ESSENTIAL');
       showSnackbar('Tipo salvo com sucesso!', 'success');
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error(e);
       showSnackbar(`Erro: ${e?.response?.data?.message || e?.message || 'Desconhecido'}`, 'error');
     } finally {
@@ -297,7 +297,7 @@ const Despesas: FC = () => {
       setTypes(prev => prev.filter(t => t.id !== id));
       setFormTypeId('');
       showSnackbar('Tipo excluído com sucesso!', 'success');
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error(e);
       showSnackbar(`Erro ao excluir tipo: ${e?.response?.data?.message || 'Em uso por despesas existentes'}`, 'error');
     } finally {

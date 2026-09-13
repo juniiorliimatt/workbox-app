@@ -54,7 +54,7 @@ const BatchRevenueModal = ({ open, onClose, types, onSaved, api, showSnackbar }:
       showSnackbar('Receitas em lote cadastradas com sucesso!', 'success');
       onClose();
       onSaved();
-    } catch (e: any) {
+    } catch (e: unknown) {
       showSnackbar(`Erro ao salvar lote: ${e?.response?.data?.message || e?.message}`, 'error');
     } finally {
       setBatchLoading(false);
@@ -144,7 +144,7 @@ const Receitas: FC = () => {
     try {
       const res = await api.get(`/api/v1/revenues/${item.id}/history`);
       setAuditHistory(res.data || []);
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error(e);
       showSnackbar('Erro ao carregar histórico de auditoria', 'error');
     } finally {
@@ -171,7 +171,7 @@ const Receitas: FC = () => {
       setRevenues(Array.isArray(revRes.data?.content) ? revRes.data.content : []);
       setTotalElements(revRes.data?.totalElements || 0);
       setTypes(Array.isArray(typeRes.data) ? typeRes.data : []);
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error(e);
     } finally {
       setLoading(false);
@@ -236,7 +236,7 @@ const Receitas: FC = () => {
       
       setOpen(false);
       loadData();
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error(e);
       showSnackbar(`Erro: ${e?.response?.data?.message || e?.message || 'Desconhecido'}`, 'error');
     }
@@ -247,7 +247,7 @@ const Receitas: FC = () => {
       await api.delete(`/api/v1/revenues/${id}`);
       loadData();
       showSnackbar('Receita excluída com sucesso!', 'success');
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error(e);
       showSnackbar('Erro ao excluir receita', 'error');
     } finally {
@@ -267,7 +267,7 @@ const Receitas: FC = () => {
     setNewTypeInclude(true);
     setNewTypeMonthlyInclude(true);
       showSnackbar('Tipo criado com sucesso!', 'success');
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error(e);
       showSnackbar(`Erro: ${e?.response?.data?.message || e?.message || 'Desconhecido'}`, 'error');
     } finally {
@@ -287,7 +287,7 @@ const Receitas: FC = () => {
       setTypes(prev => prev.filter(t => t.id !== id));
       setFormTypeId('');
       showSnackbar('Tipo excluído com sucesso!', 'success');
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error(e);
       showSnackbar(`Erro ao excluir tipo: ${e?.response?.data?.message || 'Em uso por receitas existentes'}`, 'error');
     } finally {

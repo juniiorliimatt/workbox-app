@@ -54,7 +54,7 @@ const GerenciarTipos: FC = () => {
       const res = await api.get(endpoint);
       if (origin === 'rev') setRevAuditHistory(res.data || []);
       else setSpendAuditHistory(res.data || []);
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error(e);
       showSnackbar('Erro ao carregar histórico de auditoria', 'error');
     } finally {
@@ -80,7 +80,7 @@ const GerenciarTipos: FC = () => {
       ]);
       setRevenueTypes(Array.isArray(revRes.data) ? revRes.data : []);
       setSpendingTypes(Array.isArray(spendRes.data) ? spendRes.data : []);
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error(e);
       showSnackbar('Erro ao carregar os tipos.', 'error');
     } finally {
@@ -120,7 +120,7 @@ const GerenciarTipos: FC = () => {
       }
       setOpenRevModal(false);
       loadData();
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error(e);
       showSnackbar(`Erro: ${e?.response?.data?.message || 'Falha ao salvar'}`, 'error');
     } finally {
@@ -133,7 +133,7 @@ const GerenciarTipos: FC = () => {
       await api.delete(`/api/v1/revenue-types/${id}`);
       showSnackbar('Tipo de receita excluído!', 'success');
       loadData();
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error(e);
       showSnackbar(`Erro: ${e?.response?.data?.message || 'Em uso ou não encontrado'}`, 'error');
     } finally {
@@ -169,7 +169,7 @@ const GerenciarTipos: FC = () => {
       }
       setOpenSpendModal(false);
       loadData();
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error(e);
       showSnackbar(`Erro: ${e?.response?.data?.message || 'Falha ao salvar'}`, 'error');
     } finally {
@@ -182,7 +182,7 @@ const GerenciarTipos: FC = () => {
       await api.delete(`/api/v1/spending-types/${id}`);
       showSnackbar('Tipo de despesa excluído!', 'success');
       loadData();
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error(e);
       showSnackbar(`Erro: ${e?.response?.data?.message || 'Em uso ou não encontrado'}`, 'error');
     } finally {
