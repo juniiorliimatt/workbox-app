@@ -226,7 +226,7 @@ const Despesas: FC = () => {
         value: Number(item.value),
         wasPaid: item.wasPaid
       }));
-      await api.post('/api/v1/spendings/batch', payload);
+      await api.post('/api/v1/spendings/batch', { spendings: payload });
       showSnackbar('Despesas em lote cadastradas com sucesso!', 'success');
       setOpenBatchModal(false);
       setBatchItems([{ date: dayjs(), referenceDate: null, typeId: '', description: '', value: '', wasPaid: false }]);

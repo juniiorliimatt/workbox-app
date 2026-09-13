@@ -212,7 +212,7 @@ const Receitas: FC = () => {
         typeId: item.typeId,
         value: Number(item.value)
       }));
-      await api.post('/api/v1/revenues/batch', payload);
+      await api.post('/api/v1/revenues/batch', { revenues: payload });
       showSnackbar('Receitas em lote cadastradas com sucesso!', 'success');
       setOpenBatchModal(false);
       setBatchItems([{ date: dayjs(), referenceDate: null, typeId: '', value: '' }]);
