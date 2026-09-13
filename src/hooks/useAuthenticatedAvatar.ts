@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import api from '@/services/api';
 
+const avatarPromiseCache = new Map<string, Promise<string>>();
+
 export const useAuthenticatedAvatar = (
   avatarUrl?: string | null,
   accessToken?: string | null
@@ -9,7 +11,6 @@ export const useAuthenticatedAvatar = (
 
   useEffect(() => {
     let active = true;
-    let currentObjectUrl: string | null = null;
 
     if (!avatarUrl) {
       setBlobUrl(null);
@@ -21,35 +22,35 @@ export const useAuthenticatedAvatar = (
       return;
     }
 
-    const fetchAvatarBlob = async () => {
-      try {
-        const response = await api.get(avatarUrl, {
-          headers: accessToken
-            ? {
-                Authorization: `Bearer ${accessToken}`,
-              }
-            : undefined,
-          responseType: 'blob',
-        });
+    const cacheKey = `${avatarUrl}_${accessToken || 'anon'}`;
 
-        if (active) {
-          currentObjectUrl = URL.createObjectURL(response.data);
-          setBlobUrl(currentObjectUrl);
-        }
-      } catch {
-        if (active) {
-          setBlobUrl(null);
-        }
-      }
-    };
+    if (avatarPromiseCache.has(cacheKey)) {
+      avatarPromiseCache.get(cacheKey)!.then(url => {
+        if (active) setBlobUrl(url);
+      }).catch(() => {
+        if (active) setBlobUrl(null);
+      });
+      return;
+    }
 
-    fetchAvatarBlob();
+    const fetchPromise = api.get(avatarUrl, {
+      headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
+      responseType: 'blob',
+    }).then(response => {
+      return URL.createObjectURL(response.data);
+    });
+
+    avatarPromiseCache.set(cacheKey, fetchPromise);
+
+    fetchPromise.then(url => {
+      if (active) setBlobUrl(url);
+    }).catch(() => {
+      avatarPromiseCache.delete(cacheKey);
+      if (active) setBlobUrl(null);
+    });
 
     return () => {
       active = false;
-      if (currentObjectUrl) {
-        URL.revokeObjectURL(currentObjectUrl);
-      }
     };
   }, [avatarUrl, accessToken]);
 
