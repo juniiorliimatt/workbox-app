@@ -3,9 +3,9 @@ import { Box, Container, Paper, Typography, Grid, CircularProgress, TextField, M
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { useAxiosWithAuth } from '@/services/useAxiosWithAuth';
 import AppNavbar from '@/components/AppNavbar';
-import { TotalDTO, BudgetBucketDTO } from '@/interfaces/budget';
+import { TotalDTO, FiftyThirtyTwentyDTO } from '@/interfaces/budget';
 
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28'];
 
 const Orcamentos: FC = () => {
   const api = useAxiosWithAuth();
@@ -16,117 +16,125 @@ const Orcamentos: FC = () => {
   const [loading, setLoading] = useState(false);
   const [revTotal, setRevTotal] = useState(0);
   const [spendTotal, setSpendTotal] = useState(0);
-  const [buckets, setBuckets] = useState<BudgetBucketDTO[]>([]);
+  const [ruleData, setRuleData] = useState<FiftyThirtyTwentyDTO | null>(null);
 
   const loadData = useCallback(async () => {
-    
     setLoading(true);
     try {
       const p = { month, year };
       const [revRes, spendRes, ruleRes] = await Promise.all([
         api.get<TotalDTO>('/api/v1/revenues/total', { params: p }),
         api.get<TotalDTO>('/api/v1/spendings/total', { params: p }),
-        api.get<BudgetBucketDTO[]>('/api/v1/budget-rules/fifty-thirty-twenty', { params: p })
+        api.get<FiftyThirtyTwentyDTO>('/api/v1/budget-rules/fifty-thirty-twenty', { params: p })
       ]);
       setRevTotal(revRes.data.total || 0);
       setSpendTotal(spendRes.data.total || 0);
-      setBuckets(Array.isArray(ruleRes.data) ? ruleRes.data : []);
+      setRuleData(ruleRes.data);
     } catch (e) {
       console.error(e);
     } finally {
       setLoading(false);
     }
-  }, [month, year]);
+  }, [api, month, year]);
 
   useEffect(() => {
     loadData();
   }, [loadData]);
 
-  
-
   const barData = [
     { name: 'Geral', Receitas: revTotal, Despesas: spendTotal }
   ];
 
-  const pieData = buckets.map(b => ({
-    name: b.category,
-    value: b.currentSpending
-  })).filter(b => b.value > 0);
+  const pieData = ruleData ? [
+    { name: 'Essencial', value: ruleData.essential.actual },
+    { name: 'Pessoal', value: ruleData.personal.actual },
+    { name: 'Economia', value: ruleData.savings.actual }
+  ].filter(b => b.value > 0) : [];
+
+  const buckets = ruleData ? [
+    { label: 'Gastos Essenciais (50%)', data: ruleData.essential },
+    { label: 'Gastos Pessoais (30%)', data: ruleData.personal },
+    { label: 'Economia/Investimentos (20%)', data: ruleData.savings }
+  ] : [];
 
   return (
     <Box sx={{ width: '100%', minHeight: '100vh', bgcolor: 'grey.50', display: 'flex', flexDirection: 'column' }}>
       <AppNavbar title="Metas e Orçamentos" showBackButton backPath="/financas" backLabel="Voltar" />
       <Container maxWidth="xl" sx={{ mt: 4, mb: 4, flexGrow: 1 }}>
-      <Paper sx={{ p: 2, mb: 3, display: 'flex', gap: 2, alignItems: 'center' }}>
-        <Typography variant="subtitle1">Filtro:</Typography>
-        <TextField select label="Mês" value={month} onChange={e => setMonth(Number(e.target.value))} size="small">
-          {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
-            <MenuItem key={m} value={m}>{m.toString().padStart(2, '0')}</MenuItem>
-          ))}
-        </TextField>
-        <TextField type="number" label="Ano" value={year} onChange={e => setYear(Number(e.target.value))} size="small" />
-      </Paper>
+        <Paper sx={{ p: 2, mb: 3, display: 'flex', gap: 2, alignItems: 'center' }}>
+          <Typography variant="subtitle1">Filtro:</Typography>
+          <TextField select label="Mês" value={month} onChange={e => setMonth(Number(e.target.value))} size="small">
+            {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
+              <MenuItem key={m} value={m}>{m.toString().padStart(2, '0')}</MenuItem>
+            ))}
+          </TextField>
+          <TextField type="number" label="Ano" value={year} onChange={e => setYear(Number(e.target.value))} size="small" />
+        </Paper>
 
-      {loading ? (
-        <Box sx={{ display: 'flex', justifyContent: 'center', p: 5 }}><CircularProgress /></Box>
-      ) : (
-        <Grid container spacing={3}>
-          <Grid item xs={12} md={6}>
-            <Paper sx={{ p: 3, height: 400 }}>
-              <Typography variant="h6" align="center" gutterBottom>Receitas vs Despesas</Typography>
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={barData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <RechartsTooltip />
-                  <Legend />
-                  <Bar dataKey="Receitas" fill="#4caf50" />
-                  <Bar dataKey="Despesas" fill="#f44336" />
-                </BarChart>
-              </ResponsiveContainer>
-            </Paper>
+        {loading ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', p: 5 }}><CircularProgress /></Box>
+        ) : (
+          <Grid container spacing={3}>
+            <Grid item xs={12} md={6}>
+              <Paper sx={{ p: 3, height: 400, display: 'flex', flexDirection: 'column' }}>
+                <Typography variant="h6" align="center" gutterBottom>Receitas vs Despesas</Typography>
+                <Box sx={{ flexGrow: 1, minHeight: 0 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={barData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" />
+                      <YAxis />
+                      <RechartsTooltip formatter={(value: any) => `R$ ${Number(value || 0).toFixed(2)}`} />
+                      <Legend verticalAlign="bottom" height={36} />
+                      <Bar dataKey="Receitas" fill="#4caf50" />
+                      <Bar dataKey="Despesas" fill="#f44336" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </Box>
+              </Paper>
+            </Grid>
+            
+            <Grid item xs={12} md={6}>
+              <Paper sx={{ p: 3, height: 400, display: 'flex', flexDirection: 'column' }}>
+                <Typography variant="h6" align="center" gutterBottom>Gastos por Meta (50/30/20)</Typography>
+                <Box sx={{ flexGrow: 1, minHeight: 0 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie data={pieData} cx="50%" cy="50%" outerRadius={100} fill="#8884d8" dataKey="value" label={({ name, percent }: any) => `${name} (${(Number(percent || 0) * 100).toFixed(0)}%)`}>
+                        {pieData.map((_, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <RechartsTooltip formatter={(value: any) => `R$ ${Number(value || 0).toFixed(2)}`} />
+                      <Legend verticalAlign="bottom" height={36} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </Box>
+              </Paper>
+            </Grid>
+            
+            <Grid item xs={12}>
+              <Paper sx={{ p: 3 }}>
+                <Typography variant="h6" gutterBottom>Status das Metas (Orçamento)</Typography>
+                <Grid container spacing={2}>
+                  {buckets.map(b => (
+                    <Grid item xs={12} md={4} key={b.label}>
+                      <Paper variant="outlined" sx={{ p: 2, textAlign: 'center' }}>
+                        <Typography variant="subtitle1" color="primary">{b.label}</Typography>
+                        <Typography variant="body2">Teto: R$ {b.data.target.toFixed(2)}</Typography>
+                        <Typography variant="body2">Gasto: R$ {b.data.actual.toFixed(2)}</Typography>
+                        <Typography variant="body2" color={b.data.difference < 0 ? 'error' : 'success.main'} sx={{ fontWeight: 'bold', mt: 1 }}>
+                          Restante: R$ {b.data.difference.toFixed(2)}
+                        </Typography>
+                      </Paper>
+                    </Grid>
+                  ))}
+                </Grid>
+              </Paper>
+            </Grid>
           </Grid>
-          
-          <Grid item xs={12} md={6}>
-            <Paper sx={{ p: 3, height: 400 }}>
-              <Typography variant="h6" align="center" gutterBottom>Gastos por Meta (50/30/20)</Typography>
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie data={pieData} cx="50%" cy="50%" outerRadius={100} fill="#8884d8" dataKey="value" label>
-                    {pieData.map((_, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <RechartsTooltip />
-                  <Legend />
-                </PieChart>
-              </ResponsiveContainer>
-            </Paper>
-          </Grid>
-          
-          <Grid item xs={12}>
-            <Paper sx={{ p: 3 }}>
-              <Typography variant="h6" gutterBottom>Status das Metas (Orçamento)</Typography>
-              <Grid container spacing={2}>
-                {buckets.map(b => (
-                  <Grid item xs={12} md={4} key={b.category}>
-                    <Paper variant="outlined" sx={{ p: 2, textAlign: 'center' }}>
-                      <Typography variant="subtitle1" color="primary">{b.category}</Typography>
-                      <Typography variant="body2">Teto: R$ {b.targetSpending.toFixed(2)}</Typography>
-                      <Typography variant="body2">Gasto: R$ {b.currentSpending.toFixed(2)}</Typography>
-                      <Typography variant="body2" color={b.remaining < 0 ? 'error' : 'success.main'}>
-                        Restante: R$ {b.remaining.toFixed(2)}
-                      </Typography>
-                    </Paper>
-                  </Grid>
-                ))}
-              </Grid>
-            </Paper>
-          </Grid>
-        </Grid>
-      )}
-    </Container>
+        )}
+      </Container>
     </Box>
   );
 };

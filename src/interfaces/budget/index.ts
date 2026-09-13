@@ -34,8 +34,14 @@ export interface TotalDTO {
 }
 
 export interface BudgetBucketDTO {
-  category: 'ESSENTIAL' | 'PERSONAL' | 'SAVINGS';
-  currentSpending: number;
-  targetSpending: number;
-  remaining: number;
+  actual: number;
+  target: number;
+  difference: number;
+}
+
+export interface FiftyThirtyTwentyDTO {
+  essential: BudgetBucketDTO;
+  personal: BudgetBucketDTO;
+  savings: BudgetBucketDTO;
+  totalRevenue: number;
 }
