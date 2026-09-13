@@ -131,3 +131,35 @@ para os endpoints de CRUD — só é verdade pra um lugar específico.
 Code corrigir de volta (`UPDATE workbox.roles SET authority='ADMIN' WHERE id=1`) depois
 que o front parar de reintroduzir o prefixo — não adianta corrigir o dado se a tela
 ainda vai regravar `ROLE_ADMIN` na próxima edição.
+
+## Incidente 2026-09-13 — `catch (e: unknown)` sem narrowing quebrou o build
+
+Um commit de lint (`chore(lint): corrige erros de tipagem any em blocos catch`) trocou
+`catch (e: any)` por `catch (e: unknown)` em `Despesas.tsx`, `Receitas.tsx` e
+`GerenciarTipos.tsx`, mas manteve acesso direto a `e.response.data.message`/`e.message`
+sem narrowing — isso não compila (`Property 'response' does not exist on type
+'unknown'`) e **derrubou o build de produção inteiro**. O mesmo commit também trocou o
+tipo do `label` de dois `<Pie>` (recharts) em `Orcamentos.tsx` pra `{ name: string }`,
+quando a lib entrega `name` como `string | undefined` — outro erro de overload que
+quebrava o build.
+
+**Regra reforçada, não só "evitar `any`" — trocar `any` por um tipo que não bate com o
+shape real do dado é pior que deixar `any`, porque quebra o build silenciosamente até
+alguém rodar `tsc`/`npm run build`:**
+
+- Antes de fazer commit que remove `any`/mexe em tipagem, **rode `npm run build` (ou
+  `tsc --noEmit`) localmente e confirme que passa** — não basta o editor não sublinhar
+  erro; ESLint e o compilador TypeScript real (`tsc`) podem discordar.
+- Pra erro vindo de `catch (e: unknown)` em chamada de API (axios): não acessar
+  `e.response`/`e.message` direto. Existe agora um helper pronto —
+  `getErrorMessage(e: unknown): string | undefined` em `src/utils/errors.ts` — usar ele
+  em vez de reinventar o narrowing em cada `catch`.
+- Pra props de bibliotecas externas (recharts, mui, etc.) que a lib tipa como opcional
+  (`?`), não estreitar pra obrigatório só porque "sempre vem preenchido na prática" — a
+  assinatura da função tem que ser compatível com o tipo que a lib exige, não com o que
+  parece razoável.
+- Corrigido nesse incidente pelo Claude Code (autorizado a mexer no front pontualmente
+  pra destravar o deploy) — ver commit `fix(financas): corrige regressão de build
+  introduzida pelo lint de catch` no `workbox-app`. Fica como referência de padrão a
+  seguir daqui pra frente, não repetir o `e?.response?.data?.message` cru em novos
+  `catch`.
