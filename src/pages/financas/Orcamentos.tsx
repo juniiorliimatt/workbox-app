@@ -97,10 +97,10 @@ const Orcamentos: FC = () => {
                 <Typography variant="h6" align="center" gutterBottom>Receitas vs Despesas</Typography>
                 <Box sx={{ flexGrow: 1, minHeight: 0 }}>
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={barData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                    <BarChart layout="vertical" data={barData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                       <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="name" />
-                      <YAxis />
+                      <XAxis type="number" />
+                      <YAxis dataKey="name" type="category" width={100} />
                       <RechartsTooltip formatter={(value: any) => `R$ ${Number(value || 0).toFixed(2)}`} />
                       <Legend verticalAlign="bottom" height={36} />
                       <Bar dataKey="Receitas" fill="#4caf50" />
@@ -227,10 +227,10 @@ const Orcamentos: FC = () => {
                 <Typography variant="h6" align="center" gutterBottom>Receitas por Tipo ({year})</Typography>
                 <Box sx={{ flexGrow: 1, minHeight: 0 }}>
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={revenuesByType} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                    <BarChart layout="vertical" data={revenuesByType} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                       <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="typeName" />
-                      <YAxis />
+                      <XAxis type="number" />
+                      <YAxis dataKey="typeName" type="category" width={150} />
                       <RechartsTooltip formatter={(value: any) => `R$ ${Number(value || 0).toFixed(2)}`} />
                       <Bar dataKey="total" fill="#4caf50" name="Valor Arrecadado" />
                     </BarChart>
@@ -244,10 +244,10 @@ const Orcamentos: FC = () => {
                 <Typography variant="h6" align="center" gutterBottom>Despesas por Tipo ({year})</Typography>
                 <Box sx={{ flexGrow: 1, minHeight: 0 }}>
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={spendingsByType} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                    <BarChart layout="vertical" data={spendingsByType} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                       <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="typeName" />
-                      <YAxis />
+                      <XAxis type="number" />
+                      <YAxis dataKey="typeName" type="category" width={150} />
                       <RechartsTooltip formatter={(value: any) => `R$ ${Number(value || 0).toFixed(2)}`} />
                       <Bar dataKey="total" fill="#f44336" name="Valor Gasto" />
                     </BarChart>
