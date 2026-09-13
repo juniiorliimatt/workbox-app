@@ -5,11 +5,12 @@ import {
   FormControlLabel, Checkbox
 } from '@mui/material';
 import { Add as AddIcon, Delete as DeleteIcon } from '@mui/icons-material';
-import api from '@/services/api';
+import { useAxiosWithAuth } from '@/services/useAxiosWithAuth';
 import AppNavbar from '@/components/AppNavbar';
 import { SpendingDTO, SpendingTypeDTO } from '@/interfaces/budget';
 
 const Despesas: FC = () => {
+  const api = useAxiosWithAuth();
   const [spendings, setSpendings] = useState<SpendingDTO[]>([]);
   const [types, setTypes] = useState<SpendingTypeDTO[]>([]);
   const [loading, setLoading] = useState(false);
@@ -29,8 +30,8 @@ const Despesas: FC = () => {
         api.get('/api/v1/spendings?size=1000'),
         api.get('/api/v1/spending-types')
       ]);
-      setSpendings(spendRes.data.content || []);
-      setTypes(typeRes.data || []);
+      setSpendings(Array.isArray(spendRes.data?.content) ? spendRes.data.content : []);
+      setTypes(Array.isArray(typeRes.data) ? typeRes.data : []);
     } catch (e) {
       console.error(e);
     } finally {

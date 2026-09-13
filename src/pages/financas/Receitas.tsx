@@ -4,11 +4,12 @@ import {
   IconButton, Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem, CircularProgress
 } from '@mui/material';
 import { Add as AddIcon, Delete as DeleteIcon } from '@mui/icons-material';
-import api from '@/services/api';
+import { useAxiosWithAuth } from '@/services/useAxiosWithAuth';
 import AppNavbar from '@/components/AppNavbar';
 import { RevenueDTO, RevenueTypeDTO } from '@/interfaces/budget';
 
 const Receitas: FC = () => {
+  const api = useAxiosWithAuth();
   const [revenues, setRevenues] = useState<RevenueDTO[]>([]);
   const [types, setTypes] = useState<RevenueTypeDTO[]>([]);
   const [loading, setLoading] = useState(false);
@@ -26,8 +27,8 @@ const Receitas: FC = () => {
         api.get('/api/v1/revenues?size=1000'),
         api.get('/api/v1/revenue-types')
       ]);
-      setRevenues(revRes.data.content || []);
-      setTypes(typeRes.data || []);
+      setRevenues(Array.isArray(revRes.data?.content) ? revRes.data.content : []);
+      setTypes(Array.isArray(typeRes.data) ? typeRes.data : []);
     } catch (e) {
       console.error(e);
     } finally {

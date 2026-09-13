@@ -1,13 +1,14 @@
 import { FC, useState, useEffect, useCallback } from 'react';
 import { Box, Container, Paper, Typography, Grid, CircularProgress, TextField, MenuItem } from '@mui/material';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import api from '@/services/api';
+import { useAxiosWithAuth } from '@/services/useAxiosWithAuth';
 import AppNavbar from '@/components/AppNavbar';
 import { TotalDTO, BudgetBucketDTO } from '@/interfaces/budget';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
 
 const Orcamentos: FC = () => {
+  const api = useAxiosWithAuth();
   const today = new Date();
   const [month, setMonth] = useState(today.getMonth() + 1);
   const [year, setYear] = useState(today.getFullYear());
@@ -29,7 +30,7 @@ const Orcamentos: FC = () => {
       ]);
       setRevTotal(revRes.data.total || 0);
       setSpendTotal(spendRes.data.total || 0);
-      setBuckets(ruleRes.data || []);
+      setBuckets(Array.isArray(ruleRes.data) ? ruleRes.data : []);
     } catch (e) {
       console.error(e);
     } finally {
