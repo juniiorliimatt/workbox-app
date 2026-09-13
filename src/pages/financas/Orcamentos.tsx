@@ -1,5 +1,5 @@
 import { FC, useState, useEffect, useCallback } from 'react';
-import { Box, Container, Paper, Typography, Grid, CircularProgress, TextField, MenuItem, Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from '@mui/material';
+import { Box, Container, Paper, Typography, Grid, CircularProgress, TextField, MenuItem, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Tabs, Tab } from '@mui/material';
 import { Tooltip as RechartsTooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { useAxiosWithAuth } from '@/services/useAxiosWithAuth';
 import AppNavbar from '@/components/AppNavbar';
@@ -12,6 +12,7 @@ const Orcamentos: FC = () => {
   const today = new Date();
   const [month, setMonth] = useState(today.getMonth() + 1);
   const [year, setYear] = useState(today.getFullYear());
+  const [tabValue, setTabValue] = useState(0);
   
   const [loading, setLoading] = useState(false);
   const [revTotal, setRevTotal] = useState(0);
@@ -89,10 +90,19 @@ const Orcamentos: FC = () => {
           <TextField type="number" label="Ano" value={year} onChange={e => setYear(Number(e.target.value))} size="small" />
         </Paper>
 
+        <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
+          <Tabs value={tabValue} onChange={(_, newValue) => setTabValue(newValue)}>
+            <Tab label="Visão Mensal" />
+            <Tab label="Visão Anual" />
+          </Tabs>
+        </Box>
+
         {loading ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', p: 5 }}><CircularProgress /></Box>
         ) : (
-          <Grid container spacing={3}>
+          <>
+            <Box sx={{ display: tabValue === 0 ? 'block' : 'none' }}>
+              <Grid container spacing={3}>
             <Grid item xs={12} md={6}>
               <Paper sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column' }}>
                 <Typography variant="h6" align="center" gutterBottom>Receitas vs Despesas</Typography>
@@ -215,12 +225,11 @@ const Orcamentos: FC = () => {
 
             </Grid>
 
-            {/* SEÇÃO ANUAL */}
-            <Grid item xs={12} sx={{ mt: 2 }}>
-              <Typography variant="h5" gutterBottom color="primary.main" sx={{ fontWeight: 'bold' }}>
-                Visão Anual ({year})
-              </Typography>
             </Grid>
+            </Box>
+            <Box sx={{ display: tabValue === 1 ? 'block' : 'none' }}>
+              <Grid container spacing={3}>
+            
 
             <Grid item xs={12}>
               <Paper sx={{ p: 3, mb: 3 }}>
@@ -300,7 +309,9 @@ const Orcamentos: FC = () => {
 
               </Paper>
             </Grid>
-          </Grid>
+                        </Grid>
+            </Box>
+          </>
         )}
       </Container>
     </Box>
