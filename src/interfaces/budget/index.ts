@@ -53,3 +53,29 @@ export interface MonthlySummaryDTO {
   totalRevenue: number;
   totalSpending: number;
 }
+
+export interface RevenueRevisionDTO {
+  changedAt?: string;
+  changedBy?: string;
+  date?: string;
+  id?: string;
+  referenceDate?: string;
+  revision: number;
+  revisionType: string;
+  typeId?: string;
+  value?: number;
+}
+
+export interface SpendingRevisionDTO {
+  changedAt?: string;
+  changedBy?: string;
+  date?: string;
+  description?: string;
+  id?: string;
+  referenceDate?: string;
+  revision: number;
+  revisionType: string;
+  typeId?: string;
+  value?: number;
+  wasPaid?: boolean;
+}

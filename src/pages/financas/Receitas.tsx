@@ -1,14 +1,14 @@
 import { FC, useState, useEffect, useCallback } from 'react';
 import {
   Box, Container, Button, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-  IconButton, Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem, CircularProgress, TablePagination, TableSortLabel
+  IconButton, Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem, CircularProgress, Chip, Typography, TablePagination, TableSortLabel
 } from '@mui/material';
-import { Add as AddIcon, Delete as DeleteIcon, Edit as EditIcon } from '@mui/icons-material';
+import { Add as AddIcon, Delete as DeleteIcon, Edit as EditIcon, History as HistoryIcon } from '@mui/icons-material';
 import { useAxiosWithAuth } from '@/services/useAxiosWithAuth';
 import AppNavbar from '@/components/AppNavbar';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { useSnackbar } from '@/hooks/useSnackbar';
-import { RevenueDTO, RevenueTypeDTO } from '@/interfaces/budget';
+import { RevenueDTO, RevenueTypeDTO , RevenueRevisionDTO } from '@/interfaces/budget';
 import dayjs, { Dayjs } from 'dayjs';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 
@@ -19,6 +19,10 @@ const Receitas: FC = () => {
   const [revenues, setRevenues] = useState<RevenueDTO[]>([]);
   const [types, setTypes] = useState<RevenueTypeDTO[]>([]);
   const [loading, setLoading] = useState(false);
+  const [auditTarget, setAuditTarget] = useState<RevenueDTO | null>(null);
+  const [auditHistory, setAuditHistory] = useState<RevenueRevisionDTO[]>([]);
+  const [isLoadingAudit, setIsLoadingAudit] = useState(false);
+
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(12);
   const [totalElements, setTotalElements] = useState(0);
@@ -38,6 +42,31 @@ const Receitas: FC = () => {
   const [typeLoading, setTypeLoading] = useState(false);
 
   const [confirmTarget, setConfirmTarget] = useState<{ type: 'revenue' | 'type', id: string } | null>(null);
+
+  
+  const handleOpenAudit = async (item: RevenueDTO) => {
+    setAuditTarget(item);
+    setIsLoadingAudit(true);
+    setAuditHistory([]);
+    try {
+      const res = await api.get(`/api/v1/revenues/${item.id}/history`);
+      setAuditHistory(res.data || []);
+    } catch (e: any) {
+      console.error(e);
+      showSnackbar('Erro ao carregar histórico de auditoria', 'error');
+    } finally {
+      setIsLoadingAudit(false);
+    }
+  };
+
+  const getRevisionTypeChip = (type: string) => {
+    switch (type) {
+      case 'ADD': return <Chip label="Criação (ADD)" color="success" size="small" />;
+      case 'MOD': return <Chip label="Alteração (MOD)" color="primary" size="small" />;
+      case 'DEL': return <Chip label="Exclusão (DEL)" color="error" size="small" />;
+      default: return <Chip label={type} size="small" />;
+    }
+  };
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -207,6 +236,7 @@ const Receitas: FC = () => {
                     <TableCell>{rev.typeName}</TableCell>
                     <TableCell>{Number(rev.value).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</TableCell>
                     <TableCell align="right">
+                      <IconButton color="info" onClick={() => handleOpenAudit(rev)} title="Ver Histórico"><HistoryIcon /></IconButton>
                       <IconButton color="primary" onClick={() => handleEdit(rev)}><EditIcon /></IconButton>
                       <IconButton color="error" onClick={() => setConfirmTarget({ type: 'revenue', id: rev.id })}><DeleteIcon /></IconButton>
                     </TableCell>
@@ -276,6 +306,52 @@ const Receitas: FC = () => {
         </Dialog>
       </Container>
       
+      
+      <Dialog open={Boolean(auditTarget)} onClose={() => setAuditTarget(null)} maxWidth="md" fullWidth>
+        <DialogTitle sx={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
+          <HistoryIcon color="primary" /> Histórico de Auditoria: {auditTarget?.id}
+        </DialogTitle>
+        <DialogContent dividers>
+          {isLoadingAudit ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 5 }}><CircularProgress /></Box>
+          ) : auditHistory.length === 0 ? (
+            <Typography variant="body2" color="text.secondary" sx={{ py: 3, textAlign: 'center' }}>
+              Nenhum registro de auditoria encontrado.
+            </Typography>
+          ) : (
+            <TableContainer component={Paper} elevation={0} sx={{ border: '1px solid', borderColor: 'grey.200' }}>
+              <Table size="small">
+                <TableHead sx={{ bgcolor: 'grey.100' }}>
+                  <TableRow>
+                    <TableCell sx={{ fontWeight: 600 }}>Rev. #</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>Tipo</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>Data/Hora (Modificação)</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>Autor</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>Valor Salvo (R$)</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {auditHistory.map((rev) => (
+                    <TableRow key={rev.revision} hover>
+                      <TableCell sx={{ fontWeight: 600 }}>#{rev.revision}</TableCell>
+                      <TableCell>{getRevisionTypeChip(rev.revisionType)}</TableCell>
+                      <TableCell sx={{ fontFamily: 'monospace', fontSize: '0.8rem' }}>
+                        {rev.changedAt ? new Date(rev.changedAt).toLocaleString('pt-BR') : '-'}
+                      </TableCell>
+                      <TableCell sx={{ fontSize: '0.85rem' }}>{rev.changedBy || 'Sistema'}</TableCell>
+                      <TableCell>{rev.value !== undefined ? Number(rev.value).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : '-'}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button onClick={() => setAuditTarget(null)}>Fechar</Button>
+        </DialogActions>
+      </Dialog>
+
       <ConfirmDialog
         open={confirmTarget !== null}
         title={confirmTarget?.type === 'type' ? 'Excluir Tipo de Receita' : 'Excluir Receita'}
