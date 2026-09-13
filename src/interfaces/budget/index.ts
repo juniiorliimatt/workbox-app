@@ -6,6 +6,7 @@ export interface RevenueTypeDTO {
 export interface RevenueDTO {
   id: string;
   date: string;
+  referenceDate?: string;
   typeId: string;
   typeName?: string;
   value: number;
@@ -20,6 +21,7 @@ export interface SpendingTypeDTO {
 export interface SpendingDTO {
   id: string;
   date: string;
+  referenceDate?: string;
   description?: string;
   typeId: string;
   typeName?: string;

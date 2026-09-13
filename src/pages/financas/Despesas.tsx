@@ -1,5 +1,3 @@
-import dayjs, { Dayjs } from 'dayjs';
-import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { FC, useState, useEffect, useCallback } from 'react';
 import {
   Box, Container, Button, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
@@ -9,19 +7,25 @@ import {
 import { Add as AddIcon, Delete as DeleteIcon, Edit as EditIcon } from '@mui/icons-material';
 import { useAxiosWithAuth } from '@/services/useAxiosWithAuth';
 import AppNavbar from '@/components/AppNavbar';
+import ConfirmDialog from '@/components/ConfirmDialog';
 import { useSnackbar } from '@/hooks/useSnackbar';
 import { SpendingDTO, SpendingTypeDTO } from '@/interfaces/budget';
+import dayjs, { Dayjs } from 'dayjs';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 
 const Despesas: FC = () => {
   const api = useAxiosWithAuth();
   const { showSnackbar } = useSnackbar();
-  const [editingId, setEditingId] = useState<string | null>(null);
+  
   const [spendings, setSpendings] = useState<SpendingDTO[]>([]);
   const [types, setTypes] = useState<SpendingTypeDTO[]>([]);
   const [loading, setLoading] = useState(false);
+  
   const [open, setOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   
   const [formDate, setFormDate] = useState<Dayjs | null>(null);
+  const [formRefDate, setFormRefDate] = useState<Dayjs | null>(null);
   const [formDesc, setFormDesc] = useState('');
   const [formValue, setFormValue] = useState('');
   const [formTypeId, setFormTypeId] = useState('');
@@ -31,6 +35,8 @@ const Despesas: FC = () => {
   const [newTypeName, setNewTypeName] = useState('');
   const [newTypeCategory, setNewTypeCategory] = useState('ESSENTIAL');
   const [typeLoading, setTypeLoading] = useState(false);
+
+  const [confirmTarget, setConfirmTarget] = useState<{ type: 'spending' | 'type', id: string } | null>(null);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -55,6 +61,7 @@ const Despesas: FC = () => {
   const handleOpenNew = () => {
     setEditingId(null);
     setFormDate(dayjs());
+    setFormRefDate(null);
     setFormDesc('');
     setFormValue('');
     setFormTypeId('');
@@ -65,6 +72,7 @@ const Despesas: FC = () => {
   const handleEdit = (s: SpendingDTO) => {
     setEditingId(s.id);
     setFormDate(dayjs(s.date));
+    setFormRefDate(s.referenceDate ? dayjs(s.referenceDate) : null);
     setFormDesc(s.description || '');
     setFormValue(s.value.toString());
     setFormTypeId(s.typeId);
@@ -77,11 +85,13 @@ const Despesas: FC = () => {
     try {
       const payload = {
         date: formDate?.format('YYYY-MM-DD') || '',
+        referenceDate: formRefDate ? formRefDate.format('YYYY-MM-DD') : null,
         description: formDesc,
         value: Number(formValue),
         typeId: formTypeId,
         wasPaid: formWasPaid
       };
+      
       if (editingId) {
         await api.put(`/api/v1/spendings/${editingId}`, payload);
         showSnackbar('Despesa atualizada com sucesso!', 'success');
@@ -89,6 +99,7 @@ const Despesas: FC = () => {
         await api.post('/api/v1/spendings', payload);
         showSnackbar('Despesa salva com sucesso!', 'success');
       }
+      
       setOpen(false);
       loadData();
     } catch (e: any) {
@@ -97,8 +108,7 @@ const Despesas: FC = () => {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Deseja excluir esta despesa?')) return;
+  const executeDelete = async (id: string) => {
     try {
       await api.delete(`/api/v1/spendings/${id}`);
       loadData();
@@ -106,6 +116,8 @@ const Despesas: FC = () => {
     } catch (e: any) {
       console.error(e);
       showSnackbar(`Erro ao excluir despesa: ${e?.response?.data?.message || 'Desconhecido'}`, 'error');
+    } finally {
+      setConfirmTarget(null);
     }
   };
 
@@ -128,17 +140,17 @@ const Despesas: FC = () => {
     }
   };
 
-  const handleDeleteType = async () => {
-    if (!formTypeId) return;
-    if (!confirm('Deseja excluir este tipo de despesa?')) return;
+  const executeDeleteType = async (id: string) => {
     try {
-      await api.delete(`/api/v1/spending-types/${formTypeId}`);
-      setTypes(prev => prev.filter(t => t.id !== formTypeId));
+      await api.delete(`/api/v1/spending-types/${id}`);
+      setTypes(prev => prev.filter(t => t.id !== id));
       setFormTypeId('');
       showSnackbar('Tipo excluído com sucesso!', 'success');
     } catch (e: any) {
       console.error(e);
       showSnackbar(`Erro ao excluir tipo: ${e?.response?.data?.message || 'Em uso por despesas existentes'}`, 'error');
+    } finally {
+      setConfirmTarget(null);
     }
   };
 
@@ -155,6 +167,7 @@ const Despesas: FC = () => {
             <TableHead>
               <TableRow>
                 <TableCell>Data</TableCell>
+                <TableCell>Competência</TableCell>
                 <TableCell>Descrição</TableCell>
                 <TableCell>Tipo</TableCell>
                 <TableCell>Situação</TableCell>
@@ -164,20 +177,21 @@ const Despesas: FC = () => {
             </TableHead>
             <TableBody>
               {loading ? (
-                <TableRow><TableCell colSpan={6} align="center"><CircularProgress /></TableCell></TableRow>
+                <TableRow><TableCell colSpan={7} align="center"><CircularProgress /></TableCell></TableRow>
               ) : spendings.length === 0 ? (
-                <TableRow><TableCell colSpan={6} align="center">Nenhuma despesa encontrada.</TableCell></TableRow>
+                <TableRow><TableCell colSpan={7} align="center">Nenhuma despesa encontrada.</TableCell></TableRow>
               ) : (
                 spendings.map(s => (
                   <TableRow key={s.id}>
                     <TableCell>{dayjs(s.date).format('DD/MM/YYYY')}</TableCell>
+                    <TableCell>{s.referenceDate ? dayjs(s.referenceDate).format('MM/YYYY') : '-'}</TableCell>
                     <TableCell>{s.description || '-'}</TableCell>
                     <TableCell>{s.typeName}</TableCell>
                     <TableCell>{s.wasPaid ? 'Pago' : 'Pendente'}</TableCell>
                     <TableCell>{Number(s.value).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</TableCell>
                     <TableCell align="right">
                       <IconButton color="primary" onClick={() => handleEdit(s)}><EditIcon /></IconButton>
-                      <IconButton color="error" onClick={() => handleDelete(s.id)}><DeleteIcon /></IconButton>
+                      <IconButton color="error" onClick={() => setConfirmTarget({ type: 'spending', id: s.id })}><DeleteIcon /></IconButton>
                     </TableCell>
                   </TableRow>
                 ))
@@ -190,7 +204,10 @@ const Despesas: FC = () => {
           <form onSubmit={handleSave}>
             <DialogTitle>{editingId ? 'Editar Despesa' : 'Nova Despesa'}</DialogTitle>
             <DialogContent dividers>
-              <DatePicker label="Data" value={formDate} onChange={(newValue) => setFormDate(newValue)} format="DD/MM/YYYY" slotProps={{ textField: { fullWidth: true, margin: 'normal', required: true } }} />
+              <Box sx={{ display: 'flex', gap: 2 }}>
+                <DatePicker label="Data do Movimento" value={formDate} onChange={(newValue) => setFormDate(newValue)} format="DD/MM/YYYY" slotProps={{ textField: { fullWidth: true, margin: 'normal', required: true } }} />
+                <DatePicker label="Competência (Opcional)" value={formRefDate} onChange={(newValue) => setFormRefDate(newValue)} format="MM/YYYY" views={['year', 'month']} slotProps={{ textField: { fullWidth: true, margin: 'normal' } }} />
+              </Box>
               <TextField fullWidth label="Descrição" value={formDesc} onChange={e => setFormDesc(e.target.value)} margin="normal" />
               <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mt: 2, mb: 1 }}>
                 <TextField fullWidth select label="Tipo" value={formTypeId} onChange={e => setFormTypeId(e.target.value)} required margin="none">
@@ -200,7 +217,7 @@ const Despesas: FC = () => {
                   <AddIcon />
                 </IconButton>
                 {formTypeId && (
-                  <IconButton color="error" onClick={handleDeleteType} sx={{ bgcolor: 'action.hover', borderRadius: 1 }} title="Excluir tipo selecionado">
+                  <IconButton color="error" onClick={() => setConfirmTarget({ type: 'type', id: formTypeId })} sx={{ bgcolor: 'action.hover', borderRadius: 1 }} title="Excluir tipo selecionado">
                     <DeleteIcon />
                   </IconButton>
                 )}
@@ -235,7 +252,16 @@ const Despesas: FC = () => {
           </form>
         </Dialog>
       </Container>
+      
+      <ConfirmDialog
+        open={confirmTarget !== null}
+        title={confirmTarget?.type === 'type' ? 'Excluir Tipo de Despesa' : 'Excluir Despesa'}
+        message={confirmTarget?.type === 'type' ? 'Tem certeza que deseja excluir este tipo? Esta ação não pode ser desfeita.' : 'Tem certeza que deseja excluir este lançamento financeiro? Esta ação não pode ser desfeita.'}
+        onCancel={() => setConfirmTarget(null)}
+        onConfirm={() => confirmTarget && (confirmTarget.type === 'type' ? executeDeleteType(confirmTarget.id) : executeDelete(confirmTarget.id))}
+      />
     </Box>
   );
 };
+
 export default Despesas;
