@@ -104,6 +104,15 @@ const Orcamentos: FC = () => {
         ) : (
           <>
             <Box sx={{ display: tabValue === 0 ? 'block' : 'none' }}>
+              <Paper elevation={0} variant="outlined" sx={{ p: 2, mb: 3, display: 'flex', gap: 2, alignItems: 'center', bgcolor: 'grey.50' }}>
+                <Typography variant="subtitle2" color="text.secondary">Filtro Mensal:</Typography>
+                <TextField select label="Mês" value={month} onChange={e => setMonth(Number(e.target.value))} size="small" sx={{ minWidth: 100 }}>
+                  {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
+                    <MenuItem key={m} value={m}>{m.toString().padStart(2, '0')}</MenuItem>
+                  ))}
+                </TextField>
+                <TextField type="number" label="Ano" value={year} onChange={e => setYear(Number(e.target.value))} size="small" sx={{ width: 100 }} />
+              </Paper>
               <Grid container spacing={3}>
             <Grid item xs={12} md={6}>
               <Paper sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -243,6 +252,10 @@ const Orcamentos: FC = () => {
             </Grid>
             </Box>
             <Box sx={{ display: tabValue === 1 ? 'block' : 'none' }}>
+              <Paper elevation={0} variant="outlined" sx={{ p: 2, mb: 3, display: 'flex', gap: 2, alignItems: 'center', bgcolor: 'grey.50' }}>
+                <Typography variant="subtitle2" color="text.secondary">Filtro Anual:</Typography>
+                <TextField type="number" label="Ano" value={year} onChange={e => setYear(Number(e.target.value))} size="small" sx={{ width: 100 }} />
+              </Paper>
               <Grid container spacing={3}>
             
 
