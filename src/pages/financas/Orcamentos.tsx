@@ -1,5 +1,5 @@
 import { FC, useState, useEffect, useCallback } from 'react';
-import { Box, Container, Paper, Typography, Grid, CircularProgress, TextField, MenuItem } from '@mui/material';
+import { Box, Container, Paper, Typography, Grid, CircularProgress, TextField, MenuItem, Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from '@mui/material';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { useAxiosWithAuth } from '@/services/useAxiosWithAuth';
 import AppNavbar from '@/components/AppNavbar';
@@ -93,7 +93,7 @@ const Orcamentos: FC = () => {
         ) : (
           <Grid container spacing={3}>
             <Grid item xs={12} md={6}>
-              <Paper sx={{ p: 3, height: 400, display: 'flex', flexDirection: 'column' }}>
+              <Paper sx={{ p: 3, height: '100%', minHeight: 400, display: 'flex', flexDirection: 'column' }}>
                 <Typography variant="h6" align="center" gutterBottom>Receitas vs Despesas</Typography>
                 <Box sx={{ flexGrow: 1, minHeight: 0 }}>
                   <ResponsiveContainer width="100%" height="100%">
@@ -108,11 +108,32 @@ const Orcamentos: FC = () => {
                     </BarChart>
                   </ResponsiveContainer>
                 </Box>
+
+                <TableContainer sx={{ mt: 2, border: '1px solid', borderColor: 'grey.200', borderRadius: 1 }}>
+                  <Table size="small">
+                    <TableHead sx={{ bgcolor: 'grey.100' }}>
+                      <TableRow>
+                        <TableCell sx={{ fontWeight: 600 }}>Categoria</TableCell>
+                        <TableCell align="right" sx={{ fontWeight: 600 }}>Valor (R$)</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      <TableRow hover>
+                        <TableCell>Receitas</TableCell>
+                        <TableCell align="right">{Number(revTotal).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</TableCell>
+                      </TableRow>
+                      <TableRow hover>
+                        <TableCell>Despesas</TableCell>
+                        <TableCell align="right">{Number(spendTotal).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</TableCell>
+                      </TableRow>
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+
               </Paper>
             </Grid>
-            
             <Grid item xs={12} md={6}>
-              <Paper sx={{ p: 3, height: 400, display: 'flex', flexDirection: 'column' }}>
+              <Paper sx={{ p: 3, height: '100%', minHeight: 400, display: 'flex', flexDirection: 'column' }}>
                 <Typography variant="h6" align="center" gutterBottom>Gastos por Meta (50/30/20)</Typography>
                 <Box sx={{ flexGrow: 1, minHeight: 0 }}>
                   <ResponsiveContainer width="100%" height="100%">
@@ -223,7 +244,7 @@ const Orcamentos: FC = () => {
             </Grid>
 
             <Grid item xs={12} md={6}>
-              <Paper sx={{ p: 3, height: 400, display: 'flex', flexDirection: 'column' }}>
+              <Paper sx={{ p: 3, height: '100%', minHeight: 400, display: 'flex', flexDirection: 'column' }}>
                 <Typography variant="h6" align="center" gutterBottom>Receitas por Tipo ({year})</Typography>
                 <Box sx={{ flexGrow: 1, minHeight: 0 }}>
                   <ResponsiveContainer width="100%" height="100%">
@@ -236,11 +257,32 @@ const Orcamentos: FC = () => {
                     </BarChart>
                   </ResponsiveContainer>
                 </Box>
+
+                <TableContainer sx={{ mt: 2, border: '1px solid', borderColor: 'grey.200', borderRadius: 1, maxHeight: 200 }}>
+                  <Table size="small" stickyHeader>
+                    <TableHead>
+                      <TableRow>
+                        <TableCell sx={{ fontWeight: 600, bgcolor: 'grey.100' }}>Tipo de Receita</TableCell>
+                        <TableCell align="right" sx={{ fontWeight: 600, bgcolor: 'grey.100' }}>Valor Arrecadado (R$)</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {revenuesByType.length === 0 ? (
+                        <TableRow><TableCell colSpan={2} align="center">Nenhum dado.</TableCell></TableRow>
+                      ) : revenuesByType.map(r => (
+                        <TableRow key={r.typeId} hover>
+                          <TableCell>{r.typeName}</TableCell>
+                          <TableCell align="right">{Number(r.total).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+
               </Paper>
             </Grid>
-
             <Grid item xs={12} md={6}>
-              <Paper sx={{ p: 3, height: 400, display: 'flex', flexDirection: 'column' }}>
+              <Paper sx={{ p: 3, height: '100%', minHeight: 400, display: 'flex', flexDirection: 'column' }}>
                 <Typography variant="h6" align="center" gutterBottom>Despesas por Tipo ({year})</Typography>
                 <Box sx={{ flexGrow: 1, minHeight: 0 }}>
                   <ResponsiveContainer width="100%" height="100%">
@@ -253,9 +295,30 @@ const Orcamentos: FC = () => {
                     </BarChart>
                   </ResponsiveContainer>
                 </Box>
+
+                <TableContainer sx={{ mt: 2, border: '1px solid', borderColor: 'grey.200', borderRadius: 1, maxHeight: 200 }}>
+                  <Table size="small" stickyHeader>
+                    <TableHead>
+                      <TableRow>
+                        <TableCell sx={{ fontWeight: 600, bgcolor: 'grey.100' }}>Tipo de Despesa</TableCell>
+                        <TableCell align="right" sx={{ fontWeight: 600, bgcolor: 'grey.100' }}>Valor Gasto (R$)</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {spendingsByType.length === 0 ? (
+                        <TableRow><TableCell colSpan={2} align="center">Nenhum dado.</TableCell></TableRow>
+                      ) : spendingsByType.map(s => (
+                        <TableRow key={s.typeId} hover>
+                          <TableCell>{s.typeName}</TableCell>
+                          <TableCell align="right">{Number(s.total).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+
               </Paper>
             </Grid>
-
           </Grid>
         )}
       </Container>
