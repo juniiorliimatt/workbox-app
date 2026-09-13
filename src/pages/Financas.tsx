@@ -1,13 +1,16 @@
-import { FC, useState } from 'react';
-import { Box, Container, Tab, Tabs, Paper } from '@mui/material';
-import { AccountBalanceWallet as WalletIcon } from '@mui/icons-material';
+import { FC } from 'react';
+import { Box, Card, CardContent, Container, Divider, Grid, Paper, Typography, CardActionArea } from '@mui/material';
+import {
+  AccountBalanceWallet as WalletIcon,
+  TrendingUp as TrendingUpIcon,
+  TrendingDown as TrendingDownIcon,
+  Savings as SavingsIcon,
+} from '@mui/icons-material';
 import AppNavbar from '@/components/AppNavbar';
-import ReceitasTab from './financas/ReceitasTab';
-import DespesasTab from './financas/DespesasTab';
-import OrcamentosTab from './financas/OrcamentosTab';
+import { useNavigate } from 'react-router-dom';
 
 const Financas: FC = () => {
-  const [activeTab, setActiveTab] = useState(0);
+  const navigate = useNavigate();
 
   return (
     <Box sx={{ width: '100%', minHeight: '100vh', bgcolor: 'grey.50', display: 'flex', flexDirection: 'column' }}>
@@ -19,30 +22,68 @@ const Financas: FC = () => {
         backLabel="Voltar aos Módulos"
       />
 
-      <Container maxWidth="xl" sx={{ mt: 4, mb: 4, flexGrow: 1 }}>
-        <Paper elevation={1} sx={{ mb: 3, borderRadius: 2 }}>
-          <Tabs
-            value={activeTab}
-            onChange={(_, nv) => setActiveTab(nv)}
-            variant="fullWidth"
-            textColor="primary"
-            indicatorColor="primary"
-          >
-            <Tab label="Metas e Orçamentos" />
-            <Tab label="Receitas" />
-            <Tab label="Despesas" />
-          </Tabs>
+      <Container maxWidth="lg" sx={{ mt: 4, mb: 4, flexGrow: 1 }}>
+        <Paper elevation={1} sx={{ p: 3, mb: 4, borderRadius: 2 }}>
+          <Typography variant="h5" sx={{ fontWeight: 600, mb: 1 }}>
+            Gestão Financeira & Orçamentos
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Módulo conectado ao microserviço <code>budget-service</code> (Resource Server na porta 8081).
+          </Typography>
         </Paper>
 
-        <Box sx={{ display: activeTab === 0 ? 'block' : 'none' }}>
-          <OrcamentosTab active={activeTab === 0} />
-        </Box>
-        <Box sx={{ display: activeTab === 1 ? 'block' : 'none' }}>
-          <ReceitasTab active={activeTab === 1} />
-        </Box>
-        <Box sx={{ display: activeTab === 2 ? 'block' : 'none' }}>
-          <DespesasTab active={activeTab === 2} />
-        </Box>
+        <Grid container spacing={3}>
+          <Grid item xs={12} md={4}>
+            <Card elevation={2} sx={{ height: '100%', borderRadius: 2 }}>
+              <CardActionArea sx={{ height: '100%' }} onClick={() => navigate('/financas/receitas')}>
+                <CardContent>
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                    <TrendingUpIcon color="success" sx={{ mr: 1 }} />
+                    <Typography variant="h6">Receitas</Typography>
+                  </Box>
+                  <Divider sx={{ mb: 2 }} />
+                  <Typography variant="body2" color="text.secondary">
+                    Controle de entradas financeiras e fontes de receita.
+                  </Typography>
+                </CardContent>
+              </CardActionArea>
+            </Card>
+          </Grid>
+
+          <Grid item xs={12} md={4}>
+            <Card elevation={2} sx={{ height: '100%', borderRadius: 2 }}>
+              <CardActionArea sx={{ height: '100%' }} onClick={() => navigate('/financas/despesas')}>
+                <CardContent>
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                    <TrendingDownIcon color="error" sx={{ mr: 1 }} />
+                    <Typography variant="h6">Despesas</Typography>
+                  </Box>
+                  <Divider sx={{ mb: 2 }} />
+                  <Typography variant="body2" color="text.secondary">
+                    Categorização de saídas, contas e cartões de crédito.
+                  </Typography>
+                </CardContent>
+              </CardActionArea>
+            </Card>
+          </Grid>
+
+          <Grid item xs={12} md={4}>
+            <Card elevation={2} sx={{ height: '100%', borderRadius: 2 }}>
+              <CardActionArea sx={{ height: '100%' }} onClick={() => navigate('/financas/orcamentos')}>
+                <CardContent>
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                    <SavingsIcon color="primary" sx={{ mr: 1 }} />
+                    <Typography variant="h6">Metas e Orçamentos</Typography>
+                  </Box>
+                  <Divider sx={{ mb: 2 }} />
+                  <Typography variant="body2" color="text.secondary">
+                    Planejamento mensal e reserva de emergência (regra 50-30-20).
+                  </Typography>
+                </CardContent>
+              </CardActionArea>
+            </Card>
+          </Grid>
+        </Grid>
       </Container>
     </Box>
   );

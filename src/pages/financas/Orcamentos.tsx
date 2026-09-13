@@ -1,16 +1,13 @@
 import { FC, useState, useEffect, useCallback } from 'react';
-import { Box, Paper, Typography, Grid, CircularProgress, TextField, MenuItem } from '@mui/material';
+import { Box, Container, Paper, Typography, Grid, CircularProgress, TextField, MenuItem } from '@mui/material';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import api from '@/services/api';
+import AppNavbar from '@/components/AppNavbar';
 import { TotalDTO, BudgetBucketDTO } from '@/interfaces/budget';
-
-interface Props {
-  active: boolean;
-}
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
 
-const OrcamentosTab: FC<Props> = ({ active }) => {
+const Orcamentos: FC = () => {
   const today = new Date();
   const [month, setMonth] = useState(today.getMonth() + 1);
   const [year, setYear] = useState(today.getFullYear());
@@ -21,7 +18,7 @@ const OrcamentosTab: FC<Props> = ({ active }) => {
   const [buckets, setBuckets] = useState<BudgetBucketDTO[]>([]);
 
   const loadData = useCallback(async () => {
-    if (!active) return;
+    
     setLoading(true);
     try {
       const p = { month, year };
@@ -38,13 +35,13 @@ const OrcamentosTab: FC<Props> = ({ active }) => {
     } finally {
       setLoading(false);
     }
-  }, [active, month, year]);
+  }, [month, year]);
 
   useEffect(() => {
     loadData();
   }, [loadData]);
 
-  if (!active) return null;
+  
 
   const barData = [
     { name: 'Geral', Receitas: revTotal, Despesas: spendTotal }
@@ -56,7 +53,9 @@ const OrcamentosTab: FC<Props> = ({ active }) => {
   })).filter(b => b.value > 0);
 
   return (
-    <Box>
+    <Box sx={{ width: '100%', minHeight: '100vh', bgcolor: 'grey.50', display: 'flex', flexDirection: 'column' }}>
+      <AppNavbar title="Metas e Orçamentos" showBackButton backPath="/financas" backLabel="Voltar" />
+      <Container maxWidth="xl" sx={{ mt: 4, mb: 4, flexGrow: 1 }}>
       <Paper sx={{ p: 2, mb: 3, display: 'flex', gap: 2, alignItems: 'center' }}>
         <Typography variant="subtitle1">Filtro:</Typography>
         <TextField select label="Mês" value={month} onChange={e => setMonth(Number(e.target.value))} size="small">
@@ -126,7 +125,8 @@ const OrcamentosTab: FC<Props> = ({ active }) => {
           </Grid>
         </Grid>
       )}
+    </Container>
     </Box>
   );
 };
-export default OrcamentosTab;
+export default Orcamentos;

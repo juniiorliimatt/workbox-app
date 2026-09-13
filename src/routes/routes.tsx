@@ -2,6 +2,9 @@ import { createBrowserRouter, Navigate } from 'react-router-dom';
 import Login from '@/pages/Login';
 import Dashboard from '@/pages/Dashboard';
 import Financas from '@/pages/Financas';
+import Receitas from '@/pages/financas/Receitas';
+import Despesas from '@/pages/financas/Despesas';
+import Orcamentos from '@/pages/financas/Orcamentos';
 import Admin from '@/pages/Admin';
 import AdminUsuarios from '@/pages/AdminUsuarios';
 import AdminPapeis from '@/pages/AdminPapeis';
@@ -35,6 +38,18 @@ export const router = createBrowserRouter([
       {
         path: '/financas',
         element: <Financas />,
+      },
+      {
+        path: '/financas/receitas',
+        element: <Receitas />,
+      },
+      {
+        path: '/financas/despesas',
+        element: <Despesas />,
+      },
+      {
+        path: '/financas/orcamentos',
+        element: <Orcamentos />,
       },
       {
         path: '/admin',
