@@ -2,7 +2,7 @@ import { FC, useState, useEffect, useCallback } from 'react';
 import {
   Box, Container, Button, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
   IconButton, Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem, CircularProgress,
-  FormControlLabel, Checkbox
+  FormControlLabel, Checkbox, TablePagination, TableSortLabel
 } from '@mui/material';
 import { Add as AddIcon, Delete as DeleteIcon, Edit as EditIcon } from '@mui/icons-material';
 import { useAxiosWithAuth } from '@/services/useAxiosWithAuth';
@@ -20,6 +20,12 @@ const Despesas: FC = () => {
   const [spendings, setSpendings] = useState<SpendingDTO[]>([]);
   const [types, setTypes] = useState<SpendingTypeDTO[]>([]);
   const [loading, setLoading] = useState(false);
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(12);
+  const [totalElements, setTotalElements] = useState(0);
+  const [orderBy, setOrderBy] = useState('date');
+  const [orderDirection, setOrderDirection] = useState<'asc' | 'desc'>('desc');
+
   
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -42,17 +48,34 @@ const Despesas: FC = () => {
     setLoading(true);
     try {
       const [spendRes, typeRes] = await Promise.all([
-        api.get('/api/v1/spendings?size=1000'),
+        api.get('/api/v1/spendings', { params: { page, size: rowsPerPage, sort: `${orderBy},${orderDirection}` } }),
         api.get('/api/v1/spending-types')
       ]);
       setSpendings(Array.isArray(spendRes.data?.content) ? spendRes.data.content : []);
+      setTotalElements(spendRes.data?.totalElements || 0);
       setTypes(Array.isArray(typeRes.data) ? typeRes.data : []);
     } catch (e: any) {
       console.error(e);
     } finally {
       setLoading(false);
     }
-  }, [api]);
+  }, [api, page, rowsPerPage, orderBy, orderDirection]);
+
+  
+  const handleRequestSort = (property: string) => {
+    const isAsc = orderBy === property && orderDirection === 'asc';
+    setOrderDirection(isAsc ? 'desc' : 'asc');
+    setOrderBy(property);
+  };
+
+  const handleChangePage = (_event: unknown, newPage: number) => {
+    setPage(newPage);
+  };
+
+  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
 
   useEffect(() => {
     loadData();
@@ -165,15 +188,27 @@ const Despesas: FC = () => {
         <TableContainer component={Paper}>
           <Table>
             <TableHead>
-              <TableRow>
-                <TableCell>Data</TableCell>
-                <TableCell>Competência</TableCell>
-                <TableCell>Descrição</TableCell>
-                <TableCell>Tipo</TableCell>
-                <TableCell>Situação</TableCell>
-                <TableCell>Valor (R$)</TableCell>
-                <TableCell align="right">Ações</TableCell>
-              </TableRow>
+              
+            <TableRow>
+              <TableCell>
+                <TableSortLabel active={orderBy === 'date'} direction={orderBy === 'date' ? orderDirection : 'asc'} onClick={() => handleRequestSort('date')}>Data</TableSortLabel>
+              </TableCell>
+              <TableCell>
+                <TableSortLabel active={orderBy === 'referenceDate'} direction={orderBy === 'referenceDate' ? orderDirection : 'asc'} onClick={() => handleRequestSort('referenceDate')}>Competência</TableSortLabel>
+              </TableCell>
+              <TableCell>Descrição</TableCell>
+              <TableCell>
+                <TableSortLabel active={orderBy === 'type.name'} direction={orderBy === 'type.name' ? orderDirection : 'asc'} onClick={() => handleRequestSort('type.name')}>Tipo</TableSortLabel>
+              </TableCell>
+              <TableCell>
+                <TableSortLabel active={orderBy === 'wasPaid'} direction={orderBy === 'wasPaid' ? orderDirection : 'asc'} onClick={() => handleRequestSort('wasPaid')}>Situação</TableSortLabel>
+              </TableCell>
+              <TableCell>
+                <TableSortLabel active={orderBy === 'value'} direction={orderBy === 'value' ? orderDirection : 'asc'} onClick={() => handleRequestSort('value')}>Valor (R$)</TableSortLabel>
+              </TableCell>
+              <TableCell align="right">Ações</TableCell>
+            </TableRow>
+
             </TableHead>
             <TableBody>
               {loading ? (
@@ -198,7 +233,20 @@ const Despesas: FC = () => {
               )}
             </TableBody>
           </Table>
+        
         </TableContainer>
+        <TablePagination
+          rowsPerPageOptions={[12, 24, 36]}
+          component="div"
+          count={totalElements}
+          rowsPerPage={rowsPerPage}
+          page={page}
+          onPageChange={handleChangePage}
+          onRowsPerPageChange={handleChangeRowsPerPage}
+          labelRowsPerPage="Itens por página:"
+          labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count !== -1 ? count : `mais de ${to}`}`}
+        />
+
 
         <Dialog open={open} onClose={() => setOpen(false)} PaperProps={{ sx: { width: "750px", maxWidth: "90vw" } }}>
           <form onSubmit={handleSave}>

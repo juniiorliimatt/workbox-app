@@ -30,6 +30,7 @@ import {
   TableHead,
   TableRow,
   TablePagination,
+  TableSortLabel,
   TextField,
   Tooltip,
   Typography,
@@ -60,8 +61,12 @@ export const AdminUsuarios: FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [debouncedSearch, setDebouncedSearch] = useState<string>('');
+  
   const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [rowsPerPage, setRowsPerPage] = useState(12);
+  const [orderBy, setOrderBy] = useState('socialName');
+  const [orderDirection, setOrderDirection] = useState<'asc' | 'desc'>('asc');
+
   const [totalElements, setTotalElements] = useState(0);
 
   useEffect(() => {
@@ -98,6 +103,13 @@ export const AdminUsuarios: FC = () => {
   const [isLoadingUserAudit, setIsLoadingUserAudit] = useState<boolean>(false);
   const [userAuditError, setUserAuditError] = useState<string | null>(null);
 
+  
+  const handleRequestSort = (property: string) => {
+    const isAsc = orderBy === property && orderDirection === 'asc';
+    setOrderDirection(isAsc ? 'desc' : 'asc');
+    setOrderBy(property);
+  };
+
   const fetchUsers = useCallback(async () => {
     setIsLoading(true);
     setFeedbackError(null);
@@ -110,6 +122,7 @@ export const AdminUsuarios: FC = () => {
             search: debouncedSearch || undefined,
             page,
             size: rowsPerPage,
+            sort: `${orderBy},${orderDirection}`,
           },
         }
       );
@@ -396,9 +409,15 @@ export const AdminUsuarios: FC = () => {
                 <Table id="tabela-usuarios" aria-label="Tabela de usuários">
                   <TableHead sx={{ bgcolor: 'grey.100' }}>
                     <TableRow>
-                      <TableCell sx={{ fontWeight: 600 }}>Usuário</TableCell>
-                      <TableCell sx={{ fontWeight: 600 }}>E-mail</TableCell>
-                      <TableCell sx={{ fontWeight: 600 }}>Status</TableCell>
+                      <TableCell sx={{ fontWeight: 600 }}>
+                        <TableSortLabel active={orderBy === 'socialName'} direction={orderBy === 'socialName' ? orderDirection : 'asc'} onClick={() => handleRequestSort('socialName')}>Usuário</TableSortLabel>
+                      </TableCell>
+                      <TableCell sx={{ fontWeight: 600 }}>
+                        <TableSortLabel active={orderBy === 'email'} direction={orderBy === 'email' ? orderDirection : 'asc'} onClick={() => handleRequestSort('email')}>E-mail</TableSortLabel>
+                      </TableCell>
+                      <TableCell sx={{ fontWeight: 600 }}>
+                        <TableSortLabel active={orderBy === 'enabled'} direction={orderBy === 'enabled' ? orderDirection : 'asc'} onClick={() => handleRequestSort('enabled')}>Status</TableSortLabel>
+                      </TableCell>
                       <TableCell sx={{ fontWeight: 600 }}>Papéis</TableCell>
                       <TableCell sx={{ fontWeight: 600, textAlign: 'right' }}>Ações</TableCell>
                     </TableRow>
@@ -492,7 +511,7 @@ export const AdminUsuarios: FC = () => {
                 </Table>
               </TableContainer>
               <TablePagination
-                rowsPerPageOptions={[5, 10, 25, 50]}
+                rowsPerPageOptions={[12, 24, 36]}
                 component="div"
                 count={totalElements}
                 rowsPerPage={rowsPerPage}
