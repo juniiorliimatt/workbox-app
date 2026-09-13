@@ -131,6 +131,7 @@ const Receitas: FC = () => {
   const [openTypeModal, setOpenTypeModal] = useState(false);
   const [newTypeName, setNewTypeName] = useState('');
   const [newTypeInclude, setNewTypeInclude] = useState(true);
+  const [newTypeMonthlyInclude, setNewTypeMonthlyInclude] = useState(true);
   const [typeLoading, setTypeLoading] = useState(false);
 
   const [confirmTarget, setConfirmTarget] = useState<{ type: 'revenue' | 'type', id: string } | null>(null);
@@ -264,6 +265,7 @@ const Receitas: FC = () => {
       setOpenTypeModal(false);
       setNewTypeName('');
     setNewTypeInclude(true);
+    setNewTypeMonthlyInclude(true);
       showSnackbar('Tipo criado com sucesso!', 'success');
     } catch (e: any) {
       console.error(e);
@@ -412,6 +414,7 @@ const Receitas: FC = () => {
             <DialogContent dividers>
               <TextField autoFocus fullWidth label="Nome do Tipo" value={newTypeName} onChange={e => setNewTypeName(e.target.value)} required margin="normal" />
               <FormControlLabel control={<Checkbox checked={newTypeInclude} onChange={e => setNewTypeInclude(e.target.checked)} />} label="Incluir na contagem anual" sx={{ mt: 1 }} />
+              <FormControlLabel control={<Checkbox checked={newTypeMonthlyInclude} onChange={e => setNewTypeMonthlyInclude(e.target.checked)} />} label="Incluir na contagem mensal" sx={{ mt: 1 }} />
             </DialogContent>
             <DialogActions>
               <Button onClick={() => setOpenTypeModal(false)}>Cancelar</Button>

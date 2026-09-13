@@ -26,6 +26,7 @@ const GerenciarTipos: FC = () => {
   const [revFormId, setRevFormId] = useState<string | null>(null);
   const [revFormName, setRevFormName] = useState('');
   const [revFormInclude, setRevFormInclude] = useState(true);
+  const [revFormMonthlyInclude, setRevFormMonthlyInclude] = useState(true);
   
   const [spendFormId, setSpendFormId] = useState<string | null>(null);
   const [spendFormName, setSpendFormName] = useState('');
@@ -100,6 +101,7 @@ const GerenciarTipos: FC = () => {
       setRevFormId(null);
       setRevFormName('');
     setRevFormInclude(true);
+    setRevFormMonthlyInclude(true);
     }
     setOpenRevModal(true);
   };
@@ -284,6 +286,7 @@ const GerenciarTipos: FC = () => {
             <DialogContent dividers>
               <TextField autoFocus fullWidth label="Nome do Tipo" value={revFormName} onChange={e => setRevFormName(e.target.value)} required margin="normal" />
               <FormControlLabel control={<Checkbox checked={revFormInclude} onChange={e => setRevFormInclude(e.target.checked)} />} label="Incluir na contagem anual" sx={{ mt: 1 }} />
+              <FormControlLabel control={<Checkbox checked={revFormMonthlyInclude} onChange={e => setRevFormMonthlyInclude(e.target.checked)} />} label="Incluir na contagem mensal" sx={{ mt: 1 }} />
             </DialogContent>
             <DialogActions>
               <Button onClick={() => setOpenRevModal(false)}>Cancelar</Button>
