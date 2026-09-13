@@ -45,3 +45,11 @@ export interface FiftyThirtyTwentyDTO {
   savings: BudgetBucketDTO;
   totalRevenue: number;
 }
+
+export interface MonthlySummaryDTO {
+  projectedBalance: number;
+  totalPaid: number;
+  totalPending: number;
+  totalRevenue: number;
+  totalSpending: number;
+}

@@ -3,7 +3,7 @@ import { Box, Container, Paper, Typography, Grid, CircularProgress, TextField, M
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { useAxiosWithAuth } from '@/services/useAxiosWithAuth';
 import AppNavbar from '@/components/AppNavbar';
-import { TotalDTO, FiftyThirtyTwentyDTO } from '@/interfaces/budget';
+import { TotalDTO, FiftyThirtyTwentyDTO, MonthlySummaryDTO } from '@/interfaces/budget';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28'];
 
@@ -17,19 +17,22 @@ const Orcamentos: FC = () => {
   const [revTotal, setRevTotal] = useState(0);
   const [spendTotal, setSpendTotal] = useState(0);
   const [ruleData, setRuleData] = useState<FiftyThirtyTwentyDTO | null>(null);
+  const [summary, setSummary] = useState<MonthlySummaryDTO | null>(null);
 
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
       const p = { month, year };
-      const [revRes, spendRes, ruleRes] = await Promise.all([
+      const [revRes, spendRes, ruleRes, summaryRes] = await Promise.all([
         api.get<TotalDTO>('/api/v1/revenues/total', { params: p }),
         api.get<TotalDTO>('/api/v1/spendings/total', { params: p }),
-        api.get<FiftyThirtyTwentyDTO>('/api/v1/budget-rules/fifty-thirty-twenty', { params: p })
+        api.get<FiftyThirtyTwentyDTO>('/api/v1/budget-rules/fifty-thirty-twenty', { params: p }),
+        api.get<MonthlySummaryDTO>('/api/v1/budget-rules/monthly-summary', { params: p })
       ]);
       setRevTotal(revRes.data.total || 0);
       setSpendTotal(spendRes.data.total || 0);
       setRuleData(ruleRes.data);
+      setSummary(summaryRes.data);
     } catch (e) {
       console.error(e);
     } finally {
@@ -113,8 +116,46 @@ const Orcamentos: FC = () => {
               </Paper>
             </Grid>
             
+            
             <Grid item xs={12}>
+              <Paper sx={{ p: 3, mb: 3 }}>
+                <Typography variant="h6" gutterBottom>Resumo Geral do Mês</Typography>
+                <Grid container spacing={2}>
+                  <Grid item xs={12} sm={6} md={2.4}>
+                    <Paper variant="outlined" sx={{ p: 2, textAlign: 'center', bgcolor: 'success.light', color: 'success.contrastText' }}>
+                      <Typography variant="subtitle2">Total de Receitas</Typography>
+                      <Typography variant="h6">R$ {summary?.totalRevenue.toFixed(2) || '0.00'}</Typography>
+                    </Paper>
+                  </Grid>
+                  <Grid item xs={12} sm={6} md={2.4}>
+                    <Paper variant="outlined" sx={{ p: 2, textAlign: 'center', bgcolor: 'error.light', color: 'error.contrastText' }}>
+                      <Typography variant="subtitle2">Total de Despesas</Typography>
+                      <Typography variant="h6">R$ {summary?.totalSpending.toFixed(2) || '0.00'}</Typography>
+                    </Paper>
+                  </Grid>
+                  <Grid item xs={12} sm={6} md={2.4}>
+                    <Paper variant="outlined" sx={{ p: 2, textAlign: 'center' }}>
+                      <Typography variant="subtitle2">Total Pago</Typography>
+                      <Typography variant="h6">R$ {summary?.totalPaid.toFixed(2) || '0.00'}</Typography>
+                    </Paper>
+                  </Grid>
+                  <Grid item xs={12} sm={6} md={2.4}>
+                    <Paper variant="outlined" sx={{ p: 2, textAlign: 'center' }}>
+                      <Typography variant="subtitle2">Falta Pagar</Typography>
+                      <Typography variant="h6" color="warning.main">R$ {summary?.totalPending.toFixed(2) || '0.00'}</Typography>
+                    </Paper>
+                  </Grid>
+                  <Grid item xs={12} sm={12} md={2.4}>
+                    <Paper variant="outlined" sx={{ p: 2, textAlign: 'center', bgcolor: (summary?.projectedBalance || 0) >= 0 ? 'info.light' : 'warning.light' }}>
+                      <Typography variant="subtitle2">Previsão Saldo Final</Typography>
+                      <Typography variant="h6">R$ {summary?.projectedBalance.toFixed(2) || '0.00'}</Typography>
+                    </Paper>
+                  </Grid>
+                </Grid>
+              </Paper>
+
               <Paper sx={{ p: 3 }}>
+
                 <Typography variant="h6" gutterBottom>Status das Metas (Orçamento)</Typography>
                 <Grid container spacing={2}>
                   {buckets.map(b => (
