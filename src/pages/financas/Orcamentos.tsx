@@ -7,6 +7,14 @@ import { TotalDTO, FiftyThirtyTwentyDTO, MonthlySummaryDTO, YearlySummaryDTO, Ty
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28'];
 
+const RANDOM_COLORS = [
+  '#FF6633', '#FFB399', '#FF33FF', '#FFFF99', '#00B3E6', 
+  '#E6B333', '#3366E6', '#999966', '#99FF99', '#B34D4D',
+  '#80B300', '#809900', '#E6B3B3', '#6680B3', '#66991A', 
+  '#FF99E6', '#CCFF1A', '#FF1A66', '#E6331A', '#33FFCC'
+];
+
+
 const Orcamentos: FC = () => {
   const api = useAxiosWithAuth();
   const today = new Date();
@@ -103,8 +111,8 @@ const Orcamentos: FC = () => {
                       <YAxis dataKey="name" type="category" width={100} />
                       <RechartsTooltip formatter={(value: any) => `R$ ${Number(value || 0).toFixed(2)}`} />
                       <Legend verticalAlign="bottom" height={36} />
-                      <Bar dataKey="Receitas" fill="#4caf50" />
-                      <Bar dataKey="Despesas" fill="#f44336" />
+                      <Bar dataKey="Receitas" fill="#4caf50" radius={[0, 10, 10, 0]} />
+                      <Bar dataKey="Despesas" fill="#f44336" radius={[0, 10, 10, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 </Box>
@@ -253,7 +261,11 @@ const Orcamentos: FC = () => {
                       <XAxis type="number" />
                       <YAxis dataKey="typeName" type="category" width={150} />
                       <RechartsTooltip formatter={(value: any) => `R$ ${Number(value || 0).toFixed(2)}`} />
-                      <Bar dataKey="total" fill="#4caf50" name="Valor Arrecadado" />
+                      <Bar dataKey="total" name="Valor Arrecadado" radius={[0, 10, 10, 0]}>
+                        {revenuesByType.map((_, index) => (
+                          <Cell key={`cell-rev-${index}`} fill={RANDOM_COLORS[index % RANDOM_COLORS.length]} />
+                        ))}
+                      </Bar>
                     </BarChart>
                   </ResponsiveContainer>
                 </Box>
@@ -291,7 +303,11 @@ const Orcamentos: FC = () => {
                       <XAxis type="number" />
                       <YAxis dataKey="typeName" type="category" width={150} />
                       <RechartsTooltip formatter={(value: any) => `R$ ${Number(value || 0).toFixed(2)}`} />
-                      <Bar dataKey="total" fill="#f44336" name="Valor Gasto" />
+                      <Bar dataKey="total" name="Valor Gasto" radius={[0, 10, 10, 0]}>
+                        {spendingsByType.map((_, index) => (
+                          <Cell key={`cell-spend-${index}`} fill={RANDOM_COLORS[(index + 5) % RANDOM_COLORS.length]} />
+                        ))}
+                      </Bar>
                     </BarChart>
                   </ResponsiveContainer>
                 </Box>
