@@ -208,14 +208,27 @@ const Orcamentos: FC = () => {
                     <Grid item xs={12} md={4} key={b.label}>
                       <Paper variant="outlined" sx={{ p: 2, textAlign: 'center' }}>
                         <Typography variant="subtitle1" color="primary">{b.label}</Typography>
-                        <Typography variant="body2">Meta: R$ {b.data.target.toFixed(2)}</Typography>
-                        <Typography variant="body2">Gasto: R$ {b.data.actual.toFixed(2)}</Typography>
+                        <Typography variant="body2">Meta: {Number(b.data.target).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</Typography>
+                        <Typography variant="body2">
+                          {b.type === 'savings' ? 'Investido/Poupado' : 'Gasto'}: {Number(b.data.actual).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                        </Typography>
                         <Typography variant="body2" color={
                           b.type === 'expense' 
                             ? (b.data.actual > b.data.target ? 'error' : 'success.main') 
                             : (b.data.actual < b.data.target ? 'error' : 'success.main')
-                        } sx={{ fontWeight: 'bold', mt: 1 }}>
-                          Restante: R$ {b.data.difference.toFixed(2)}
+                        } sx={{ fontWeight: 'bold', mt: 1, minHeight: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          {b.type === 'savings' 
+                            ? (b.data.actual < b.data.target 
+                                ? `Investiu/Poupou ${Number(Math.abs(b.data.difference)).toLocaleString('pt-BR', {style:'currency',currency:'BRL'})} abaixo da meta.`
+                                : (b.data.actual > b.data.target 
+                                    ? `Investiu/Poupou ${Number(Math.abs(b.data.difference)).toLocaleString('pt-BR', {style:'currency',currency:'BRL'})} acima da meta.` 
+                                    : 'Atingiu a meta exatamente.'))
+                            : (b.data.actual < b.data.target 
+                                ? `Gastou ${Number(Math.abs(b.data.difference)).toLocaleString('pt-BR', {style:'currency',currency:'BRL'})} abaixo da meta de gastos.`
+                                : (b.data.actual > b.data.target 
+                                    ? `Gastou ${Number(Math.abs(b.data.difference)).toLocaleString('pt-BR', {style:'currency',currency:'BRL'})} acima da meta de gastos.` 
+                                    : 'Atingiu a meta de gastos exatamente.'))
+                          }
                         </Typography>
                       </Paper>
                     </Grid>
