@@ -22,7 +22,8 @@ async function runBrowserValidation() {
 
     // 1. Navegar para a aplicação
     console.log('1️⃣ Navegando para http://localhost:5173...');
-    await page.goto('http://localhost:5173', { waitUntil: 'networkidle0' });
+    const appUrl = process.env.APP_URL || 'http://localhost:5173';
+    await page.goto(appUrl, { waitUntil: 'networkidle0' });
 
     const title = await page.title();
     console.log(`   ✅ Título da página renderizado: "${title}"`);
