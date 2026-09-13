@@ -21,8 +21,8 @@ async function runBrowserValidation() {
     console.log('🚀 Iniciando validação no Google Chrome headless: Avatar, QR Code MFA, Gestão de Usuários, Papéis e Auditoria...');
 
     // 1. Navegar para a aplicação
-    console.log('1️⃣ Navegando para http://localhost:5173...');
-    const appUrl = process.env.APP_URL || 'http://localhost:5173';
+    console.log('1️⃣ Navegando para http://localhost:7053...');
+    const appUrl = process.env.APP_URL || 'http://localhost:7053';
     await page.goto(appUrl, { waitUntil: 'networkidle0' });
 
     const title = await page.title();

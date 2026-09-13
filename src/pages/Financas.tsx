@@ -29,7 +29,7 @@ const Financas: FC = () => {
             Gestão Financeira & Orçamentos
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Módulo conectado ao microserviço <code>budget-service</code> (Resource Server na porta 8081).
+            Módulo conectado ao microserviço <code>budget-service</code> (Resource Server na porta 7052).
           </Typography>
         </Paper>
 

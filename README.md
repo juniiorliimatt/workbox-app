@@ -158,8 +158,9 @@ Exclusivo para contas com permissão de administrador (papel `ADMIN`):
 # Instalação das dependências
 npm install
 
-# Servidor de desenvolvimento (com proxy reverso /api -> http://localhost:8080)
-npm run dev       # http://localhost:5173
+# Servidor de desenvolvimento (com proxy reverso /api -> http://localhost:7051,
+# rotas de budget-service -> http://localhost:7052, ver vite.config.ts)
+npm run dev       # http://localhost:7053
 
 # Verificação estática de código (ESLint)
 npm run lint

@@ -26,14 +26,14 @@ export default defineConfig({
     },
   },
   server: {
-    port: 5173,
+    port: 7053,
     proxy: {
       '^/api/v1/(revenues|spendings|revenue-types|spending-types|budget-rules)': {
-        target: process.env.VITE_BUDGET_API_URL || 'http://localhost:8081',
+        target: process.env.VITE_BUDGET_API_URL || 'http://localhost:7052',
         changeOrigin: true,
       },
       '/api': {
-        target: process.env.VITE_API_URL || 'http://localhost:8080',
+        target: process.env.VITE_API_URL || 'http://localhost:7051',
         changeOrigin: true,
       },
     },
