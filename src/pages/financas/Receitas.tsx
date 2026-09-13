@@ -109,6 +109,9 @@ const Receitas: FC = () => {
   const [isLoadingAudit, setIsLoadingAudit] = useState(false);
 
   const [page, setPage] = useState(0);
+  const today = new Date();
+  const [month, setMonth] = useState<number>(today.getMonth() + 1);
+  const [year, setYear] = useState<number>(today.getFullYear());
   const [rowsPerPage, setRowsPerPage] = useState(12);
   const [totalElements, setTotalElements] = useState(0);
   const [orderBy, setOrderBy] = useState('date');
@@ -160,7 +163,7 @@ const Receitas: FC = () => {
     setLoading(true);
     try {
       const [revRes, typeRes] = await Promise.all([
-        api.get('/api/v1/revenues', { params: { page, size: rowsPerPage, sort: `${orderBy},${orderDirection}` } }),
+        api.get('/api/v1/revenues', { params: { page, size: rowsPerPage, sort: `${orderBy},${orderDirection}`, month, year } }),
         api.get('/api/v1/revenue-types')
       ]);
       setRevenues(Array.isArray(revRes.data?.content) ? revRes.data.content : []);
@@ -171,7 +174,7 @@ const Receitas: FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [api, page, rowsPerPage, orderBy, orderDirection]);
+  }, [api, page, rowsPerPage, orderBy, orderDirection, month, year]);
 
   
   const handleRequestSort = (property: string) => {
@@ -296,6 +299,17 @@ const Receitas: FC = () => {
           <Button variant="outlined" sx={{ mr: 2 }} onClick={() => setOpenBatchModal(true)}>Lançamento em Lote</Button>
           <Button variant="contained" startIcon={<AddIcon />} onClick={handleOpenNew}>Nova Receita</Button>
         </Box>
+
+        
+        <Paper sx={{ p: 2, mb: 3, display: 'flex', gap: 2, alignItems: 'center' }}>
+          <Typography variant="subtitle1">Competência:</Typography>
+          <TextField select label="Mês" value={month} onChange={e => setMonth(Number(e.target.value))} size="small">
+            {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
+              <MenuItem key={m} value={m}>{m.toString().padStart(2, '0')}</MenuItem>
+            ))}
+          </TextField>
+          <TextField type="number" label="Ano" value={year} onChange={e => setYear(Number(e.target.value))} size="small" />
+        </Paper>
 
         <TableContainer component={Paper}>
           <Table>
