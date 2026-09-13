@@ -175,7 +175,7 @@ const Receitas: FC = () => {
 
         <TableContainer component={Paper}>
           <Table>
-            <TableHead>
+            <TableHead sx={{ bgcolor: 'grey.100' }}>
               
             <TableRow>
               <TableCell>
