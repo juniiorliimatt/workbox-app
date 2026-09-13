@@ -2,6 +2,7 @@ import { FC } from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Box, CircularProgress } from '@mui/material';
+import { IdleMonitor } from '@/components/IdleMonitor';
 
 export const ProtectedRoute: FC = () => {
   const { isAuthenticated, isLoading } = useAuth();
@@ -26,7 +27,12 @@ export const ProtectedRoute: FC = () => {
     return <Navigate to="/" replace />;
   }
 
-  return <Outlet />;
+  return (
+    <>
+      <IdleMonitor />
+      <Outlet />
+    </>
+  );
 };
 
 export default ProtectedRoute;
