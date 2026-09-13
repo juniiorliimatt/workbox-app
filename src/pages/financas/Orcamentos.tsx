@@ -95,7 +95,7 @@ const Orcamentos: FC = () => {
             <Grid item xs={12} md={6}>
               <Paper sx={{ p: 3, height: '100%', minHeight: 400, display: 'flex', flexDirection: 'column' }}>
                 <Typography variant="h6" align="center" gutterBottom>Receitas vs Despesas</Typography>
-                <Box sx={{ flexGrow: 1, minHeight: 0 }}>
+                <Box sx={{ height: 250, width: "100%", mt: 2 }}>
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart layout="vertical" data={barData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                       <CartesianGrid strokeDasharray="3 3" />
@@ -246,7 +246,7 @@ const Orcamentos: FC = () => {
             <Grid item xs={12} md={6}>
               <Paper sx={{ p: 3, height: '100%', minHeight: 400, display: 'flex', flexDirection: 'column' }}>
                 <Typography variant="h6" align="center" gutterBottom>Receitas por Tipo ({year})</Typography>
-                <Box sx={{ flexGrow: 1, minHeight: 0 }}>
+                <Box sx={{ height: Math.max(250, revenuesByType.length * 55), width: "100%", mt: 2 }}>
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart layout="vertical" data={revenuesByType} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                       <CartesianGrid strokeDasharray="3 3" />
@@ -284,7 +284,7 @@ const Orcamentos: FC = () => {
             <Grid item xs={12} md={6}>
               <Paper sx={{ p: 3, height: '100%', minHeight: 400, display: 'flex', flexDirection: 'column' }}>
                 <Typography variant="h6" align="center" gutterBottom>Despesas por Tipo ({year})</Typography>
-                <Box sx={{ flexGrow: 1, minHeight: 0 }}>
+                <Box sx={{ height: Math.max(250, spendingsByType.length * 55), width: "100%", mt: 2 }}>
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart layout="vertical" data={spendingsByType} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                       <CartesianGrid strokeDasharray="3 3" />
