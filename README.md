@@ -1,10 +1,10 @@
-# workbox-app
+# Workbox App 📦
 
-Frontend do [monorepo `workbox`](../README.md) — consome a API em
-[`workbox-api`](../workbox-api/README.md) e serviços do ecossistema.
+O **Workbox App** é o frontend principal (SPA) do ecossistema [Workbox](../README.md), uma plataforma modular focada na gestão integrada de diversas áreas (Finanças, RH, CRM, Estoque, etc). Desenvolvido para ser o ponto de entrada unificado do usuário, este aplicativo consome os serviços de backend (como `workbox-api` e `budget-service`) para entregar uma experiência fluida, segura e responsiva.
 
-> Desenvolvimento deste submódulo é de responsabilidade do agente **Antigravity** (ver
-> [AGENTS.md](../AGENTS.md) na raiz do monorepo).
+Atualmente, o destaque do sistema é o seu **Módulo Financeiro**, que permite o controle minucioso de metas, receitas e despesas com suporte avançado a regras de orçamento (50/30/20) e dashboards ricos.
+
+> 🤖 **Nota de Arquitetura IA:** O desenvolvimento deste frontend é conduzido e mantido de forma autônoma pelo agente de Inteligência Artificial **Antigravity**, respeitando estritamente os contratos OpenAPI e as convenções do monorepo (ver [AGENTS.md](../AGENTS.md) na raiz).
 
 Também espelhado no [GitHub](https://github.com/juniiorliimatt/workbox-app) — todo push
 pro GitLab é replicado automaticamente via git hook. Ver
@@ -24,6 +24,8 @@ pro GitLab é replicado automaticamente via git hook. Ver
 | Formulários & Validação | `react-hook-form` + `yup` (`@hookform/resolvers`) |
 | Cliente HTTP | Axios (com interceptors de Bearer token e refresh automático) |
 | Roteamento | `react-router-dom` v6 |
+| Visualização de Dados | `recharts` (Gráficos de Pizza, Barras e Linhas dinâmicos) |
+| Manipulação de Datas | `dayjs` + `@mui/x-date-pickers` |
 | MFA / 2FA TOTP | `qrcode.react` (geração de QR Code compatível com Google Authenticator) |
 | Testes Unitários | Vitest + React Testing Library + `@testing-library/user-event` |
 | Testes E2E / Visuais | Puppeteer-core + Google Chrome headless |
