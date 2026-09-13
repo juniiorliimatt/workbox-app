@@ -12,6 +12,91 @@ import { RevenueDTO, RevenueTypeDTO , RevenueRevisionDTO } from '@/interfaces/bu
 import dayjs, { Dayjs } from 'dayjs';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 
+
+const BatchRevenueModal = ({ open, onClose, types, onSaved, api, showSnackbar }: any) => {
+  const [batchItems, setBatchItems] = useState<any[]>([{ date: dayjs(), referenceDate: null, typeId: '', value: '' }]);
+  const [batchLoading, setBatchLoading] = useState(false);
+
+  useEffect(() => {
+    if (open) setBatchItems([{ date: dayjs(), referenceDate: null, typeId: '', value: '' }]);
+  }, [open]);
+
+  const handleBatchChange = (index: number, field: string, val: any) => {
+    setBatchItems(prev => prev.map((item, i) => i === index ? { ...item, [field]: val } : item));
+  };
+
+  const handleAddBatchLine = () => {
+    setBatchItems(prev => {
+      const lastItem = prev.length > 0 ? prev[prev.length - 1] : null;
+      return [...prev, { 
+        ...({ date: dayjs(), referenceDate: null, typeId: '', value: '' }),
+        date: lastItem ? lastItem.date : dayjs(), 
+        referenceDate: lastItem ? lastItem.referenceDate : null 
+      }];
+    });
+  };
+
+  const handleRemoveBatchLine = (index: number) => {
+    setBatchItems(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleSaveBatch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setBatchLoading(true);
+    try {
+      const payload = batchItems.map(item => ({
+        ...item,
+        date: item.date ? item.date.format('YYYY-MM-DD') : null,
+        referenceDate: item.referenceDate ? item.referenceDate.format('YYYY-MM-DD') : null,
+        value: Number(item.value)
+      }));
+      await api.post('/api/v1/revenues/batch', { revenues: payload });
+      showSnackbar('Receitas em lote cadastradas com sucesso!', 'success');
+      onClose();
+      onSaved();
+    } catch (e: any) {
+      showSnackbar(`Erro ao salvar lote: ${e?.response?.data?.message || e?.message}`, 'error');
+    } finally {
+      setBatchLoading(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
+      
+        <form onSubmit={handleSaveBatch}>
+          <DialogTitle>Lançamento em Lote de Receitas</DialogTitle>
+          <DialogContent dividers>
+            {batchItems.map((item, index) => (
+              <Box key={index} sx={{ display: 'flex', gap: 2, alignItems: 'center', mb: 2 }}>
+                <DatePicker label="Data" value={item.date} onChange={(val) => handleBatchChange(index, 'date', val)} format="DD/MM/YYYY" slotProps={{ textField: { required: true, size: 'small', sx: { width: 150 } } }} />
+                <DatePicker label="Comp. (Opc)" value={item.referenceDate} onChange={(val) => handleBatchChange(index, 'referenceDate', val)} format="MM/YYYY" views={['year', 'month']} slotProps={{ textField: { size: 'small', sx: { width: 130 } } }} />
+                <Autocomplete
+                  options={types}
+                  getOptionLabel={(option) => option.name}
+                  value={types.find((t: any) => t.id === item.typeId) || null}
+                  onChange={(_, newValue) => handleBatchChange(index, 'typeId', newValue ? newValue.id : '')}
+                  renderInput={(params) => <TextField {...params} label="Tipo" required size="small" />}
+                  sx={{ flexGrow: 1 }}
+                />
+                <TextField type="number" label="Valor" value={item.value} onChange={e => handleBatchChange(index, 'value', e.target.value)} required size="small" inputProps={{ step: '0.01' }} sx={{ width: 120 }} />
+                <IconButton color="error" onClick={() => handleRemoveBatchLine(index)} disabled={batchItems.length === 1}><DeleteIcon /></IconButton>
+              </Box>
+            ))}
+            <Button variant="text" startIcon={<AddIcon />} onClick={handleAddBatchLine}>Adicionar linha</Button>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => onClose()}>Cancelar</Button>
+            <Button type="submit" variant="contained" disabled={batchLoading}>
+              {batchLoading ? <CircularProgress size={24} /> : 'Salvar Lote'}
+            </Button>
+          </DialogActions>
+        </form>
+      
+    </Dialog>
+  );
+};
+
 const Receitas: FC = () => {
   const api = useAxiosWithAuth();
   const { showSnackbar } = useSnackbar();
@@ -38,9 +123,7 @@ const Receitas: FC = () => {
   const [formTypeId, setFormTypeId] = useState('');
 
   const [openBatchModal, setOpenBatchModal] = useState(false);
-  const [batchItems, setBatchItems] = useState<any[]>([{ date: dayjs(), referenceDate: null, typeId: '', value: '' }]);
-  const [batchLoading, setBatchLoading] = useState(false);
-
+    
   
   const [openTypeModal, setOpenTypeModal] = useState(false);
   const [newTypeName, setNewTypeName] = useState('');
@@ -187,44 +270,10 @@ const Receitas: FC = () => {
 
   
   
-  const handleAddBatchLine = () => {
-    const lastItem = batchItems.length > 0 ? batchItems[batchItems.length - 1] : null;
-    setBatchItems([...batchItems, { date: lastItem ? lastItem.date : dayjs(), referenceDate: lastItem ? lastItem.referenceDate : null, typeId: '', value: '' }]);
-  };
-
-  const handleRemoveBatchLine = (index: number) => {
-    setBatchItems(batchItems.filter((_, i) => i !== index));
-  };
-
-  const handleBatchChange = (index: number, field: string, val: any) => {
-    const newItems = [...batchItems];
-    newItems[index][field] = val;
-    setBatchItems(newItems);
-  };
-
-  const handleSaveBatch = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setBatchLoading(true);
-    try {
-      const payload = batchItems.map(item => ({
-        date: item.date ? item.date.format('YYYY-MM-DD') : null,
-        referenceDate: item.referenceDate ? item.referenceDate.format('YYYY-MM-DD') : null,
-        typeId: item.typeId,
-        value: Number(item.value)
-      }));
-      await api.post('/api/v1/revenues/batch', { revenues: payload });
-      showSnackbar('Receitas em lote cadastradas com sucesso!', 'success');
-      setOpenBatchModal(false);
-      setBatchItems([{ date: dayjs(), referenceDate: null, typeId: '', value: '' }]);
-      loadData();
-    } catch (e: any) {
-      console.error(e);
-      showSnackbar(`Erro ao salvar lote: ${e?.response?.data?.message || e?.message}`, 'error');
-    } finally {
-      setBatchLoading(false);
-    }
-  };
-
+  
+  
+  
+  
   const executeDeleteType = async (id: string) => {
     try {
       await api.delete(`/api/v1/revenue-types/${id}`);
@@ -399,36 +448,7 @@ const Receitas: FC = () => {
       </Dialog>
 
       
-      <Dialog open={openBatchModal} onClose={() => setOpenBatchModal(false)} maxWidth="md" fullWidth>
-        <form onSubmit={handleSaveBatch}>
-          <DialogTitle>Lançamento em Lote de Receitas</DialogTitle>
-          <DialogContent dividers>
-            {batchItems.map((item, index) => (
-              <Box key={index} sx={{ display: 'flex', gap: 2, alignItems: 'center', mb: 2 }}>
-                <DatePicker label="Data" value={item.date} onChange={(val) => handleBatchChange(index, 'date', val)} format="DD/MM/YYYY" slotProps={{ textField: { required: true, size: 'small', sx: { width: 150 } } }} />
-                <DatePicker label="Comp. (Opc)" value={item.referenceDate} onChange={(val) => handleBatchChange(index, 'referenceDate', val)} format="MM/YYYY" views={['year', 'month']} slotProps={{ textField: { size: 'small', sx: { width: 130 } } }} />
-                <Autocomplete
-                  options={types}
-                  getOptionLabel={(option) => option.name}
-                  value={types.find(t => t.id === item.typeId) || null}
-                  onChange={(_, newValue) => handleBatchChange(index, 'typeId', newValue ? newValue.id : '')}
-                  renderInput={(params) => <TextField {...params} label="Tipo" required size="small" />}
-                  sx={{ flexGrow: 1 }}
-                />
-                <TextField type="number" label="Valor" value={item.value} onChange={e => handleBatchChange(index, 'value', e.target.value)} required size="small" inputProps={{ step: '0.01' }} sx={{ width: 120 }} />
-                <IconButton color="error" onClick={() => handleRemoveBatchLine(index)} disabled={batchItems.length === 1}><DeleteIcon /></IconButton>
-              </Box>
-            ))}
-            <Button variant="text" startIcon={<AddIcon />} onClick={handleAddBatchLine}>Adicionar linha</Button>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setOpenBatchModal(false)}>Cancelar</Button>
-            <Button type="submit" variant="contained" disabled={batchLoading}>
-              {batchLoading ? <CircularProgress size={24} /> : 'Salvar Lote'}
-            </Button>
-          </DialogActions>
-        </form>
-      </Dialog>
+      <BatchRevenueModal open={openBatchModal} onClose={() => setOpenBatchModal(false)} types={types} onSaved={loadData} api={api} showSnackbar={showSnackbar} />
 
       <ConfirmDialog
         open={confirmTarget !== null}
