@@ -3,7 +3,7 @@ import {
   Box, Container, Button, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
   IconButton, Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem, CircularProgress,
   Grid, Typography, Chip
-} from '@mui/material';
+, Checkbox, FormControlLabel } from '@mui/material';
 import { Add as AddIcon, Delete as DeleteIcon, Edit as EditIcon, History as HistoryIcon } from '@mui/icons-material';
 import { useAxiosWithAuth } from '@/services/useAxiosWithAuth';
 import AppNavbar from '@/components/AppNavbar';
@@ -25,6 +25,7 @@ const GerenciarTipos: FC = () => {
 
   const [revFormId, setRevFormId] = useState<string | null>(null);
   const [revFormName, setRevFormName] = useState('');
+  const [revFormInclude, setRevFormInclude] = useState(true);
   
   const [spendFormId, setSpendFormId] = useState<string | null>(null);
   const [spendFormName, setSpendFormName] = useState('');
@@ -98,6 +99,7 @@ const GerenciarTipos: FC = () => {
     } else {
       setRevFormId(null);
       setRevFormName('');
+    setRevFormInclude(true);
     }
     setOpenRevModal(true);
   };
@@ -281,6 +283,7 @@ const GerenciarTipos: FC = () => {
             <DialogTitle>{revFormId ? 'Editar Tipo de Receita' : 'Novo Tipo de Receita'}</DialogTitle>
             <DialogContent dividers>
               <TextField autoFocus fullWidth label="Nome do Tipo" value={revFormName} onChange={e => setRevFormName(e.target.value)} required margin="normal" />
+              <FormControlLabel control={<Checkbox checked={revFormInclude} onChange={e => setRevFormInclude(e.target.checked)} />} label="Incluir na contagem anual" sx={{ mt: 1 }} />
             </DialogContent>
             <DialogActions>
               <Button onClick={() => setOpenRevModal(false)}>Cancelar</Button>

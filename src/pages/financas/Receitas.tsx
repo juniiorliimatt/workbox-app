@@ -2,7 +2,7 @@ import { FC, useState, useEffect, useCallback } from 'react';
 import {
   Box, Container, Button, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
   IconButton, Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem, CircularProgress, Autocomplete, Chip, Typography, TablePagination, TableSortLabel
-} from '@mui/material';
+, Checkbox, FormControlLabel } from '@mui/material';
 import { Add as AddIcon, Delete as DeleteIcon, Edit as EditIcon, History as HistoryIcon } from '@mui/icons-material';
 import { useAxiosWithAuth } from '@/services/useAxiosWithAuth';
 import AppNavbar from '@/components/AppNavbar';
@@ -130,6 +130,7 @@ const Receitas: FC = () => {
   
   const [openTypeModal, setOpenTypeModal] = useState(false);
   const [newTypeName, setNewTypeName] = useState('');
+  const [newTypeInclude, setNewTypeInclude] = useState(true);
   const [typeLoading, setTypeLoading] = useState(false);
 
   const [confirmTarget, setConfirmTarget] = useState<{ type: 'revenue' | 'type', id: string } | null>(null);
@@ -262,6 +263,7 @@ const Receitas: FC = () => {
       setFormTypeId(res.data.id);
       setOpenTypeModal(false);
       setNewTypeName('');
+    setNewTypeInclude(true);
       showSnackbar('Tipo criado com sucesso!', 'success');
     } catch (e: any) {
       console.error(e);
@@ -409,6 +411,7 @@ const Receitas: FC = () => {
             <DialogTitle>Novo Tipo de Receita</DialogTitle>
             <DialogContent dividers>
               <TextField autoFocus fullWidth label="Nome do Tipo" value={newTypeName} onChange={e => setNewTypeName(e.target.value)} required margin="normal" />
+              <FormControlLabel control={<Checkbox checked={newTypeInclude} onChange={e => setNewTypeInclude(e.target.checked)} />} label="Incluir na contagem anual" sx={{ mt: 1 }} />
             </DialogContent>
             <DialogActions>
               <Button onClick={() => setOpenTypeModal(false)}>Cancelar</Button>

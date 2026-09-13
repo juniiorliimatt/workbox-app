@@ -1,6 +1,7 @@
 export interface RevenueTypeDTO {
   id: string;
   name: string;
+  includeInTotals?: boolean;
 }
 
 export interface RevenueDTO {
@@ -15,6 +16,7 @@ export interface RevenueDTO {
 export interface SpendingTypeDTO {
   id: string;
   name: string;
+  includeInTotals?: boolean;
   category?: 'ESSENTIAL' | 'PERSONAL' | 'SAVINGS';
 }
 
