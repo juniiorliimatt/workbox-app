@@ -128,7 +128,7 @@ const Receitas: FC = () => {
         </Table>
       </TableContainer>
 
-      <Dialog open={open} onClose={() => setOpen(false)}>
+      <Dialog open={open} onClose={() => setOpen(false)} PaperProps={{ sx: { width: "750px", maxWidth: "90vw" } }}>
         <form onSubmit={handleSave}>
           <DialogTitle>Nova Receita</DialogTitle>
           <DialogContent dividers>
