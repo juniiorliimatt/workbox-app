@@ -96,10 +96,10 @@ const Orcamentos: FC = () => {
             <Grid item xs={12} md={6}>
               <Paper sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column' }}>
                 <Typography variant="h6" align="center" gutterBottom>Receitas vs Despesas</Typography>
-                <Box sx={{ height: 250, width: "100%", mt: 2 }}>
+                <Box sx={{ height: 350, width: "100%", mt: 2 }}>
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
-                      <Pie data={revSpendPieData} cx="50%" cy="50%" outerRadius={80} dataKey="value" label={({ name, percent }: any) => `${name} (${(Number(percent || 0) * 100).toFixed(0)}%)`}>
+                      <Pie data={revSpendPieData} cx="50%" cy="50%" outerRadius={100} dataKey="value" label={({ name, percent }: any) => `${name} (${(Number(percent || 0) * 100).toFixed(0)}%)`}>
                         {revSpendPieData.map((entry, index) => (
                           <Cell key={`cell-rs-${index}`} fill={entry.fill} />
                         ))}
