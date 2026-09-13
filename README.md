@@ -94,6 +94,7 @@ em uso).
 - **Autenticação em Duas Etapas (MFA / 2FA)**:
   - Detecção automática de contas com MFA ativo via desafio `mfa_token`.
   - Formulário dedicado para validação do código de 6 dígitos gerado por aplicativo autenticador.
+- **Controle de Inatividade (Auto-Logout)**: O frontend expira e invalida a sessão automaticamente se o usuário ficar inativo por 15 minutos (sem interação com mouse/teclado/touch).
 - **Renovação de Sessão (Token Refresh)**:
   - Rotação contínua de refresh tokens via `POST /api/v1/auth/refresh` com corpo JSON `{ "refreshToken": "..." }`.
   - Renovação automática transparente via interceptors do Axios em respostas 401.
@@ -102,6 +103,9 @@ em uso).
 - Tela inicial pós-login contendo **12 cards de módulos**:
   1. **Administração** (`/admin`): Exibido com prioridade para usuários com papel `ADMIN`.
   2. **Finanças** (`/financas`): Acesso ao módulo de finanças pessoais (*budget-service*).
+   - **Metas e Orçamento:** Resumos formatados em padrão monetário (BRL), gráficos de proporção (Receitas vs Despesas em PieChart), e painéis semânticos de acompanhamento de metas em abas mensais e anuais.
+   - **Receitas e Despesas:** Grids completos com filtro de competência, controle de pagamento, autocomplete inteligente e **Lançamentos em Lote** (componentizados para garantir alta performance).
+   - **Gerenciamento de Tipos:** Controle de categorias, regras 50/30/20 para despesas, e flags dinâmicas para Receitas (`includeInTotals` e `includeInMonthlyTotals`) ocultando os tipos desejados da contagem e gráficos.
   3. Demais 10 módulos com badge *"Em breve"* e estado desabilitado (RH, Vendas, Relatórios, CRM, Estoque, etc.).
 
 ### 3. Meu Perfil & Segurança (`/perfil`)
@@ -110,7 +114,7 @@ em uso).
   - Seletor de arquivo de imagem (PNG, JPEG, WEBP até 2MB).
   - Envio multipart para `POST /api/v1/auth/avatar`.
   - Remoção de foto via `DELETE /api/v1/auth/avatar`.
-  - Renderização protegida por token através do hook `useAuthenticatedAvatar` e componente `UserAvatar`.
+  - Renderização protegida por token através do hook `useAuthenticatedAvatar` e componente `UserAvatar` (com sistema de cache global *in-memory* que evita chamadas repetidas à API).
 - **Alteração de Senha**: Validação de senha atual e confirmação de nova senha via `PUT /api/v1/auth/password`.
 - **Configuração de MFA**:
   - Geração de segredo e **QR Code TOTP** escaneável no Google Authenticator, Microsoft Authenticator e Authy.
