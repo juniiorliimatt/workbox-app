@@ -3,13 +3,16 @@ import {
   Box, Container, Button, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
   IconButton, Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem, CircularProgress
 } from '@mui/material';
-import { Add as AddIcon, Delete as DeleteIcon } from '@mui/icons-material';
+import { Add as AddIcon, Delete as DeleteIcon, Edit as EditIcon } from '@mui/icons-material';
 import { useAxiosWithAuth } from '@/services/useAxiosWithAuth';
 import AppNavbar from '@/components/AppNavbar';
+import { useSnackbar } from '@/hooks/useSnackbar';
 import { RevenueDTO, RevenueTypeDTO } from '@/interfaces/budget';
 
 const Receitas: FC = () => {
   const api = useAxiosWithAuth();
+  const { showSnackbar } = useSnackbar();
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [revenues, setRevenues] = useState<RevenueDTO[]>([]);
   const [types, setTypes] = useState<RevenueTypeDTO[]>([]);
   const [loading, setLoading] = useState(false);
@@ -47,19 +50,42 @@ const Receitas: FC = () => {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await api.post('/api/v1/revenues', {
+      const payload = {
         date: formDate,
         value: Number(formValue),
         typeId: formTypeId
-      });
+      };
+      
+      if (editingId) {
+        await api.put(`/api/v1/revenues/${editingId}`, payload);
+        showSnackbar('Receita atualizada com sucesso!', 'success');
+      } else {
+        await api.post('/api/v1/revenues', payload);
+        showSnackbar('Receita criada com sucesso!', 'success');
+      }
+      
       setOpen(false);
       loadData();
     } catch (e: any) {
       console.error(e);
-      alert('Erro ao salvar receita');
+      showSnackbar(`Erro: ${e?.response?.data?.message || e?.message || 'Desconhecido'}`, 'error');
     }
   };
 
+  const handleEdit = (rev: RevenueDTO) => {
+    setEditingId(rev.id);
+    setFormDate(rev.date);
+    setFormValue(rev.value.toString());
+    setFormTypeId(rev.typeId);
+    setOpen(true);
+  };
+  const handleOpenNew = () => {
+    setEditingId(null);
+    setFormDate('');
+    setFormValue('');
+    setFormTypeId('');
+    setOpen(true);
+  };
   const handleSaveType = async (e: React.FormEvent) => {
     e.preventDefault();
     setTypeLoading(true);
@@ -71,7 +97,7 @@ const Receitas: FC = () => {
       setNewTypeName('');
     } catch (e: any) {
       console.error(e);
-      alert(`Erro: ${e?.response?.data?.message || e?.message || "Desconhecido"}`);
+      showSnackbar(`Erro: ${e?.response?.data?.message || e?.message || 'Desconhecido'}`, 'error');
     } finally {
       setTypeLoading(false);
     }
@@ -82,6 +108,7 @@ const Receitas: FC = () => {
     try {
       await api.delete(`/api/v1/revenues/${id}`);
       loadData();
+      showSnackbar('Receita excluída com sucesso!', 'success');
     } catch (e: any) {
       console.error(e);
     }
@@ -94,7 +121,7 @@ const Receitas: FC = () => {
       <AppNavbar title="Receitas" showBackButton backPath="/financas" backLabel="Voltar" />
       <Container maxWidth="xl" sx={{ mt: 4, mb: 4, flexGrow: 1 }}>
       <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={() => setOpen(true)}>Nova Receita</Button>
+        <Button variant="contained" startIcon={<AddIcon />} onClick={handleOpenNew}>Nova Receita</Button>
       </Box>
 
       <TableContainer component={Paper}>
@@ -119,6 +146,7 @@ const Receitas: FC = () => {
                   <TableCell>{rev.typeName}</TableCell>
                   <TableCell>{Number(rev.value).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</TableCell>
                   <TableCell align="right">
+                    <IconButton color="primary" onClick={() => handleEdit(rev)}><EditIcon /></IconButton>
                     <IconButton color="error" onClick={() => handleDelete(rev.id)}><DeleteIcon /></IconButton>
                   </TableCell>
                 </TableRow>
@@ -130,7 +158,7 @@ const Receitas: FC = () => {
 
       <Dialog open={open} onClose={() => setOpen(false)} PaperProps={{ sx: { width: "750px", maxWidth: "90vw" } }}>
         <form onSubmit={handleSave}>
-          <DialogTitle>Nova Receita</DialogTitle>
+          <DialogTitle>{editingId ? 'Editar Receita' : 'Nova Receita'}</DialogTitle>
           <DialogContent dividers>
             <TextField fullWidth type="date" label="Data" value={formDate} onChange={e => setFormDate(e.target.value)} required margin="normal" InputLabelProps={{ shrink: true }} />
             <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mt: 2, mb: 1 }}>

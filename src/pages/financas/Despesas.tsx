@@ -7,10 +7,12 @@ import {
 import { Add as AddIcon, Delete as DeleteIcon } from '@mui/icons-material';
 import { useAxiosWithAuth } from '@/services/useAxiosWithAuth';
 import AppNavbar from '@/components/AppNavbar';
+import { useSnackbar } from '@/hooks/useSnackbar';
 import { SpendingDTO, SpendingTypeDTO } from '@/interfaces/budget';
 
 const Despesas: FC = () => {
   const api = useAxiosWithAuth();
+  const { showSnackbar } = useSnackbar();
   const [spendings, setSpendings] = useState<SpendingDTO[]>([]);
   const [types, setTypes] = useState<SpendingTypeDTO[]>([]);
   const [loading, setLoading] = useState(false);
@@ -32,7 +34,7 @@ const Despesas: FC = () => {
       ]);
       setSpendings(Array.isArray(spendRes.data?.content) ? spendRes.data.content : []);
       setTypes(Array.isArray(typeRes.data) ? typeRes.data : []);
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
     } finally {
       setLoading(false);
@@ -55,9 +57,10 @@ const Despesas: FC = () => {
       });
       setOpen(false);
       loadData();
-    } catch (e) {
+      showSnackbar('Despesa salva com sucesso!', 'success');
+    } catch (e: any) {
       console.error(e);
-      alert('Erro ao salvar despesa');
+      showSnackbar(`Erro ao salvar despesa: ${e?.response?.data?.message || e?.message || 'Desconhecido'}`, 'error');
     }
   };
 
@@ -66,7 +69,8 @@ const Despesas: FC = () => {
     try {
       await api.delete(`/api/v1/spendings/${id}`);
       loadData();
-    } catch (e) {
+      showSnackbar('Despesa excluída com sucesso!', 'success');
+    } catch (e: any) {
       console.error(e);
     }
   };

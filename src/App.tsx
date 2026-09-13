@@ -2,6 +2,7 @@ import { RouterProvider } from 'react-router-dom';
 import { createTheme, CssBaseline, ThemeProvider } from '@mui/material';
 import router from '@/routes/routes';
 import { AuthProvider } from '@/contexts/AuthContext';
+import { SnackbarProvider } from '@/contexts/SnackbarContext';
 
 const theme = createTheme({
   palette: {
@@ -49,9 +50,11 @@ function App() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
+      <SnackbarProvider>
       <AuthProvider>
         <RouterProvider router={router} />
       </AuthProvider>
+      </SnackbarProvider>
     </ThemeProvider>
   );
 }
