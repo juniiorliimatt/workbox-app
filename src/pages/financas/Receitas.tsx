@@ -103,6 +103,21 @@ const Receitas: FC = () => {
     }
   };
 
+
+  const handleDeleteType = async () => {
+    if (!formTypeId) return;
+    if (!confirm('Deseja excluir este tipo de receita?')) return;
+    try {
+      await api.delete(`/api/v1/revenue-types/${formTypeId}`);
+      setTypes(prev => prev.filter(t => t.id !== formTypeId));
+      setFormTypeId('');
+      showSnackbar('Tipo excluído com sucesso!', 'success');
+    } catch (e: any) {
+      console.error(e);
+      showSnackbar(`Erro ao excluir tipo: ${e?.response?.data?.message || 'Em uso por receitas existentes'}`, 'error');
+    }
+  };
+
   const handleDelete = async (id: string) => {
     if (!confirm('Deseja excluir?')) return;
     try {
@@ -168,6 +183,11 @@ const Receitas: FC = () => {
               <IconButton color="primary" onClick={() => setOpenTypeModal(true)} sx={{ bgcolor: 'action.hover', borderRadius: 1 }} title="Adicionar novo tipo">
                 <AddIcon />
               </IconButton>
+              {formTypeId && (
+                <IconButton color="error" onClick={handleDeleteType} sx={{ bgcolor: 'action.hover', borderRadius: 1 }} title="Excluir tipo selecionado">
+                  <DeleteIcon />
+                </IconButton>
+              )}
             </Box>
             <TextField fullWidth type="number" label="Valor" value={formValue} onChange={e => setFormValue(e.target.value)} required margin="normal" inputProps={{ step: '0.01' }} />
           </DialogContent>
