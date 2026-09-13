@@ -70,9 +70,9 @@ const Orcamentos: FC = () => {
   ].filter(b => b.value > 0) : [];
 
   const buckets = ruleData ? [
-    { label: 'Gastos Essenciais (50%)', data: ruleData.essential },
-    { label: 'Gastos Pessoais (30%)', data: ruleData.personal },
-    { label: 'Economia/Investimentos (20%)', data: ruleData.savings }
+    { label: 'Gastos Essenciais (50%)', data: ruleData.essential, type: 'expense' },
+    { label: 'Gastos Pessoais (30%)', data: ruleData.personal, type: 'expense' },
+    { label: 'Economia/Investimentos (20%)', data: ruleData.savings, type: 'savings' }
   ] : [];
 
   return (
@@ -198,9 +198,13 @@ const Orcamentos: FC = () => {
                     <Grid item xs={12} md={4} key={b.label}>
                       <Paper variant="outlined" sx={{ p: 2, textAlign: 'center' }}>
                         <Typography variant="subtitle1" color="primary">{b.label}</Typography>
-                        <Typography variant="body2">Teto: R$ {b.data.target.toFixed(2)}</Typography>
+                        <Typography variant="body2">Meta: R$ {b.data.target.toFixed(2)}</Typography>
                         <Typography variant="body2">Gasto: R$ {b.data.actual.toFixed(2)}</Typography>
-                        <Typography variant="body2" color={b.data.difference < 0 ? 'error' : 'success.main'} sx={{ fontWeight: 'bold', mt: 1 }}>
+                        <Typography variant="body2" color={
+                          b.type === 'expense' 
+                            ? (b.data.actual > b.data.target ? 'error' : 'success.main') 
+                            : (b.data.actual < b.data.target ? 'error' : 'success.main')
+                        } sx={{ fontWeight: 'bold', mt: 1 }}>
                           Restante: R$ {b.data.difference.toFixed(2)}
                         </Typography>
                       </Paper>
