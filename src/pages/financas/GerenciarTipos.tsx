@@ -118,11 +118,13 @@ const GerenciarTipos: FC = () => {
     if (t) {
       setRevFormId(t.id);
       setRevFormName(t.name);
+      setRevFormInclude(t.includeInTotals ?? true);
+      setRevFormMonthlyInclude(t.includeInMonthlyTotals ?? true);
     } else {
       setRevFormId(null);
       setRevFormName('');
-    setRevFormInclude(true);
-    setRevFormMonthlyInclude(true);
+      setRevFormInclude(true);
+      setRevFormMonthlyInclude(true);
     }
     setOpenRevModal(true);
   };
