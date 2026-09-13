@@ -28,6 +28,10 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
+      '^/api/v1/(revenues|spendings|revenue-types|spending-types|budget-rules)': {
+        target: process.env.VITE_BUDGET_API_URL || 'http://localhost:8081',
+        changeOrigin: true,
+      },
       '/api': {
         target: process.env.VITE_API_URL || 'http://localhost:8080',
         changeOrigin: true,
