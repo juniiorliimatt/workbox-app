@@ -1,3 +1,6 @@
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import 'dayjs/locale/pt-br';
 import { RouterProvider } from 'react-router-dom';
 import { createTheme, CssBaseline, ThemeProvider } from '@mui/material';
 import router from '@/routes/routes';
@@ -49,12 +52,14 @@ const theme = createTheme({
 function App() {
   return (
     <ThemeProvider theme={theme}>
+      <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="pt-br">
       <CssBaseline />
       <SnackbarProvider>
       <AuthProvider>
         <RouterProvider router={router} />
       </AuthProvider>
       </SnackbarProvider>
+          </LocalizationProvider>
     </ThemeProvider>
   );
 }

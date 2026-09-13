@@ -1,3 +1,5 @@
+import dayjs, { Dayjs } from 'dayjs';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { FC, useState, useEffect, useCallback } from 'react';
 import {
   Box, Container, Button, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
@@ -19,7 +21,7 @@ const Despesas: FC = () => {
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
   
-  const [formDate, setFormDate] = useState('');
+  const [formDate, setFormDate] = useState<Dayjs | null>(null);
   const [formDesc, setFormDesc] = useState('');
   const [formValue, setFormValue] = useState('');
   const [formTypeId, setFormTypeId] = useState('');
@@ -52,7 +54,7 @@ const Despesas: FC = () => {
 
   const handleOpenNew = () => {
     setEditingId(null);
-    setFormDate('');
+    setFormDate(dayjs());
     setFormDesc('');
     setFormValue('');
     setFormTypeId('');
@@ -62,7 +64,7 @@ const Despesas: FC = () => {
 
   const handleEdit = (s: SpendingDTO) => {
     setEditingId(s.id);
-    setFormDate(s.date);
+    setFormDate(dayjs(s.date));
     setFormDesc(s.description || '');
     setFormValue(s.value.toString());
     setFormTypeId(s.typeId);
@@ -74,7 +76,7 @@ const Despesas: FC = () => {
     e.preventDefault();
     try {
       const payload = {
-        date: formDate,
+        date: formDate?.format('YYYY-MM-DD') || '',
         description: formDesc,
         value: Number(formValue),
         typeId: formTypeId,
@@ -168,7 +170,7 @@ const Despesas: FC = () => {
               ) : (
                 spendings.map(s => (
                   <TableRow key={s.id}>
-                    <TableCell>{new Date(s.date).toLocaleDateString('pt-BR')}</TableCell>
+                    <TableCell>{dayjs(s.date).format('DD/MM/YYYY')}</TableCell>
                     <TableCell>{s.description || '-'}</TableCell>
                     <TableCell>{s.typeName}</TableCell>
                     <TableCell>{s.wasPaid ? 'Pago' : 'Pendente'}</TableCell>
@@ -188,7 +190,7 @@ const Despesas: FC = () => {
           <form onSubmit={handleSave}>
             <DialogTitle>{editingId ? 'Editar Despesa' : 'Nova Despesa'}</DialogTitle>
             <DialogContent dividers>
-              <TextField fullWidth type="date" label="Data" value={formDate} onChange={e => setFormDate(e.target.value)} required margin="normal" InputLabelProps={{ shrink: true }} />
+              <DatePicker label="Data" value={formDate} onChange={(newValue) => setFormDate(newValue)} format="DD/MM/YYYY" slotProps={{ textField: { fullWidth: true, margin: 'normal', required: true } }} />
               <TextField fullWidth label="Descrição" value={formDesc} onChange={e => setFormDesc(e.target.value)} margin="normal" />
               <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mt: 2, mb: 1 }}>
                 <TextField fullWidth select label="Tipo" value={formTypeId} onChange={e => setFormTypeId(e.target.value)} required margin="none">
