@@ -7,14 +7,6 @@ import { TotalDTO, FiftyThirtyTwentyDTO, MonthlySummaryDTO, YearlySummaryDTO, Ty
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28'];
 
-const RANDOM_COLORS = [
-  '#FF6633', '#FFB399', '#FF33FF', '#FFFF99', '#00B3E6', 
-  '#E6B333', '#3366E6', '#999966', '#99FF99', '#B34D4D',
-  '#80B300', '#809900', '#E6B3B3', '#6680B3', '#66991A', 
-  '#FF99E6', '#CCFF1A', '#FF1A66', '#E6331A', '#33FFCC'
-];
-
-
 const Orcamentos: FC = () => {
   const api = useAxiosWithAuth();
   const today = new Date();
@@ -101,7 +93,7 @@ const Orcamentos: FC = () => {
         ) : (
           <Grid container spacing={3}>
             <Grid item xs={12} md={6}>
-              <Paper sx={{ p: 3, height: '100%', minHeight: 400, display: 'flex', flexDirection: 'column' }}>
+              <Paper sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column' }}>
                 <Typography variant="h6" align="center" gutterBottom>Receitas vs Despesas</Typography>
                 <Box sx={{ height: 250, width: "100%", mt: 2 }}>
                   <ResponsiveContainer width="100%" height="100%">
@@ -141,7 +133,7 @@ const Orcamentos: FC = () => {
               </Paper>
             </Grid>
             <Grid item xs={12} md={6}>
-              <Paper sx={{ p: 3, height: '100%', minHeight: 400, display: 'flex', flexDirection: 'column' }}>
+              <Paper sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column' }}>
                 <Typography variant="h6" align="center" gutterBottom>Gastos por Meta (50/30/20)</Typography>
                 <Box sx={{ flexGrow: 1, minHeight: 0 }}>
                   <ResponsiveContainer width="100%" height="100%">
@@ -252,25 +244,9 @@ const Orcamentos: FC = () => {
             </Grid>
 
             <Grid item xs={12} md={6}>
-              <Paper sx={{ p: 3, height: '100%', minHeight: 400, display: 'flex', flexDirection: 'column' }}>
+              <Paper sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column' }}>
                 <Typography variant="h6" align="center" gutterBottom>Receitas por Tipo ({year})</Typography>
-                <Box sx={{ height: Math.max(250, revenuesByType.length * 55), width: "100%", mt: 2 }}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart layout="vertical" data={revenuesByType} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis type="number" />
-                      <YAxis dataKey="typeName" type="category" width={150} />
-                      <RechartsTooltip formatter={(value: any) => `R$ ${Number(value || 0).toFixed(2)}`} />
-                      <Bar dataKey="total" name="Valor Arrecadado" radius={[0, 10, 10, 0]}>
-                        {revenuesByType.map((_, index) => (
-                          <Cell key={`cell-rev-${index}`} fill={RANDOM_COLORS[index % RANDOM_COLORS.length]} />
-                        ))}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                </Box>
-
-                <TableContainer sx={{ mt: 2, border: '1px solid', borderColor: 'grey.200', borderRadius: 1, maxHeight: 200 }}>
+                <TableContainer sx={{ mt: 2, border: '1px solid', borderColor: 'grey.200', borderRadius: 1 }}>
                   <Table size="small" stickyHeader>
                     <TableHead>
                       <TableRow>
@@ -294,25 +270,9 @@ const Orcamentos: FC = () => {
               </Paper>
             </Grid>
             <Grid item xs={12} md={6}>
-              <Paper sx={{ p: 3, height: '100%', minHeight: 400, display: 'flex', flexDirection: 'column' }}>
+              <Paper sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column' }}>
                 <Typography variant="h6" align="center" gutterBottom>Despesas por Tipo ({year})</Typography>
-                <Box sx={{ height: Math.max(250, spendingsByType.length * 55), width: "100%", mt: 2 }}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart layout="vertical" data={spendingsByType} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis type="number" />
-                      <YAxis dataKey="typeName" type="category" width={150} />
-                      <RechartsTooltip formatter={(value: any) => `R$ ${Number(value || 0).toFixed(2)}`} />
-                      <Bar dataKey="total" name="Valor Gasto" radius={[0, 10, 10, 0]}>
-                        {spendingsByType.map((_, index) => (
-                          <Cell key={`cell-spend-${index}`} fill={RANDOM_COLORS[(index + 5) % RANDOM_COLORS.length]} />
-                        ))}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                </Box>
-
-                <TableContainer sx={{ mt: 2, border: '1px solid', borderColor: 'grey.200', borderRadius: 1, maxHeight: 200 }}>
+                <TableContainer sx={{ mt: 2, border: '1px solid', borderColor: 'grey.200', borderRadius: 1 }}>
                   <Table size="small" stickyHeader>
                     <TableHead>
                       <TableRow>
