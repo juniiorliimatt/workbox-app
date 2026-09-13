@@ -65,6 +65,24 @@ const GerenciarTipos: FC = () => {
     }
   };
 
+  const renderStatusChip = (context: string, isIncluded?: boolean) => {
+    const isHidden = isIncluded === false;
+    return (
+      <Chip 
+        label={isHidden ? `Oculto no ${context}` : `Exibido no ${context}`} 
+        size="small" 
+        sx={{ 
+          ml: 1, 
+          height: 20, 
+          fontSize: '0.65rem',
+          bgcolor: isHidden ? '#ffebee' : '#e3f2fd',
+          color: isHidden ? '#c62828' : '#1565c0',
+          fontWeight: 600
+        }} 
+      />
+    );
+  };
+
   const getRevisionTypeChip = (type: string) => {
     switch (type) {
       case 'ADD': return <Chip label="Criação (ADD)" color="success" size="small" />;
@@ -227,9 +245,11 @@ const GerenciarTipos: FC = () => {
                       revenueTypes.map(r => (
                         <TableRow key={r.id} hover>
                           <TableCell>
-                            {r.name}
-                            {!r.includeInTotals && <Chip label="Oculto no Anual" size="small" color="default" sx={{ ml: 1, height: 20, fontSize: '0.7rem' }} />}
-                            {!r.includeInMonthlyTotals && <Chip label="Oculto no Mensal" size="small" color="default" sx={{ ml: 1, height: 20, fontSize: '0.7rem' }} />}
+                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                              <Typography variant="body2" sx={{ mr: 1 }}>{r.name}</Typography>
+                              {renderStatusChip('Anual', r.includeInTotals)}
+                              {renderStatusChip('Mensal', r.includeInMonthlyTotals)}
+                            </Box>
                           </TableCell>
                           <TableCell align="right">
                             <IconButton size="small" color="info" onClick={() => handleOpenAudit('rev', r.id, r.name)} title="Ver Histórico"><HistoryIcon fontSize="small" /></IconButton>
@@ -270,9 +290,11 @@ const GerenciarTipos: FC = () => {
                       spendingTypes.map(s => (
                         <TableRow key={s.id} hover>
                           <TableCell>
-                            {s.name}
-                            {!s.includeInTotals && <Chip label="Oculto no Anual" size="small" color="default" sx={{ ml: 1, height: 20, fontSize: '0.7rem' }} />}
-                            {!s.includeInMonthlyTotals && <Chip label="Oculto no Mensal" size="small" color="default" sx={{ ml: 1, height: 20, fontSize: '0.7rem' }} />}
+                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                              <Typography variant="body2" sx={{ mr: 1 }}>{s.name}</Typography>
+                              {renderStatusChip('Anual', s.includeInTotals)}
+                              {renderStatusChip('Mensal', s.includeInMonthlyTotals)}
+                            </Box>
                           </TableCell>
                           <TableCell>
                             {s.category === 'ESSENTIAL' ? 'Essencial (50%)' :
