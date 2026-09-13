@@ -58,9 +58,10 @@ const Orcamentos: FC = () => {
     loadData();
   }, [loadData]);
 
-  const barData = [
-    { name: 'Geral', Receitas: revTotal, Despesas: spendTotal }
-  ];
+  const revSpendPieData = [
+    { name: 'Receitas', value: revTotal, fill: '#4caf50' },
+    { name: 'Despesas', value: spendTotal, fill: '#f44336' }
+  ].filter(d => d.value > 0);
 
   const pieData = ruleData ? [
     { name: 'Essencial', value: ruleData.essential.actual },
@@ -97,15 +98,15 @@ const Orcamentos: FC = () => {
                 <Typography variant="h6" align="center" gutterBottom>Receitas vs Despesas</Typography>
                 <Box sx={{ height: 250, width: "100%", mt: 2 }}>
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart layout="vertical" data={barData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis type="number" />
-                      <YAxis dataKey="name" type="category" width={100} />
+                    <PieChart>
+                      <Pie data={revSpendPieData} cx="50%" cy="50%" outerRadius={80} dataKey="value" label={({ name, percent }: any) => `${name} (${(Number(percent || 0) * 100).toFixed(0)}%)`}>
+                        {revSpendPieData.map((entry, index) => (
+                          <Cell key={`cell-rs-${index}`} fill={entry.fill} />
+                        ))}
+                      </Pie>
                       <RechartsTooltip formatter={(value: any) => `R$ ${Number(value || 0).toFixed(2)}`} />
                       <Legend verticalAlign="bottom" height={36} />
-                      <Bar dataKey="Receitas" fill="#4caf50" radius={[0, 10, 10, 0]} />
-                      <Bar dataKey="Despesas" fill="#f44336" radius={[0, 10, 10, 0]} />
-                    </BarChart>
+                    </PieChart>
                   </ResponsiveContainer>
                 </Box>
 
