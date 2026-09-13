@@ -32,6 +32,8 @@ const GerenciarTipos: FC = () => {
   const [spendFormId, setSpendFormId] = useState<string | null>(null);
   const [spendFormName, setSpendFormName] = useState('');
   const [spendFormCat, setSpendFormCat] = useState('ESSENTIAL');
+  const [spendFormInclude, setSpendFormInclude] = useState(true);
+  const [spendFormMonthlyInclude, setSpendFormMonthlyInclude] = useState(true);
   
   const [confirmTarget, setConfirmTarget] = useState<{ origin: 'rev' | 'spend', id: string } | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
@@ -111,7 +113,7 @@ const GerenciarTipos: FC = () => {
     e.preventDefault();
     setActionLoading(true);
     try {
-      const payload = { name: revFormName };
+      const payload = { name: revFormName, includeInTotals: revFormInclude, includeInMonthlyTotals: revFormMonthlyInclude };
       if (revFormId) {
         await api.put(`/api/v1/revenue-types/${revFormId}`, payload);
         showSnackbar('Tipo de receita atualizado com sucesso!', 'success');
@@ -148,10 +150,14 @@ const GerenciarTipos: FC = () => {
       setSpendFormId(t.id);
       setSpendFormName(t.name);
       setSpendFormCat(t.category || 'ESSENTIAL');
+      setSpendFormInclude(t.includeInTotals ?? true);
+      setSpendFormMonthlyInclude(t.includeInMonthlyTotals ?? true);
     } else {
       setSpendFormId(null);
       setSpendFormName('');
       setSpendFormCat('ESSENTIAL');
+      setSpendFormInclude(true);
+      setSpendFormMonthlyInclude(true);
     }
     setOpenSpendModal(true);
   };
@@ -160,7 +166,7 @@ const GerenciarTipos: FC = () => {
     e.preventDefault();
     setActionLoading(true);
     try {
-      const payload = { name: spendFormName, category: spendFormCat };
+      const payload = { name: spendFormName, category: spendFormCat, includeInTotals: spendFormInclude, includeInMonthlyTotals: spendFormMonthlyInclude };
       if (spendFormId) {
         await api.put(`/api/v1/spending-types/${spendFormId}`, payload);
         showSnackbar('Tipo de despesa atualizado com sucesso!', 'success');
@@ -220,7 +226,11 @@ const GerenciarTipos: FC = () => {
                     ) : (
                       revenueTypes.map(r => (
                         <TableRow key={r.id} hover>
-                          <TableCell>{r.name}</TableCell>
+                          <TableCell>
+                            {r.name}
+                            {!r.includeInTotals && <Chip label="Oculto no Anual" size="small" color="default" sx={{ ml: 1, height: 20, fontSize: '0.7rem' }} />}
+                            {!r.includeInMonthlyTotals && <Chip label="Oculto no Mensal" size="small" color="default" sx={{ ml: 1, height: 20, fontSize: '0.7rem' }} />}
+                          </TableCell>
                           <TableCell align="right">
                             <IconButton size="small" color="info" onClick={() => handleOpenAudit('rev', r.id, r.name)} title="Ver Histórico"><HistoryIcon fontSize="small" /></IconButton>
                             <IconButton size="small" color="primary" onClick={() => handleOpenRev(r)}><EditIcon fontSize="small" /></IconButton>
@@ -259,7 +269,11 @@ const GerenciarTipos: FC = () => {
                     ) : (
                       spendingTypes.map(s => (
                         <TableRow key={s.id} hover>
-                          <TableCell>{s.name}</TableCell>
+                          <TableCell>
+                            {s.name}
+                            {!s.includeInTotals && <Chip label="Oculto no Anual" size="small" color="default" sx={{ ml: 1, height: 20, fontSize: '0.7rem' }} />}
+                            {!s.includeInMonthlyTotals && <Chip label="Oculto no Mensal" size="small" color="default" sx={{ ml: 1, height: 20, fontSize: '0.7rem' }} />}
+                          </TableCell>
                           <TableCell>
                             {s.category === 'ESSENTIAL' ? 'Essencial (50%)' :
                              s.category === 'PERSONAL' ? 'Pessoal (30%)' :
@@ -308,6 +322,8 @@ const GerenciarTipos: FC = () => {
                 <MenuItem value="PERSONAL">Gastos Pessoais (30%)</MenuItem>
                 <MenuItem value="SAVINGS">Economia/Investimento (20%)</MenuItem>
               </TextField>
+              <FormControlLabel control={<Checkbox checked={spendFormInclude} onChange={e => setSpendFormInclude(e.target.checked)} />} label="Incluir na contagem anual" sx={{ mt: 1 }} />
+              <FormControlLabel control={<Checkbox checked={spendFormMonthlyInclude} onChange={e => setSpendFormMonthlyInclude(e.target.checked)} />} label="Incluir na contagem mensal" sx={{ mt: 1 }} />
             </DialogContent>
             <DialogActions>
               <Button onClick={() => setOpenSpendModal(false)}>Cancelar</Button>
