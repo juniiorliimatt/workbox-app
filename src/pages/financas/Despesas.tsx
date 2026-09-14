@@ -368,7 +368,7 @@ const Despesas: FC = () => {
                     <TableCell>{s.referenceDate ? dayjs(s.referenceDate).format('MM/YYYY') : '-'}</TableCell>
                     <TableCell>{s.description || '-'}</TableCell>
                     <TableCell>{s.typeName}</TableCell>
-                    <TableCell><Chip label={s.wasPaid ? 'Pago' : 'Pendente'} size="small" color={s.wasPaid ? 'success' : 'warning'} sx={{ fontWeight: 500 }} /></TableCell>
+                    <TableCell><Chip label={s.wasPaid ? 'Pago' : 'Pendente'} size="small" sx={{ fontWeight: 500, bgcolor: s.wasPaid ? '#e8f5e9' : '#fff3e0', color: s.wasPaid ? '#2e7d32' : '#ed6c02' }} /></TableCell>
                     <TableCell>{Number(s.value).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</TableCell>
                     <TableCell align="center">
                       <IconButton color="info" onClick={() => handleOpenAudit(s)} title="Ver Histórico"><HistoryIcon /></IconButton>
