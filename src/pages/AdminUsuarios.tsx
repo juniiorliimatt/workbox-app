@@ -1,7 +1,6 @@
 import { FC, useEffect, useState, useCallback } from 'react';
 import {
   Alert,
-  Avatar,
   Badge,
   Box,
   Button,
@@ -558,12 +557,10 @@ export const AdminUsuarios: FC = () => {
                   </label>
                 }
               >
-                <Avatar
-                  src={formAvatarPreview || undefined}
-                  sx={{ width: 52, height: 52, bgcolor: 'secondary.main' }}
-                >
-                  {!formAvatarPreview && <PersonIcon />}
-                </Avatar>
+                <UserAvatar
+                  avatarUrl={formAvatarPreview || undefined}
+                  sx={{ width: 52, height: 52, bgcolor: 'secondary.main', fontSize: '1.2rem' }}
+                />
               </Badge>
               <Box>
                 <Typography variant="subtitle2" sx={{ fontWeight: 600, fontSize: '0.85rem' }}>

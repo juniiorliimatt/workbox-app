@@ -520,6 +520,7 @@ const Perfil: FC = () => {
                   onSubmit={handleSubmitProfile(onProfileSubmit)}
                   noValidate
                 >
+                  {isAdmin && (
                   <TextField
                     margin="dense"
                     fullWidth
@@ -530,6 +531,7 @@ const Perfil: FC = () => {
                     InputProps={{ sx: { fontFamily: 'monospace', fontSize: '0.8rem' } }}
                     sx={{ mb: 1 }}
                   />
+                  )}
 
                   <TextField
                     margin="dense"

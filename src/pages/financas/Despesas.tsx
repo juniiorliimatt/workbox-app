@@ -73,7 +73,7 @@ const BatchSpendingModal = ({ open, onClose, types, onSaved, api, showSnackbar }
           <DialogContent dividers>
             {batchItems.map((item, index) => (
               <Box key={index} sx={{ display: 'flex', gap: 1, alignItems: 'center', mb: 2 }}>
-                <DatePicker label="Data" value={item.date} onChange={(val) => handleBatchChange(index, 'date', val)} format="DD/MM/YYYY" slotProps={{ textField: { required: true, size: 'small', sx: { width: 140 } } }} />
+                <DatePicker sx={{ minWidth: 150 }} label="Data" value={item.date} onChange={(val) => handleBatchChange(index, 'date', val)} format="DD/MM/YYYY" slotProps={{ textField: { required: true, size: 'small', sx: { width: 140 } } }} />
                 <DatePicker label="Comp." value={item.referenceDate} onChange={(val) => handleBatchChange(index, 'referenceDate', val)} format="MM/YYYY" views={['year', 'month']} slotProps={{ textField: { size: 'small', sx: { width: 120 } } }} />
                 <Autocomplete
                   options={types}
@@ -332,7 +332,7 @@ const Despesas: FC = () => {
         </Paper>
 
         <TableContainer component={Paper}>
-          <Table>
+          <Table size="small" sx={{ '& .MuiTableCell-root': { fontSize: '0.95rem', py: 1 } }}>
             <TableHead sx={{ bgcolor: 'grey.100' }}>
               
             <TableRow>
@@ -352,7 +352,7 @@ const Despesas: FC = () => {
               <TableCell>
                 <TableSortLabel active={orderBy === 'value'} direction={orderBy === 'value' ? orderDirection : 'asc'} onClick={() => handleRequestSort('value')}>Valor (R$)</TableSortLabel>
               </TableCell>
-              <TableCell align="right">Ações</TableCell>
+              <TableCell align="center">Ações</TableCell>
             </TableRow>
 
             </TableHead>
@@ -368,9 +368,9 @@ const Despesas: FC = () => {
                     <TableCell>{s.referenceDate ? dayjs(s.referenceDate).format('MM/YYYY') : '-'}</TableCell>
                     <TableCell>{s.description || '-'}</TableCell>
                     <TableCell>{s.typeName}</TableCell>
-                    <TableCell>{s.wasPaid ? 'Pago' : 'Pendente'}</TableCell>
+                    <TableCell><Chip label={s.wasPaid ? 'Pago' : 'Pendente'} size="small" color={s.wasPaid ? 'success' : 'warning'} sx={{ fontWeight: 500 }} /></TableCell>
                     <TableCell>{Number(s.value).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</TableCell>
-                    <TableCell align="right">
+                    <TableCell align="center">
                       <IconButton color="info" onClick={() => handleOpenAudit(s)} title="Ver Histórico"><HistoryIcon /></IconButton>
                       <IconButton color="primary" onClick={() => handleEdit(s)}><EditIcon /></IconButton>
                       <IconButton color="error" onClick={() => setConfirmTarget({ type: 'spending', id: s.id })}><DeleteIcon /></IconButton>
@@ -400,30 +400,26 @@ const Despesas: FC = () => {
             <DialogTitle>{editingId ? 'Editar Despesa' : 'Nova Despesa'}</DialogTitle>
             <DialogContent dividers>
               <Box sx={{ display: 'flex', gap: 2 }}>
-                <DatePicker label="Data do Movimento" value={formDate} onChange={(newValue) => setFormDate(newValue)} format="DD/MM/YYYY" slotProps={{ textField: { fullWidth: true, margin: 'normal', required: true } }} />
-                <DatePicker label="Competência (Opcional)" value={formRefDate} onChange={(newValue) => setFormRefDate(newValue)} format="MM/YYYY" views={['year', 'month']} slotProps={{ textField: { fullWidth: true, margin: 'normal' } }} />
+                <DatePicker label="Data do Movimento" value={formDate} onChange={(newValue) => setFormDate(newValue)} format="DD/MM/YYYY" slotProps={{ textField: { fullWidth: true, margin: 'normal', required: true, size: 'small' } }} />
+                <DatePicker label="Competência (Opcional)" value={formRefDate} onChange={(newValue) => setFormRefDate(newValue)} format="MM/YYYY" views={['year', 'month']} slotProps={{ textField: { fullWidth: true, margin: 'normal', size: 'small' } }} />
               </Box>
-              <TextField fullWidth label="Descrição" value={formDesc} onChange={e => setFormDesc(e.target.value)} margin="normal" />
+              <TextField fullWidth label="Descrição" size="small" value={formDesc} onChange={e => setFormDesc(e.target.value)} margin="dense" />
               <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mt: 2, mb: 1 }}>
                 <Autocomplete
                   options={types}
                   getOptionLabel={(option) => option.name}
                   value={types.find((t: SpendingTypeDTO) => t.id === formTypeId) || null}
                   onChange={(_, newValue) => setFormTypeId(newValue ? newValue.id : '')}
-                  renderInput={(params) => <TextField {...params} label="Tipo" required margin="none" />}
+                  renderInput={(params) => <TextField {...params} label="Tipo" required margin="none" size="small" />}
                   sx={{ flexGrow: 1 }}
                 />
                 <IconButton color="primary" onClick={() => setOpenTypeModal(true)} sx={{ bgcolor: 'action.hover', borderRadius: 1 }} title="Adicionar novo tipo">
                   <AddIcon />
                 </IconButton>
-                {formTypeId && (
-                  <IconButton color="error" onClick={() => setConfirmTarget({ type: 'type', id: formTypeId })} sx={{ bgcolor: 'action.hover', borderRadius: 1 }} title="Excluir tipo selecionado">
-                    <DeleteIcon />
-                  </IconButton>
-                )}
+                
               </Box>
               <Box sx={{ display: 'flex', gap: 2, mt: 2, alignItems: 'center' }}>
-                <TextField fullWidth type="number" label="Valor" value={formValue} onChange={e => setFormValue(e.target.value)} required margin="none" inputProps={{ step: '0.01' }} />
+                <TextField fullWidth type="number" label="Valor" size="small" value={formValue} onChange={e => setFormValue(e.target.value)} required margin="none" inputProps={{ step: '0.01' }} />
                 <FormControlLabel control={<Checkbox checked={formWasPaid} onChange={e => setFormWasPaid(e.target.checked)} />} label="Já foi pago" sx={{ whiteSpace: 'nowrap' }} />
               </Box>
             </DialogContent>
@@ -438,8 +434,8 @@ const Despesas: FC = () => {
           <form onSubmit={handleSaveType}>
             <DialogTitle>Novo Tipo de Despesa</DialogTitle>
             <DialogContent dividers>
-              <TextField autoFocus fullWidth label="Nome do Tipo" value={newTypeName} onChange={e => setNewTypeName(e.target.value)} required margin="normal" />
-              <TextField fullWidth select label="Categoria da Regra 50/30/20" value={newTypeCategory} onChange={e => setNewTypeCategory(e.target.value)} required margin="normal">
+              <TextField autoFocus fullWidth label="Nome do Tipo" value={newTypeName} onChange={e => setNewTypeName(e.target.value)} required margin="dense" />
+              <TextField fullWidth select label="Categoria da Regra 50/30/20" value={newTypeCategory} onChange={e => setNewTypeCategory(e.target.value)} required margin="dense">
                 <MenuItem value="ESSENTIAL">Gastos Essenciais (50%)</MenuItem>
                 <MenuItem value="PERSONAL">Gastos Pessoais (30%)</MenuItem>
                 <MenuItem value="SAVINGS">Economia/Investimento (20%)</MenuItem>

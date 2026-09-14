@@ -65,14 +65,14 @@ const BatchRevenueModal = ({ open, onClose, types, onSaved, api, showSnackbar }:
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
+    <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth>
       
         <form onSubmit={handleSaveBatch}>
           <DialogTitle>Lançamento em Lote de Receitas</DialogTitle>
           <DialogContent dividers>
             {batchItems.map((item, index) => (
               <Box key={index} sx={{ display: 'flex', gap: 2, alignItems: 'center', mb: 2 }}>
-                <DatePicker label="Data" value={item.date} onChange={(val) => handleBatchChange(index, 'date', val)} format="DD/MM/YYYY" slotProps={{ textField: { required: true, size: 'small', sx: { width: 150 } } }} />
+                <DatePicker sx={{ minWidth: 150 }} label="Data" value={item.date} onChange={(val) => handleBatchChange(index, 'date', val)} format="DD/MM/YYYY" slotProps={{ textField: { required: true, size: 'small', sx: { width: 150 } } }} />
                 <DatePicker label="Comp. (Opc)" value={item.referenceDate} onChange={(val) => handleBatchChange(index, 'referenceDate', val)} format="MM/YYYY" views={['year', 'month']} slotProps={{ textField: { size: 'small', sx: { width: 130 } } }} />
                 <Autocomplete
                   options={types}
@@ -322,7 +322,7 @@ const Receitas: FC = () => {
         </Paper>
 
         <TableContainer component={Paper}>
-          <Table>
+          <Table size="small" sx={{ '& .MuiTableCell-root': { fontSize: '0.95rem', py: 1 } }}>
             <TableHead sx={{ bgcolor: 'grey.100' }}>
               
             <TableRow>
@@ -338,7 +338,7 @@ const Receitas: FC = () => {
               <TableCell>
                 <TableSortLabel active={orderBy === 'value'} direction={orderBy === 'value' ? orderDirection : 'asc'} onClick={() => handleRequestSort('value')}>Valor (R$)</TableSortLabel>
               </TableCell>
-              <TableCell align="right">Ações</TableCell>
+              <TableCell align="center">Ações</TableCell>
             </TableRow>
 
             </TableHead>
@@ -354,7 +354,7 @@ const Receitas: FC = () => {
                     <TableCell>{rev.referenceDate ? dayjs(rev.referenceDate).format('MM/YYYY') : '-'}</TableCell>
                     <TableCell>{rev.typeName}</TableCell>
                     <TableCell>{Number(rev.value).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</TableCell>
-                    <TableCell align="right">
+                    <TableCell align="center">
                       <IconButton color="info" onClick={() => handleOpenAudit(rev)} title="Ver Histórico"><HistoryIcon /></IconButton>
                       <IconButton color="primary" onClick={() => handleEdit(rev)}><EditIcon /></IconButton>
                       <IconButton color="error" onClick={() => setConfirmTarget({ type: 'revenue', id: rev.id })}><DeleteIcon /></IconButton>
@@ -384,8 +384,8 @@ const Receitas: FC = () => {
             <DialogTitle>{editingId ? 'Editar Receita' : 'Nova Receita'}</DialogTitle>
             <DialogContent dividers>
               <Box sx={{ display: 'flex', gap: 2 }}>
-                <DatePicker label="Data do Lançamento" value={formDate} onChange={(newValue) => setFormDate(newValue)} format="DD/MM/YYYY" slotProps={{ textField: { fullWidth: true, margin: 'normal', required: true } }} />
-                <DatePicker label="Competência (Opcional)" value={formRefDate} onChange={(newValue) => setFormRefDate(newValue)} format="MM/YYYY" views={['year', 'month']} slotProps={{ textField: { fullWidth: true, margin: 'normal' } }} />
+                <DatePicker label="Data do Lançamento" value={formDate} onChange={(newValue) => setFormDate(newValue)} format="DD/MM/YYYY" slotProps={{ textField: { fullWidth: true, margin: 'normal', required: true, size: 'small' } }} />
+                <DatePicker label="Competência (Opcional)" value={formRefDate} onChange={(newValue) => setFormRefDate(newValue)} format="MM/YYYY" views={['year', 'month']} slotProps={{ textField: { fullWidth: true, margin: 'normal', size: 'small' } }} />
               </Box>
               <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mt: 2, mb: 1 }}>
                 <Autocomplete
@@ -393,19 +393,15 @@ const Receitas: FC = () => {
                   getOptionLabel={(option) => option.name}
                   value={types.find((t: RevenueTypeDTO) => t.id === formTypeId) || null}
                   onChange={(_, newValue) => setFormTypeId(newValue ? newValue.id : '')}
-                  renderInput={(params) => <TextField {...params} label="Tipo" required margin="none" />}
+                  renderInput={(params) => <TextField {...params} label="Tipo" required margin="none" size="small" />}
                   sx={{ flexGrow: 1 }}
                 />
                 <IconButton color="primary" onClick={() => setOpenTypeModal(true)} sx={{ bgcolor: 'action.hover', borderRadius: 1 }} title="Adicionar novo tipo">
                   <AddIcon />
                 </IconButton>
-                {formTypeId && (
-                  <IconButton color="error" onClick={() => setConfirmTarget({ type: 'type', id: formTypeId })} sx={{ bgcolor: 'action.hover', borderRadius: 1 }} title="Excluir tipo selecionado">
-                    <DeleteIcon />
-                  </IconButton>
-                )}
+                
               </Box>
-              <TextField fullWidth type="number" label="Valor" value={formValue} onChange={e => setFormValue(e.target.value)} required margin="normal" inputProps={{ step: '0.01' }} />
+              <TextField fullWidth type="number" label="Valor" size="small" value={formValue} onChange={e => setFormValue(e.target.value)} required margin="dense" inputProps={{ step: '0.01' }} />
             </DialogContent>
             <DialogActions>
               <Button onClick={() => setOpen(false)}>Cancelar</Button>
@@ -418,7 +414,7 @@ const Receitas: FC = () => {
           <form onSubmit={handleSaveType}>
             <DialogTitle>Novo Tipo de Receita</DialogTitle>
             <DialogContent dividers>
-              <TextField autoFocus fullWidth label="Nome do Tipo" value={newTypeName} onChange={e => setNewTypeName(e.target.value)} required margin="normal" />
+              <TextField autoFocus fullWidth label="Nome do Tipo" value={newTypeName} onChange={e => setNewTypeName(e.target.value)} required margin="dense" />
               <FormControlLabel control={<Checkbox checked={newTypeInclude} onChange={e => setNewTypeInclude(e.target.checked)} />} label="Incluir na contagem anual" sx={{ mt: 1 }} />
               <FormControlLabel control={<Checkbox checked={newTypeMonthlyInclude} onChange={e => setNewTypeMonthlyInclude(e.target.checked)} />} label="Incluir na contagem mensal" sx={{ mt: 1 }} />
             </DialogContent>
