@@ -65,15 +65,15 @@ const BatchRevenueModal = ({ open, onClose, types, onSaved, api, showSnackbar }:
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth>
+    <Dialog open={open} onClose={onClose} maxWidth="xl" fullWidth>
       
         <form onSubmit={handleSaveBatch}>
           <DialogTitle>Lançamento em Lote de Receitas</DialogTitle>
           <DialogContent dividers>
             {batchItems.map((item, index) => (
               <Box key={index} sx={{ display: 'flex', gap: 2, alignItems: 'center', mb: 2 }}>
-                <DatePicker sx={{ minWidth: 150 }} label="Data" value={item.date} onChange={(val) => handleBatchChange(index, 'date', val)} format="DD/MM/YYYY" slotProps={{ textField: { required: true, size: 'small', sx: { width: 150 } } }} />
-                <DatePicker label="Comp. (Opc)" value={item.referenceDate} onChange={(val) => handleBatchChange(index, 'referenceDate', val)} format="MM/YYYY" views={['year', 'month']} slotProps={{ textField: { size: 'small', sx: { width: 130 } } }} />
+                <DatePicker sx={{ minWidth: 150 }} label="Data" value={item.date} onChange={(val) => handleBatchChange(index, 'date', val)} format="DD/MM/YYYY" slotProps={{ textField: { required: true, size: 'small', sx: { width: 180 } } }} />
+                <DatePicker label="Comp. (Opc)" value={item.referenceDate} onChange={(val) => handleBatchChange(index, 'referenceDate', val)} format="MM/YYYY" views={['year', 'month']} slotProps={{ textField: { size: 'small', sx: { width: 160 } } }} />
                 <Autocomplete
                   options={types}
                   getOptionLabel={(option) => option.name}
