@@ -76,11 +76,12 @@ const BatchRevenueModal = ({ open, onClose, types, onSaved, api, showSnackbar }:
     setBatchLoading(true);
     try {
       const payload = {
-        typeId: annualItem.typeId,
-        value: Number(annualItem.value),
-        year: annualItem.date ? annualItem.date.year() : dayjs().year(),
-        startMonth: annualItem.date ? annualItem.date.month() + 1 : 1,
-        dayOfMonth: annualItem.date ? annualItem.date.date() : 1
+        revenue: {
+          date: annualItem.date ? annualItem.date.format('YYYY-MM-DD') : null,
+          typeId: annualItem.typeId,
+          value: Number(annualItem.value)
+        },
+        startMonth: annualItem.date ? annualItem.date.month() + 1 : 1
       };
       await api.post('/api/v1/revenues/batch/annual', payload);
       showSnackbar('Lote anual de receitas cadastrado com sucesso!', 'success');

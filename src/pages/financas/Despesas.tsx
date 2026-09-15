@@ -83,13 +83,14 @@ const BatchSpendingModal = ({ open, onClose, types, onSaved, api, showSnackbar }
     setBatchLoading(true);
     try {
       const payload = {
-        typeId: annualItem.typeId,
-        description: annualItem.description,
-        value: Number(annualItem.value),
-        year: annualItem.date ? annualItem.date.year() : dayjs().year(),
-        startMonth: annualItem.date ? annualItem.date.month() + 1 : 1,
-        dayOfMonth: annualItem.date ? annualItem.date.date() : 1,
-        wasPaid: annualItem.wasPaid
+        spending: {
+          date: annualItem.date ? annualItem.date.format('YYYY-MM-DD') : null,
+          typeId: annualItem.typeId,
+          description: annualItem.description,
+          value: Number(annualItem.value),
+          wasPaid: annualItem.wasPaid
+        },
+        startMonth: annualItem.date ? annualItem.date.month() + 1 : 1
       };
       await api.post('/api/v1/spendings/batch/annual', payload);
       showSnackbar('Lote anual de despesas cadastrado com sucesso!', 'success');
