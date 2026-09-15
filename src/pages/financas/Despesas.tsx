@@ -5,9 +5,9 @@ import {
   FormControlLabel, Checkbox, TablePagination, TableSortLabel,
   Tabs,
   Tab,
-  Select,
-  FormControl,
-  InputLabel
+  
+  
+  
 } from '@mui/material';
 import { Add as AddIcon, Delete as DeleteIcon, Edit as EditIcon, History as HistoryIcon } from '@mui/icons-material';
 import { useAxiosWithAuth } from '@/services/useAxiosWithAuth';
@@ -26,14 +26,7 @@ const BatchSpendingModal = ({ open, onClose, types, onSaved, api, showSnackbar }
   const [tabIndex, setTabIndex] = useState(0);
 
   const [batchItems, setBatchItems] = useState<BatchItem[]>([{ date: dayjs(), referenceDate: null, typeId: '', description: '', value: '', wasPaid: false }]);
-  
-  const [annualTypeId, setAnnualTypeId] = useState('');
-  const [annualDescription, setAnnualDescription] = useState('');
-  const [annualValue, setAnnualValue] = useState('');
-  const [annualYear, setAnnualYear] = useState(dayjs().year());
-  const [annualStartMonth, setAnnualStartMonth] = useState(1);
-  const [annualDayOfMonth, setAnnualDayOfMonth] = useState(dayjs().date());
-  const [annualWasPaid, setAnnualWasPaid] = useState(false);
+  const [annualItem, setAnnualItem] = useState<BatchItem>({ date: dayjs(), referenceDate: null, typeId: '', description: '', value: '', wasPaid: false });
 
   const [batchLoading, setBatchLoading] = useState(false);
 
@@ -41,13 +34,7 @@ const BatchSpendingModal = ({ open, onClose, types, onSaved, api, showSnackbar }
     if (open) {
       setTabIndex(0);
       setBatchItems([{ date: dayjs(), referenceDate: null, typeId: '', description: '', value: '', wasPaid: false }]);
-      setAnnualTypeId('');
-      setAnnualDescription('');
-      setAnnualValue('');
-      setAnnualYear(dayjs().year());
-      setAnnualStartMonth(1);
-      setAnnualDayOfMonth(dayjs().date());
-      setAnnualWasPaid(false);
+      setAnnualItem({ date: dayjs(), referenceDate: null, typeId: '', description: '', value: '', wasPaid: false });
     }
   }, [open]);
 
@@ -96,13 +83,13 @@ const BatchSpendingModal = ({ open, onClose, types, onSaved, api, showSnackbar }
     setBatchLoading(true);
     try {
       const payload = {
-        typeId: annualTypeId,
-        description: annualDescription,
-        value: Number(annualValue),
-        year: annualYear,
-        startMonth: annualStartMonth,
-        dayOfMonth: annualDayOfMonth,
-        wasPaid: annualWasPaid
+        typeId: annualItem.typeId,
+        description: annualItem.description,
+        value: Number(annualItem.value),
+        year: annualItem.date ? annualItem.date.year() : dayjs().year(),
+        startMonth: annualItem.date ? annualItem.date.month() + 1 : 1,
+        dayOfMonth: annualItem.date ? annualItem.date.date() : 1,
+        wasPaid: annualItem.wasPaid
       };
       await api.post('/api/v1/spendings/batch/annual', payload);
       showSnackbar('Lote anual de despesas cadastrado com sucesso!', 'success');
@@ -120,7 +107,7 @@ const BatchSpendingModal = ({ open, onClose, types, onSaved, api, showSnackbar }
       <DialogTitle>Lançamento em Lote de Despesas</DialogTitle>
       
       <Box sx={{ borderBottom: 1, borderColor: 'divider', px: 3 }}>
-        <Tabs value={tabIndex} onChange={(_, val: number) => setTabIndex(val)}>
+        <Tabs value={tabIndex} onChange={(_, val: number) => setTabIndex(val)} centered>
           <Tab label="Lote Mensal (Linhas)" />
           <Tab label="Lote Anual (Recorrente)" />
         </Tabs>
@@ -162,44 +149,22 @@ const BatchSpendingModal = ({ open, onClose, types, onSaved, api, showSnackbar }
         <form onSubmit={handleSaveAnnual}>
           <DialogContent dividers>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-              Cria uma despesa para cada mês a partir do mês inicial até dezembro. O dia do mês será mantido, ou ajustado (ex: dia 31 em fevereiro vira 28/29).
+              Cria uma despesa recorrente para cada mês até o fim do ano com base nos dados abaixo. 
+              A data inicial define o <strong>Dia</strong>, <strong>Mês inicial</strong> e <strong>Ano</strong>.
             </Typography>
-            <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+            <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mb: 2 }}>
+              <DatePicker sx={{ minWidth: 150 }} label="Data Inicial" value={annualItem.date} onChange={(val) => setAnnualItem({...annualItem, date: val})} format="DD/MM/YYYY" slotProps={{ textField: { required: true, size: 'small', sx: { width: 180 } } }} />
               <Autocomplete
                 options={types}
                 getOptionLabel={(option) => option.name}
-                value={types.find((t: SpendingTypeDTO) => t.id === annualTypeId) || null}
-                onChange={(_, newValue) => setAnnualTypeId(newValue ? newValue.id : '')}
+                value={types.find((t: SpendingTypeDTO) => t.id === annualItem.typeId) || null}
+                onChange={(_, newValue) => setAnnualItem({...annualItem, typeId: newValue ? newValue.id : ''})}
                 renderInput={(params) => <TextField {...params} label="Tipo" required size="small" />}
-                sx={{ width: 250 }}
+                sx={{ width: 180 }}
               />
-              <TextField label="Descrição Base" value={annualDescription} onChange={e => setAnnualDescription(e.target.value)} required size="small" sx={{ flexGrow: 1, minWidth: 200 }} />
-              <TextField type="number" label="Valor" value={annualValue} onChange={e => setAnnualValue(e.target.value)} required size="small" inputProps={{ step: '0.01' }} sx={{ width: 150 }} />
-            </Box>
-            <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', mt: 2, alignItems: 'center' }}>
-              <TextField type="number" label="Ano" value={annualYear} onChange={e => setAnnualYear(Number(e.target.value))} required size="small" sx={{ width: 120 }} />
-              
-              <FormControl size="small" sx={{ width: 150 }}>
-                <InputLabel>Mês Inicial</InputLabel>
-                <Select value={annualStartMonth} label="Mês Inicial" onChange={(e: any) => setAnnualStartMonth(Number(e.target.value))}>
-                  <MenuItem value={1}>Janeiro</MenuItem>
-                  <MenuItem value={2}>Fevereiro</MenuItem>
-                  <MenuItem value={3}>Março</MenuItem>
-                  <MenuItem value={4}>Abril</MenuItem>
-                  <MenuItem value={5}>Maio</MenuItem>
-                  <MenuItem value={6}>Junho</MenuItem>
-                  <MenuItem value={7}>Julho</MenuItem>
-                  <MenuItem value={8}>Agosto</MenuItem>
-                  <MenuItem value={9}>Setembro</MenuItem>
-                  <MenuItem value={10}>Outubro</MenuItem>
-                  <MenuItem value={11}>Novembro</MenuItem>
-                  <MenuItem value={12}>Dezembro</MenuItem>
-                </Select>
-              </FormControl>
-
-              <TextField type="number" label="Dia de Vencimento" value={annualDayOfMonth} onChange={e => setAnnualDayOfMonth(Number(e.target.value))} required size="small" inputProps={{ min: 1, max: 31 }} sx={{ width: 150 }} />
-              
-              <FormControlLabel control={<Checkbox checked={annualWasPaid} onChange={e => setAnnualWasPaid(e.target.checked)} size="small" />} label="Já marcar como Pago" sx={{ ml: 1 }} />
+              <TextField label="Descrição Base" value={annualItem.description} onChange={e => setAnnualItem({...annualItem, description: e.target.value})} required size="small" sx={{ flexGrow: 1 }} />
+              <TextField type="number" label="Valor" value={annualItem.value} onChange={e => setAnnualItem({...annualItem, value: e.target.value})} required size="small" inputProps={{ step: '0.01' }} sx={{ width: 110 }} />
+              <FormControlLabel control={<Checkbox checked={annualItem.wasPaid} onChange={e => setAnnualItem({...annualItem, wasPaid: e.target.checked})} size="small" />} label="Pago" sx={{ ml: 1, mr: 0 }} />
             </Box>
           </DialogContent>
           <DialogActions>
@@ -213,7 +178,6 @@ const BatchSpendingModal = ({ open, onClose, types, onSaved, api, showSnackbar }
     </Dialog>
   );
 };
-
 const Despesas: FC = () => {
   const api = useAxiosWithAuth();
   const { showSnackbar } = useSnackbar();
