@@ -1,7 +1,7 @@
 import { FC, useState, useEffect, useCallback } from 'react';
 import {
   Box, Container, Button, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-  IconButton, Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem, CircularProgress, Autocomplete, Chip, Typography, TablePagination, TableSortLabel, Tabs, Tab, Checkbox, FormControlLabel } from '@mui/material';
+  IconButton, Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem, CircularProgress, Autocomplete, Chip, Typography, TablePagination, TableSortLabel, Tabs, Tab, Checkbox, FormControlLabel, OutlinedInput, ListItemText, FormControl, InputLabel, Select } from '@mui/material';
 import { Add as AddIcon, Delete as DeleteIcon, Edit as EditIcon, History as HistoryIcon } from '@mui/icons-material';
 import { useAxiosWithAuth } from '@/services/useAxiosWithAuth';
 import AppNavbar from '@/components/AppNavbar';
@@ -19,7 +19,8 @@ const BatchRevenueModal = ({ open, onClose, types, onSaved, api, showSnackbar }:
   const [tabIndex, setTabIndex] = useState(0);
 
   const [batchItems, setBatchItems] = useState<BatchItem[]>([{ date: dayjs(), referenceDate: null, typeId: '', value: '' }]);
-  const [annualItem, setAnnualItem] = useState<BatchItem>({ date: dayjs(), referenceDate: null, typeId: '', value: '' });
+  const [annualItems, setAnnualItems] = useState<BatchItem[]>([{ date: dayjs(), referenceDate: null, typeId: '', value: '' }]);
+  const [annualMonths, setAnnualMonths] = useState<number[]>([]);
 
   const [batchLoading, setBatchLoading] = useState(false);
 
@@ -27,12 +28,16 @@ const BatchRevenueModal = ({ open, onClose, types, onSaved, api, showSnackbar }:
     if (open) {
       setTabIndex(0);
       setBatchItems([{ date: dayjs(), referenceDate: null, typeId: '', value: '' }]);
-      setAnnualItem({ date: dayjs(), referenceDate: null, typeId: '', value: '' });
+      setAnnualItems([{ date: dayjs(), referenceDate: null, typeId: '', value: '' }]);
+      setAnnualMonths([]);
     }
   }, [open]);
 
   const handleBatchChange = (index: number, field: string, val: unknown) => {
     setBatchItems(prev => prev.map((item, i) => i === index ? { ...item, [field]: val } : item));
+  };
+  const handleAnnualChange = (index: number, field: string, val: unknown) => {
+    setAnnualItems(prev => prev.map((item, i) => i === index ? { ...item, [field]: val } : item));
   };
 
   const handleAddBatchLine = () => {
@@ -45,9 +50,22 @@ const BatchRevenueModal = ({ open, onClose, types, onSaved, api, showSnackbar }:
       }];
     });
   };
+  const handleAddAnnualLine = () => {
+    setAnnualItems(prev => {
+      const lastItem = prev.length > 0 ? prev[prev.length - 1] : null;
+      return [...prev, { 
+        ...({ date: dayjs(), referenceDate: null, typeId: '', value: '' }),
+        date: lastItem ? lastItem.date : dayjs(), 
+        referenceDate: lastItem ? lastItem.referenceDate : null 
+      }];
+    });
+  };
 
   const handleRemoveBatchLine = (index: number) => {
     setBatchItems(prev => prev.filter((_, i) => i !== index));
+  };
+  const handleRemoveAnnualLine = (index: number) => {
+    setAnnualItems(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleSaveMonthly = async (e: React.FormEvent) => {
@@ -76,12 +94,12 @@ const BatchRevenueModal = ({ open, onClose, types, onSaved, api, showSnackbar }:
     setBatchLoading(true);
     try {
       const payload = {
-        revenue: {
-          date: annualItem.date ? annualItem.date.format('YYYY-MM-DD') : null,
-          typeId: annualItem.typeId,
-          value: Number(annualItem.value)
-        },
-        startMonth: annualItem.date ? annualItem.date.month() + 1 : 1
+        revenues: annualItems.map(item => ({
+          date: item.date ? item.date.format('YYYY-MM-DD') : null,
+          typeId: item.typeId,
+          value: Number(item.value)
+        })),
+        months: annualMonths.length > 0 ? annualMonths : undefined
       };
       await api.post('/api/v1/revenues/batch/annual', payload);
       showSnackbar('Lote anual de receitas cadastrado com sucesso!', 'success');
@@ -93,6 +111,13 @@ const BatchRevenueModal = ({ open, onClose, types, onSaved, api, showSnackbar }:
       setBatchLoading(false);
     }
   };
+
+  const MONTHS_OPTIONS = [
+    { value: 1, label: 'Janeiro' }, { value: 2, label: 'Fevereiro' }, { value: 3, label: 'Março' },
+    { value: 4, label: 'Abril' }, { value: 5, label: 'Maio' }, { value: 6, label: 'Junho' },
+    { value: 7, label: 'Julho' }, { value: 8, label: 'Agosto' }, { value: 9, label: 'Setembro' },
+    { value: 10, label: 'Outubro' }, { value: 11, label: 'Novembro' }, { value: 12, label: 'Dezembro' }
+  ];
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth>
@@ -138,21 +163,49 @@ const BatchRevenueModal = ({ open, onClose, types, onSaved, api, showSnackbar }:
       {tabIndex === 1 && (
         <form onSubmit={handleSaveAnnual}>
           <DialogContent dividers>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-              Cria uma receita recorrente para cada mês até o fim do ano com base nos dados abaixo.
-              A data inicial define o <strong>Dia</strong>, <strong>Mês inicial</strong> e <strong>Ano</strong>.
-            </Typography>
-            <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', mb: 2 }}>
-              <DatePicker sx={{ minWidth: 150 }} label="Data Inicial" value={annualItem.date} onChange={(val) => setAnnualItem({...annualItem, date: val})} format="DD/MM/YYYY" slotProps={{ textField: { required: true, size: 'small', sx: { width: 180 } } }} />
-              <Autocomplete
-                options={types}
-                getOptionLabel={(option) => option.name}
-                value={types.find((t: RevenueTypeDTO) => t.id === annualItem.typeId) || null}
-                onChange={(_, newValue) => setAnnualItem({...annualItem, typeId: newValue ? newValue.id : ''})}
-                renderInput={(params) => <TextField {...params} label="Tipo" required size="small" />}
-                sx={{ width: 220 }}
-              />
-              <TextField type="number" label="Valor" value={annualItem.value} onChange={e => setAnnualItem({...annualItem, value: e.target.value})} required size="small" inputProps={{ step: '0.01' }} sx={{ width: 140 }} />
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+              <Box>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                  Cria receitas recorrentes para os meses selecionados (ou todos). O <strong>Dia</strong> e <strong>Ano</strong> base vêm da data de cada linha.
+                </Typography>
+                
+                <FormControl size="small" sx={{ width: 350 }}>
+                  <InputLabel>Meses de Destino (Vazio = Todos os 12)</InputLabel>
+                  <Select
+                    multiple
+                    value={annualMonths}
+                    onChange={(e) => setAnnualMonths(typeof e.target.value === 'string' ? e.target.value.split(',').map(Number) : e.target.value as number[])}
+                    input={<OutlinedInput label="Meses de Destino (Vazio = Todos os 12)" />}
+                    renderValue={(selected) => selected.map(v => MONTHS_OPTIONS.find(m => m.value === v)?.label).join(', ')}
+                  >
+                    {MONTHS_OPTIONS.map((month) => (
+                      <MenuItem key={month.value} value={month.value}>
+                        <Checkbox checked={annualMonths.indexOf(month.value) > -1} />
+                        <ListItemText primary={month.label} />
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Box>
+
+              <Box>
+                {annualItems.map((item, index) => (
+                  <Box key={index} sx={{ display: 'flex', gap: 2, alignItems: 'center', mb: 2 }}>
+                    <DatePicker sx={{ minWidth: 150 }} label="Data Base" value={item.date} onChange={(val) => handleAnnualChange(index, 'date', val)} format="DD/MM/YYYY" slotProps={{ textField: { required: true, size: 'small', sx: { width: 180 } } }} />
+                    <Autocomplete
+                      options={types}
+                      getOptionLabel={(option) => option.name}
+                      value={types.find((t: RevenueTypeDTO) => t.id === item.typeId) || null}
+                      onChange={(_, newValue) => handleAnnualChange(index, 'typeId', newValue ? newValue.id : '')}
+                      renderInput={(params) => <TextField {...params} label="Tipo" required size="small" />}
+                      sx={{ width: 220 }}
+                    />
+                    <TextField type="number" label="Valor" value={item.value} onChange={e => handleAnnualChange(index, 'value', e.target.value)} required size="small" inputProps={{ step: '0.01' }} sx={{ width: 140 }} />
+                    <IconButton color="error" onClick={() => handleRemoveAnnualLine(index)} disabled={annualItems.length === 1}><DeleteIcon /></IconButton>
+                  </Box>
+                ))}
+                <Button variant="text" startIcon={<AddIcon />} onClick={handleAddAnnualLine}>Adicionar linha anual</Button>
+              </Box>
             </Box>
           </DialogContent>
           <DialogActions>
