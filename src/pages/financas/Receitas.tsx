@@ -1,8 +1,7 @@
 import { FC, useState, useEffect, useCallback } from 'react';
 import {
   Box, Container, Button, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-  IconButton, Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem, CircularProgress, Autocomplete, Chip, Typography, TablePagination, TableSortLabel
-, Checkbox, FormControlLabel } from '@mui/material';
+  IconButton, Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem, CircularProgress, Autocomplete, Chip, Typography, TablePagination, TableSortLabel, Tabs, Tab, Select, FormControl, InputLabel, Checkbox, FormControlLabel } from '@mui/material';
 import { Add as AddIcon, Delete as DeleteIcon, Edit as EditIcon, History as HistoryIcon } from '@mui/icons-material';
 import { useAxiosWithAuth } from '@/services/useAxiosWithAuth';
 import AppNavbar from '@/components/AppNavbar';
@@ -17,11 +16,28 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 interface BatchItem { date: dayjs.Dayjs | null; referenceDate: dayjs.Dayjs | null; typeId: string; value: string; }
 interface BatchRevenueModalProps { open: boolean; onClose: () => void; types: RevenueTypeDTO[]; onSaved: () => void; api: import('axios').AxiosInstance; showSnackbar: (msg: string, sev: 'success' | 'error') => void; }
 const BatchRevenueModal = ({ open, onClose, types, onSaved, api, showSnackbar }: BatchRevenueModalProps) => {
+  const [tabIndex, setTabIndex] = useState(0);
+
   const [batchItems, setBatchItems] = useState<BatchItem[]>([{ date: dayjs(), referenceDate: null, typeId: '', value: '' }]);
+  
+  const [annualTypeId, setAnnualTypeId] = useState('');
+  const [annualValue, setAnnualValue] = useState('');
+  const [annualYear, setAnnualYear] = useState(dayjs().year());
+  const [annualStartMonth, setAnnualStartMonth] = useState(1);
+  const [annualDayOfMonth, setAnnualDayOfMonth] = useState(dayjs().date());
+
   const [batchLoading, setBatchLoading] = useState(false);
 
   useEffect(() => {
-    if (open) setBatchItems([{ date: dayjs(), referenceDate: null, typeId: '', value: '' }]);
+    if (open) {
+      setTabIndex(0);
+      setBatchItems([{ date: dayjs(), referenceDate: null, typeId: '', value: '' }]);
+      setAnnualTypeId('');
+      setAnnualValue('');
+      setAnnualYear(dayjs().year());
+      setAnnualStartMonth(1);
+      setAnnualDayOfMonth(dayjs().date());
+    }
   }, [open]);
 
   const handleBatchChange = (index: number, field: string, val: unknown) => {
@@ -43,7 +59,7 @@ const BatchRevenueModal = ({ open, onClose, types, onSaved, api, showSnackbar }:
     setBatchItems(prev => prev.filter((_, i) => i !== index));
   };
 
-  const handleSaveBatch = async (e: React.FormEvent) => {
+  const handleSaveMonthly = async (e: React.FormEvent) => {
     e.preventDefault();
     setBatchLoading(true);
     try {
@@ -54,7 +70,7 @@ const BatchRevenueModal = ({ open, onClose, types, onSaved, api, showSnackbar }:
         value: Number(item.value)
       }));
       await api.post('/api/v1/revenues/batch', { revenues: payload });
-      showSnackbar('Receitas em lote cadastradas com sucesso!', 'success');
+      showSnackbar('Receitas mensais em lote cadastradas com sucesso!', 'success');
       onClose();
       onSaved();
     } catch (e: unknown) {
@@ -64,11 +80,41 @@ const BatchRevenueModal = ({ open, onClose, types, onSaved, api, showSnackbar }:
     }
   };
 
+  const handleSaveAnnual = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setBatchLoading(true);
+    try {
+      const payload = {
+        typeId: annualTypeId,
+        value: Number(annualValue),
+        year: annualYear,
+        startMonth: annualStartMonth,
+        dayOfMonth: annualDayOfMonth
+      };
+      await api.post('/api/v1/revenues/batch/annual', payload);
+      showSnackbar('Lote anual de receitas cadastrado com sucesso!', 'success');
+      onClose();
+      onSaved();
+    } catch (e: unknown) {
+      showSnackbar(`Erro ao salvar lote anual: ${getErrorMessage(e)}`, 'error');
+    } finally {
+      setBatchLoading(false);
+    }
+  };
+
   return (
     <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth>
+      <DialogTitle>Lançamento em Lote de Receitas</DialogTitle>
       
-        <form onSubmit={handleSaveBatch}>
-          <DialogTitle>Lançamento em Lote de Receitas</DialogTitle>
+      <Box sx={{ borderBottom: 1, borderColor: 'divider', px: 3 }}>
+        <Tabs value={tabIndex} onChange={(_, val: number) => setTabIndex(val)}>
+          <Tab label="Lote Mensal (Linhas)" />
+          <Tab label="Lote Anual (Recorrente)" />
+        </Tabs>
+      </Box>
+
+      {tabIndex === 0 && (
+        <form onSubmit={handleSaveMonthly}>
           <DialogContent dividers>
             {batchItems.map((item, index) => (
               <Box key={index} sx={{ display: 'flex', gap: 2, alignItems: 'center', mb: 2 }}>
@@ -80,22 +126,72 @@ const BatchRevenueModal = ({ open, onClose, types, onSaved, api, showSnackbar }:
                   value={types.find((t: RevenueTypeDTO) => t.id === item.typeId) || null}
                   onChange={(_, newValue) => handleBatchChange(index, 'typeId', newValue ? newValue.id : '')}
                   renderInput={(params) => <TextField {...params} label="Tipo" required size="small" />}
-                  sx={{ flexGrow: 1 }}
+                  sx={{ width: 220 }}
                 />
-                <TextField type="number" label="Valor" value={item.value} onChange={e => handleBatchChange(index, 'value', e.target.value)} required size="small" inputProps={{ step: '0.01' }} sx={{ width: 120 }} />
+                <TextField type="number" label="Valor" value={item.value} onChange={e => handleBatchChange(index, 'value', e.target.value)} required size="small" inputProps={{ step: '0.01' }} sx={{ width: 140 }} />
                 <IconButton color="error" onClick={() => handleRemoveBatchLine(index)} disabled={batchItems.length === 1}><DeleteIcon /></IconButton>
               </Box>
             ))}
             <Button variant="text" startIcon={<AddIcon />} onClick={handleAddBatchLine}>Adicionar linha</Button>
           </DialogContent>
           <DialogActions>
-            <Button onClick={() => onClose()}>Cancelar</Button>
+            <Button onClick={onClose} disabled={batchLoading}>Cancelar</Button>
             <Button type="submit" variant="contained" disabled={batchLoading}>
-              {batchLoading ? <CircularProgress size={24} /> : 'Salvar Lote'}
+              {batchLoading ? <CircularProgress size={24} /> : 'Salvar Mensal'}
             </Button>
           </DialogActions>
         </form>
-      
+      )}
+
+      {tabIndex === 1 && (
+        <form onSubmit={handleSaveAnnual}>
+          <DialogContent dividers>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+              Cria uma receita para cada mês a partir do mês inicial até dezembro. O dia do mês será mantido, ou ajustado (ex: dia 31 em fevereiro vira 28/29).
+            </Typography>
+            <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+              <Autocomplete
+                options={types}
+                getOptionLabel={(option) => option.name}
+                value={types.find((t: RevenueTypeDTO) => t.id === annualTypeId) || null}
+                onChange={(_, newValue) => setAnnualTypeId(newValue ? newValue.id : '')}
+                renderInput={(params) => <TextField {...params} label="Tipo" required size="small" />}
+                sx={{ width: 250 }}
+              />
+              <TextField type="number" label="Valor" value={annualValue} onChange={e => setAnnualValue(e.target.value)} required size="small" inputProps={{ step: '0.01' }} sx={{ width: 150 }} />
+            </Box>
+            <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', mt: 2, alignItems: 'center' }}>
+              <TextField type="number" label="Ano" value={annualYear} onChange={e => setAnnualYear(Number(e.target.value))} required size="small" sx={{ width: 120 }} />
+              
+              <FormControl size="small" sx={{ width: 150 }}>
+                <InputLabel>Mês Inicial</InputLabel>
+                <Select value={annualStartMonth} label="Mês Inicial" onChange={(e: any) => setAnnualStartMonth(Number(e.target.value))}>
+                  <MenuItem value={1}>Janeiro</MenuItem>
+                  <MenuItem value={2}>Fevereiro</MenuItem>
+                  <MenuItem value={3}>Março</MenuItem>
+                  <MenuItem value={4}>Abril</MenuItem>
+                  <MenuItem value={5}>Maio</MenuItem>
+                  <MenuItem value={6}>Junho</MenuItem>
+                  <MenuItem value={7}>Julho</MenuItem>
+                  <MenuItem value={8}>Agosto</MenuItem>
+                  <MenuItem value={9}>Setembro</MenuItem>
+                  <MenuItem value={10}>Outubro</MenuItem>
+                  <MenuItem value={11}>Novembro</MenuItem>
+                  <MenuItem value={12}>Dezembro</MenuItem>
+                </Select>
+              </FormControl>
+
+              <TextField type="number" label="Dia do Recebimento" value={annualDayOfMonth} onChange={e => setAnnualDayOfMonth(Number(e.target.value))} required size="small" inputProps={{ min: 1, max: 31 }} sx={{ width: 150 }} />
+            </Box>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={onClose} disabled={batchLoading}>Cancelar</Button>
+            <Button type="submit" variant="contained" color="secondary" disabled={batchLoading}>
+              {batchLoading ? <CircularProgress size={24} /> : 'Salvar Anual'}
+            </Button>
+          </DialogActions>
+        </form>
+      )}
     </Dialog>
   );
 };
