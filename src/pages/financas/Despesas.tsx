@@ -104,7 +104,7 @@ const BatchSpendingModal = ({ open, onClose, types, onSaved, api, showSnackbar }
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth>
-      <DialogTitle>Lançamento em Lote de Despesas</DialogTitle>
+      <DialogTitle sx={{ textAlign: 'center' }}>Lançamento em Lote de Despesas</DialogTitle>
       
       <Box sx={{ borderBottom: 1, borderColor: 'divider', px: 3 }}>
         <Tabs value={tabIndex} onChange={(_, val: number) => setTabIndex(val)} centered>
