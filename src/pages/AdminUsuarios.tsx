@@ -558,7 +558,9 @@ export const AdminUsuarios: FC = () => {
                 }
               >
                 <UserAvatar
+                  key={formAvatarPreview || 'default-avatar'}
                   avatarUrl={formAvatarPreview || undefined}
+                  name={formSocialName}
                   sx={{ width: 52, height: 52, bgcolor: 'secondary.main', fontSize: '1.2rem' }}
                 />
               </Badge>
