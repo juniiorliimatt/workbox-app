@@ -163,3 +163,20 @@ alguém rodar `tsc`/`npm run build`:**
   introduzida pelo lint de catch` no `workbox-app`. Fica como referência de padrão a
   seguir daqui pra frente, não repetir o `e?.response?.data?.message` cru em novos
   `catch`.
+
+## Regra — nunca commitar scripts de scratch (`.cjs`, `.py`, etc.)
+
+Recorrência: `patch_colors.cjs` (script de patch pontual num arquivo `.tsx`) e depois
+`fix_despesas.py`, `fix_imports.py`, `fix_payloads.py`, `fix_receitas.py`,
+`patch_modals.py`, `patch_modals_centered.py`, `patch_modals_multi.py`,
+`patch_modals_v2.py`, `patch_modals_v3.py` ficaram soltos na raiz do repo depois de
+usados — arquivos de uso único (find/replace num arquivo específico, geralmente descartados
+depois da primeira execução) que não têm razão de existir versionados.
+
+- Antes de cada commit, apagar qualquer script de patch/fix de uso único criado durante o
+  trabalho (`.cjs`, `.py`, `.js`, etc., na raiz ou em qualquer pasta do projeto) — se o
+  script não é parte do build/lint/test oficial do projeto, ele é lixo de sessão, não
+  código do repositório.
+- `git status` antes de commitar deve estar limpo de "arquivos não monitorados" desse
+  tipo — se aparecer, é sinal de que sobrou script de scratch pra remover, não pra
+  adicionar.
