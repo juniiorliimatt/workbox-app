@@ -65,7 +65,7 @@ const BatchRevenueModal = ({ open, onClose, types, onSaved, api, showSnackbar }:
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="xl" fullWidth>
+    <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth>
       
         <form onSubmit={handleSaveBatch}>
           <DialogTitle>Lançamento em Lote de Receitas</DialogTitle>
@@ -303,7 +303,7 @@ const Receitas: FC = () => {
   return (
     <Box sx={{ width: '100%', minHeight: '100vh', bgcolor: 'grey.50', display: 'flex', flexDirection: 'column' }}>
       <AppNavbar title="Receitas" showBackButton backPath="/financas" backLabel="Voltar" />
-      <Container maxWidth="xl" sx={{ mt: 4, mb: 4, flexGrow: 1 }}>
+      <Container maxWidth="lg" sx={{ mt: 4, mb: 4, flexGrow: 1 }}>
         <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
           <Button variant="outlined" sx={{ mr: 2 }} onClick={() => setOpenBatchModal(true)}>Lançamento em Lote</Button>
           <Button variant="contained" startIcon={<AddIcon />} onClick={handleOpenNew}>Nova Receita</Button>
