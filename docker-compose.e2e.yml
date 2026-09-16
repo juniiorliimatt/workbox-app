@@ -1,0 +1,62 @@
+services:
+  postgres-e2e:
+    image: postgres:18
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=workbox
+    ports:
+      - "5434:5432"
+    volumes:
+      - ../initdb:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  workbox-api-e2e:
+    build: ../workbox-api
+    environment:
+      - PROFILE_ACTIVE=dev
+      - PORT=8080
+      - DATABASE_URL=jdbc:postgresql://postgres-e2e:5432/workbox
+      - POSTGRES_USER=workbox_service
+      - POSTGRES_PASSWORD=workbox_service
+      - JWT_SECRET=VerySecretJwtForE2ETestsOnlyDoNotUseInProd12345
+      - MAIL_HOST=localhost
+      - MAIL_PORT=25
+    ports:
+      - "8082:8080"
+    depends_on:
+      postgres-e2e:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/actuator/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 40s
+
+  budget-service-e2e:
+    build: ../budget-service
+    environment:
+      - PROFILE_ACTIVE=dev
+      - PORT=8081
+      - DATABASE_URL=jdbc:postgresql://postgres-e2e:5432/workbox
+      - POSTGRES_USER=budget_service
+      - POSTGRES_PASSWORD=budget_service
+      - INTROSPECTION_URI=http://workbox-api-e2e:8080/api/v1/auth/introspect
+      - INTROSPECTION_CLIENT_ID=budget-service
+      - INTROSPECTION_CLIENT_SECRET=MyS3cur3Cli3ntS3cr3t!Budg3t!
+    ports:
+      - "8083:8081"
+    depends_on:
+      postgres-e2e:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8081/actuator/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 40s
