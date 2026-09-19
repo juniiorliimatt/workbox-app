@@ -245,6 +245,13 @@ const Despesas: FC = () => {
 
   const [page, setPage] = useState(0);
   const today = new Date();
+  
+  const [tabValue, setTabValue] = useState(0);
+  const [annualMonth, setAnnualMonth] = useState(0);
+  const [annualYear, setAnnualYear] = useState(today.getFullYear());
+  const [annualType, setAnnualType] = useState('');
+  const [appliedType, setAppliedType] = useState('');
+
   const [month, setMonth] = useState<number>(today.getMonth() + 1);
   const [year, setYear] = useState<number>(today.getFullYear());
   const [appliedMonth, setAppliedMonth] = useState<number>(today.getMonth() + 1);
@@ -304,7 +311,7 @@ const Despesas: FC = () => {
     setLoading(true);
     try {
       const [spendRes, typeRes] = await Promise.all([
-        api.get('/api/v1/spendings', { params: { page, size: rowsPerPage, sort: `${orderBy},${orderDirection}`, month: appliedMonth, year: appliedYear } }),
+        api.get('/api/v1/spendings', { params: { page, size: rowsPerPage, sort: `${orderBy},${orderDirection}`, year: appliedYear, ...(appliedMonth > 0 && { month: appliedMonth }), ...(appliedType && { typeId: appliedType }) } }),
         api.get('/api/v1/spending-types')
       ]);
       setSpendings(Array.isArray(spendRes.data?.content) ? spendRes.data.content : []);
@@ -318,6 +325,21 @@ const Despesas: FC = () => {
   }, [api, page, rowsPerPage, orderBy, orderDirection, appliedMonth, appliedYear]);
 
   
+  
+  const handleTabChange = (_: any, newValue: number) => {
+    setTabValue(newValue);
+    if (newValue === 0) {
+      setAppliedMonth(month);
+      setAppliedYear(year);
+      setAppliedType('');
+    } else {
+      setAppliedMonth(annualMonth);
+      setAppliedYear(annualYear);
+      setAppliedType(annualType);
+    }
+    setPage(0);
+  };
+
   const handleRequestSort = (property: string) => {
     const isAsc = orderBy === property && orderDirection === 'asc';
     setOrderDirection(isAsc ? 'desc' : 'asc');
@@ -449,16 +471,45 @@ const Despesas: FC = () => {
         </Box>
 
         
-        <Paper elevation={1} sx={{ p: 2, mb: 3, display: 'flex', gap: 2, alignItems: 'center', justifyContent: 'flex-end' }}>
-          <Typography variant="subtitle1">Competência:</Typography>
-          <TextField select label="Mês" value={month} onChange={e => setMonth(Number(e.target.value))} size="small">
-            {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
-              <MenuItem key={m} value={m}>{m.toString().padStart(2, '0')}</MenuItem>
-            ))}
-          </TextField>
-          <TextField type="number" label="Ano" value={year} onChange={e => setYear(Number(e.target.value))} size="small" sx={{ width: 100 }} />
-          <Button variant="contained" onClick={() => { setAppliedMonth(month); setAppliedYear(year); setPage(0); }}>Filtrar</Button>
-        </Paper>
+        <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
+          <Tabs value={tabValue} onChange={handleTabChange} variant="fullWidth" centered>
+            <Tab label="Visão Mensal" />
+            <Tab label="Visão Anual" />
+          </Tabs>
+        </Box>
+
+        {tabValue === 0 && (
+          <Paper elevation={1} sx={{ p: 2, mb: 3, display: 'flex', gap: 2, alignItems: 'center', justifyContent: 'flex-end' }}>
+            <Typography variant="subtitle2" color="text.secondary">Filtro Mensal:</Typography>
+            <TextField select label="Mês" value={month} onChange={e => setMonth(Number(e.target.value))} size="small">
+              {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
+                <MenuItem key={m} value={m}>{m.toString().padStart(2, '0')}</MenuItem>
+              ))}
+            </TextField>
+            <TextField type="number" label="Ano" value={year} onChange={e => setYear(Number(e.target.value))} size="small" sx={{ width: 100 }} />
+            <Button variant="contained" onClick={() => { setAppliedMonth(month); setAppliedYear(year); setAppliedType(''); setPage(0); }}>Filtrar</Button>
+          </Paper>
+        )}
+
+        {tabValue === 1 && (
+          <Paper elevation={1} sx={{ p: 2, mb: 3, display: 'flex', gap: 2, alignItems: 'center', justifyContent: 'flex-end' }}>
+            <Typography variant="subtitle2" color="text.secondary">Filtro Anual:</Typography>
+            <TextField select label="Tipo" value={annualType} onChange={e => setAnnualType(e.target.value)} size="small" sx={{ minWidth: 150 }}>
+              <MenuItem value="">Todos</MenuItem>
+              {types.map(t => (
+                <MenuItem key={t.id} value={t.id}>{t.name}</MenuItem>
+              ))}
+            </TextField>
+            <TextField select label="Mês" value={annualMonth} onChange={e => setAnnualMonth(Number(e.target.value))} size="small">
+              <MenuItem value={0}>Todos</MenuItem>
+              {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
+                <MenuItem key={m} value={m}>{m.toString().padStart(2, '0')}</MenuItem>
+              ))}
+            </TextField>
+            <TextField type="number" label="Ano" value={annualYear} onChange={e => setAnnualYear(Number(e.target.value))} size="small" sx={{ width: 100 }} />
+            <Button variant="contained" onClick={() => { setAppliedMonth(annualMonth); setAppliedYear(annualYear); setAppliedType(annualType); setPage(0); }}>Filtrar</Button>
+          </Paper>
+        )}
 
         <TableContainer component={Paper}>
           <Table size="small" sx={{ '& .MuiTableCell-root': { fontSize: '0.95rem', py: 1 } }}>
