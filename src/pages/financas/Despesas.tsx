@@ -322,7 +322,7 @@ const Despesas: FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [api, page, rowsPerPage, orderBy, orderDirection, appliedMonth, appliedYear]);
+  }, [api, page, rowsPerPage, orderBy, orderDirection, appliedMonth, appliedYear, appliedType]);
 
   
   
