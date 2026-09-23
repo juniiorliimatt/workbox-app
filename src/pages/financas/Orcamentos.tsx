@@ -185,7 +185,9 @@ const Orcamentos: FC = () => {
                 </Grid>
               </Paper>
             </Grid>
-            <Grid item xs={12} md={6}>
+            {/* GRÁFICOS OCULTOS CONFORME SOLICITADO */}
+            {false && (<>
+<Grid item xs={12} md={6}>
               <Paper sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column' }}>
                 <Typography variant="h6" align="center" gutterBottom>Receitas vs Despesas</Typography>
                 <Box sx={{ height: 350, width: "100%", mt: 2 }}>
@@ -243,6 +245,7 @@ const Orcamentos: FC = () => {
                 </Box>
               </Paper>
             </Grid>
+</>)}
 
             <Grid item xs={12} md={6}>
               <Paper sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column' }}>
