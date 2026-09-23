@@ -148,6 +148,43 @@ const Orcamentos: FC = () => {
                 <Button variant="contained" onClick={() => { setAppliedMonth(month); setAppliedYear(year); }}>Filtrar</Button>
               </Paper>
               <Grid container spacing={3}>
+            <Grid item xs={12}>
+              <Paper sx={{ p: 3, mb: 3 }}>
+                <Typography variant="h6" gutterBottom>Resumo Geral do Mês</Typography>
+                <Grid container spacing={2}>
+                  <Grid item xs={12} sm={6} md={2.4}>
+                    <Paper variant="outlined" sx={{ p: 2, textAlign: 'center', bgcolor: 'success.light', color: 'success.contrastText' }}>
+                      <Typography variant="subtitle2">Total de Receitas</Typography>
+                      <Typography variant="h6">{formatCurrency(summary?.totalRevenue)}</Typography>
+                    </Paper>
+                  </Grid>
+                  <Grid item xs={12} sm={6} md={2.4}>
+                    <Paper variant="outlined" sx={{ p: 2, textAlign: 'center', bgcolor: 'error.light', color: 'error.contrastText' }}>
+                      <Typography variant="subtitle2">Total de Despesas</Typography>
+                      <Typography variant="h6">{formatCurrency(summary?.totalSpending)}</Typography>
+                    </Paper>
+                  </Grid>
+                  <Grid item xs={12} sm={6} md={2.4}>
+                    <Paper variant="outlined" sx={{ p: 2, textAlign: 'center' }}>
+                      <Typography variant="subtitle2">Total Pago</Typography>
+                      <Typography variant="h6">{formatCurrency(summary?.totalPaid)}</Typography>
+                    </Paper>
+                  </Grid>
+                  <Grid item xs={12} sm={6} md={2.4}>
+                    <Paper variant="outlined" sx={{ p: 2, textAlign: 'center' }}>
+                      <Typography variant="subtitle2">Falta Pagar</Typography>
+                      <Typography variant="h6" color="warning.main">{formatCurrency(summary?.totalPending)}</Typography>
+                    </Paper>
+                  </Grid>
+                  <Grid item xs={12} sm={12} md={2.4}>
+                    <Paper variant="outlined" sx={{ p: 2, textAlign: 'center', bgcolor: (summary?.projectedBalance || 0) >= 0 ? 'info.light' : 'warning.light' }}>
+                      <Typography variant="subtitle2">Previsão Saldo Final</Typography>
+                      <Typography variant="h6">{formatCurrency(summary?.projectedBalance)}</Typography>
+                    </Paper>
+                  </Grid>
+                </Grid>
+              </Paper>
+            </Grid>
             <Grid item xs={12} md={6}>
               <Paper sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column' }}>
                 <Typography variant="h6" align="center" gutterBottom>Receitas vs Despesas</Typography>
@@ -262,41 +299,6 @@ const Orcamentos: FC = () => {
             
             
             <Grid item xs={12}>
-              <Paper sx={{ p: 3, mb: 3 }}>
-                <Typography variant="h6" gutterBottom>Resumo Geral do Mês</Typography>
-                <Grid container spacing={2}>
-                  <Grid item xs={12} sm={6} md={2.4}>
-                    <Paper variant="outlined" sx={{ p: 2, textAlign: 'center', bgcolor: 'success.light', color: 'success.contrastText' }}>
-                      <Typography variant="subtitle2">Total de Receitas</Typography>
-                      <Typography variant="h6">{formatCurrency(summary?.totalRevenue)}</Typography>
-                    </Paper>
-                  </Grid>
-                  <Grid item xs={12} sm={6} md={2.4}>
-                    <Paper variant="outlined" sx={{ p: 2, textAlign: 'center', bgcolor: 'error.light', color: 'error.contrastText' }}>
-                      <Typography variant="subtitle2">Total de Despesas</Typography>
-                      <Typography variant="h6">{formatCurrency(summary?.totalSpending)}</Typography>
-                    </Paper>
-                  </Grid>
-                  <Grid item xs={12} sm={6} md={2.4}>
-                    <Paper variant="outlined" sx={{ p: 2, textAlign: 'center' }}>
-                      <Typography variant="subtitle2">Total Pago</Typography>
-                      <Typography variant="h6">{formatCurrency(summary?.totalPaid)}</Typography>
-                    </Paper>
-                  </Grid>
-                  <Grid item xs={12} sm={6} md={2.4}>
-                    <Paper variant="outlined" sx={{ p: 2, textAlign: 'center' }}>
-                      <Typography variant="subtitle2">Falta Pagar</Typography>
-                      <Typography variant="h6" color="warning.main">{formatCurrency(summary?.totalPending)}</Typography>
-                    </Paper>
-                  </Grid>
-                  <Grid item xs={12} sm={12} md={2.4}>
-                    <Paper variant="outlined" sx={{ p: 2, textAlign: 'center', bgcolor: (summary?.projectedBalance || 0) >= 0 ? 'info.light' : 'warning.light' }}>
-                      <Typography variant="subtitle2">Previsão Saldo Final</Typography>
-                      <Typography variant="h6">{formatCurrency(summary?.projectedBalance)}</Typography>
-                    </Paper>
-                  </Grid>
-                </Grid>
-              </Paper>
 
               <Paper sx={{ p: 3 }}>
 
