@@ -148,6 +148,117 @@ const Orcamentos: FC = () => {
                 <Button variant="contained" onClick={() => { setAppliedMonth(month); setAppliedYear(year); }}>Filtrar</Button>
               </Paper>
               <Grid container spacing={3}>
+            <Grid item xs={12}>
+              <Paper sx={{ p: 3, mb: 3 }}>
+                <Typography variant="h6" gutterBottom>Resumo Geral do Mês</Typography>
+                <Grid container spacing={2}>
+                  <Grid item xs={12} sm={6} md={2.4}>
+                    <Paper variant="outlined" sx={{ p: 2, textAlign: 'center', bgcolor: 'success.light', color: 'success.contrastText' }}>
+                      <Typography variant="subtitle2">Total de Receitas</Typography>
+                      <Typography variant="h6">{formatCurrency(summary?.totalRevenue)}</Typography>
+                    </Paper>
+                  </Grid>
+                  <Grid item xs={12} sm={6} md={2.4}>
+                    <Paper variant="outlined" sx={{ p: 2, textAlign: 'center', bgcolor: 'error.light', color: 'error.contrastText' }}>
+                      <Typography variant="subtitle2">Total de Despesas</Typography>
+                      <Typography variant="h6">{formatCurrency(summary?.totalSpending)}</Typography>
+                    </Paper>
+                  </Grid>
+                  <Grid item xs={12} sm={6} md={2.4}>
+                    <Paper variant="outlined" sx={{ p: 2, textAlign: 'center' }}>
+                      <Typography variant="subtitle2">Total Pago</Typography>
+                      <Typography variant="h6">{formatCurrency(summary?.totalPaid)}</Typography>
+                    </Paper>
+                  </Grid>
+                  <Grid item xs={12} sm={6} md={2.4}>
+                    <Paper variant="outlined" sx={{ p: 2, textAlign: 'center' }}>
+                      <Typography variant="subtitle2">Falta Pagar</Typography>
+                      <Typography variant="h6" color="warning.main">{formatCurrency(summary?.totalPending)}</Typography>
+                    </Paper>
+                  </Grid>
+                  <Grid item xs={12} sm={12} md={2.4}>
+                    <Paper variant="outlined" sx={{ p: 2, textAlign: 'center', bgcolor: (summary?.projectedBalance || 0) >= 0 ? 'info.light' : 'warning.light' }}>
+                      <Typography variant="subtitle2">Previsão Saldo Final</Typography>
+                      <Typography variant="h6">{formatCurrency(summary?.projectedBalance)}</Typography>
+                    </Paper>
+                  </Grid>
+                </Grid>
+              </Paper>
+
+              <Paper sx={{ p: 3 }}>
+
+                <Typography variant="h6" gutterBottom>Status das Metas (Orçamento)</Typography>
+                <Grid container spacing={2}>
+                  {buckets.map(b => (
+                    <Grid item xs={12} md={4} key={b.label}>
+                      <Paper variant="outlined" sx={{ p: 2, textAlign: 'center' }}>
+                        <Typography variant="subtitle1" color="primary">{b.label}</Typography>
+                        <Typography variant="body2">Meta: {Number(b.data.target).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</Typography>
+                        <Typography variant="body2">
+                          {b.type === 'savings' ? 'Investido/Poupado' : 'Gasto'}: {Number(b.data.actual).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                        </Typography>
+                        <Typography variant="body2" color={
+                          b.type === 'expense' 
+                            ? (b.data.actual > b.data.target ? 'error' : 'success.main') 
+                            : (b.data.actual < b.data.target ? 'error' : 'success.main')
+                        } sx={{ fontWeight: 'bold', mt: 1, minHeight: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          {b.type === 'savings' 
+                            ? (b.data.actual < b.data.target 
+                                ? `Investiu/Poupou ${Number(Math.abs(b.data.difference)).toLocaleString('pt-BR', {style:'currency',currency:'BRL'})} abaixo da meta.`
+                                : (b.data.actual > b.data.target 
+                                    ? `Investiu/Poupou ${Number(Math.abs(b.data.difference)).toLocaleString('pt-BR', {style:'currency',currency:'BRL'})} acima da meta.` 
+                                    : 'Atingiu a meta exatamente.'))
+                            : (b.data.actual < b.data.target 
+                                ? `Gastou ${Number(Math.abs(b.data.difference)).toLocaleString('pt-BR', {style:'currency',currency:'BRL'})} abaixo da meta de gastos.`
+                                : (b.data.actual > b.data.target 
+                                    ? `Gastou ${Number(Math.abs(b.data.difference)).toLocaleString('pt-BR', {style:'currency',currency:'BRL'})} acima da meta de gastos.` 
+                                    : 'Atingiu a meta de gastos exatamente.'))
+                          }
+                        </Typography>
+                      </Paper>
+                    </Grid>
+                  ))}
+                </Grid>
+              </Paper>
+
+            </Grid>
+
+            </Grid>
+            </Box>
+            <Box sx={{ display: tabValue === 1 ? 'block' : 'none' }}>
+              <Paper elevation={1} sx={{ p: 2, mb: 3, display: 'flex', gap: 2, alignItems: 'center', justifyContent: 'flex-end' }}>
+                <Typography variant="subtitle2" color="text.secondary">Filtro Anual:</Typography>
+                <TextField type="number" label="Ano" value={year} onChange={e => setYear(Number(e.target.value))} size="small" sx={{ width: 100 }} />
+                <Button variant="contained" onClick={() => { setAppliedYear(year); setAppliedMonth(month); }}>Filtrar</Button>
+              </Paper>
+              <Grid container spacing={3}>
+            
+
+            <Grid item xs={12}>
+              <Paper sx={{ p: 3, mb: 3 }}>
+                <Typography variant="h6" gutterBottom>Resumo Geral do Ano</Typography>
+                <Grid container spacing={2}>
+                  <Grid item xs={12} sm={4}>
+                    <Paper variant="outlined" sx={{ p: 2, textAlign: 'center', bgcolor: 'success.light', color: 'success.contrastText' }}>
+                      <Typography variant="subtitle2">Total de Receitas (Ano)</Typography>
+                      <Typography variant="h6">{formatCurrency(yearlySummary?.totalRevenue)}</Typography>
+                    </Paper>
+                  </Grid>
+                  <Grid item xs={12} sm={4}>
+                    <Paper variant="outlined" sx={{ p: 2, textAlign: 'center', bgcolor: 'error.light', color: 'error.contrastText' }}>
+                      <Typography variant="subtitle2">Total de Despesas (Ano)</Typography>
+                      <Typography variant="h6">{formatCurrency(yearlySummary?.totalSpending)}</Typography>
+                    </Paper>
+                  </Grid>
+                  <Grid item xs={12} sm={4}>
+                    <Paper variant="outlined" sx={{ p: 2, textAlign: 'center', bgcolor: (yearlySummary?.balance || 0) >= 0 ? 'info.light' : 'warning.light' }}>
+                      <Typography variant="subtitle2">Saldo (Ano)</Typography>
+                      <Typography variant="h6">{formatCurrency(yearlySummary?.balance)}</Typography>
+                    </Paper>
+                  </Grid>
+                </Grid>
+              </Paper>
+            </Grid>
             <Grid item xs={12} md={6}>
               <Paper sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column' }}>
                 <Typography variant="h6" align="center" gutterBottom>Receitas vs Despesas</Typography>
@@ -261,117 +372,7 @@ const Orcamentos: FC = () => {
 
             
             
-            <Grid item xs={12}>
-              <Paper sx={{ p: 3, mb: 3 }}>
-                <Typography variant="h6" gutterBottom>Resumo Geral do Mês</Typography>
-                <Grid container spacing={2}>
-                  <Grid item xs={12} sm={6} md={2.4}>
-                    <Paper variant="outlined" sx={{ p: 2, textAlign: 'center', bgcolor: 'success.light', color: 'success.contrastText' }}>
-                      <Typography variant="subtitle2">Total de Receitas</Typography>
-                      <Typography variant="h6">{formatCurrency(summary?.totalRevenue)}</Typography>
-                    </Paper>
-                  </Grid>
-                  <Grid item xs={12} sm={6} md={2.4}>
-                    <Paper variant="outlined" sx={{ p: 2, textAlign: 'center', bgcolor: 'error.light', color: 'error.contrastText' }}>
-                      <Typography variant="subtitle2">Total de Despesas</Typography>
-                      <Typography variant="h6">{formatCurrency(summary?.totalSpending)}</Typography>
-                    </Paper>
-                  </Grid>
-                  <Grid item xs={12} sm={6} md={2.4}>
-                    <Paper variant="outlined" sx={{ p: 2, textAlign: 'center' }}>
-                      <Typography variant="subtitle2">Total Pago</Typography>
-                      <Typography variant="h6">{formatCurrency(summary?.totalPaid)}</Typography>
-                    </Paper>
-                  </Grid>
-                  <Grid item xs={12} sm={6} md={2.4}>
-                    <Paper variant="outlined" sx={{ p: 2, textAlign: 'center' }}>
-                      <Typography variant="subtitle2">Falta Pagar</Typography>
-                      <Typography variant="h6" color="warning.main">{formatCurrency(summary?.totalPending)}</Typography>
-                    </Paper>
-                  </Grid>
-                  <Grid item xs={12} sm={12} md={2.4}>
-                    <Paper variant="outlined" sx={{ p: 2, textAlign: 'center', bgcolor: (summary?.projectedBalance || 0) >= 0 ? 'info.light' : 'warning.light' }}>
-                      <Typography variant="subtitle2">Previsão Saldo Final</Typography>
-                      <Typography variant="h6">{formatCurrency(summary?.projectedBalance)}</Typography>
-                    </Paper>
-                  </Grid>
-                </Grid>
-              </Paper>
 
-              <Paper sx={{ p: 3 }}>
-
-                <Typography variant="h6" gutterBottom>Status das Metas (Orçamento)</Typography>
-                <Grid container spacing={2}>
-                  {buckets.map(b => (
-                    <Grid item xs={12} md={4} key={b.label}>
-                      <Paper variant="outlined" sx={{ p: 2, textAlign: 'center' }}>
-                        <Typography variant="subtitle1" color="primary">{b.label}</Typography>
-                        <Typography variant="body2">Meta: {Number(b.data.target).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</Typography>
-                        <Typography variant="body2">
-                          {b.type === 'savings' ? 'Investido/Poupado' : 'Gasto'}: {Number(b.data.actual).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                        </Typography>
-                        <Typography variant="body2" color={
-                          b.type === 'expense' 
-                            ? (b.data.actual > b.data.target ? 'error' : 'success.main') 
-                            : (b.data.actual < b.data.target ? 'error' : 'success.main')
-                        } sx={{ fontWeight: 'bold', mt: 1, minHeight: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          {b.type === 'savings' 
-                            ? (b.data.actual < b.data.target 
-                                ? `Investiu/Poupou ${Number(Math.abs(b.data.difference)).toLocaleString('pt-BR', {style:'currency',currency:'BRL'})} abaixo da meta.`
-                                : (b.data.actual > b.data.target 
-                                    ? `Investiu/Poupou ${Number(Math.abs(b.data.difference)).toLocaleString('pt-BR', {style:'currency',currency:'BRL'})} acima da meta.` 
-                                    : 'Atingiu a meta exatamente.'))
-                            : (b.data.actual < b.data.target 
-                                ? `Gastou ${Number(Math.abs(b.data.difference)).toLocaleString('pt-BR', {style:'currency',currency:'BRL'})} abaixo da meta de gastos.`
-                                : (b.data.actual > b.data.target 
-                                    ? `Gastou ${Number(Math.abs(b.data.difference)).toLocaleString('pt-BR', {style:'currency',currency:'BRL'})} acima da meta de gastos.` 
-                                    : 'Atingiu a meta de gastos exatamente.'))
-                          }
-                        </Typography>
-                      </Paper>
-                    </Grid>
-                  ))}
-                </Grid>
-              </Paper>
-
-            </Grid>
-
-            </Grid>
-            </Box>
-            <Box sx={{ display: tabValue === 1 ? 'block' : 'none' }}>
-              <Paper elevation={1} sx={{ p: 2, mb: 3, display: 'flex', gap: 2, alignItems: 'center', justifyContent: 'flex-end' }}>
-                <Typography variant="subtitle2" color="text.secondary">Filtro Anual:</Typography>
-                <TextField type="number" label="Ano" value={year} onChange={e => setYear(Number(e.target.value))} size="small" sx={{ width: 100 }} />
-                <Button variant="contained" onClick={() => { setAppliedYear(year); setAppliedMonth(month); }}>Filtrar</Button>
-              </Paper>
-              <Grid container spacing={3}>
-            
-
-            <Grid item xs={12}>
-              <Paper sx={{ p: 3, mb: 3 }}>
-                <Typography variant="h6" gutterBottom>Resumo Geral do Ano</Typography>
-                <Grid container spacing={2}>
-                  <Grid item xs={12} sm={4}>
-                    <Paper variant="outlined" sx={{ p: 2, textAlign: 'center', bgcolor: 'success.light', color: 'success.contrastText' }}>
-                      <Typography variant="subtitle2">Total de Receitas (Ano)</Typography>
-                      <Typography variant="h6">{formatCurrency(yearlySummary?.totalRevenue)}</Typography>
-                    </Paper>
-                  </Grid>
-                  <Grid item xs={12} sm={4}>
-                    <Paper variant="outlined" sx={{ p: 2, textAlign: 'center', bgcolor: 'error.light', color: 'error.contrastText' }}>
-                      <Typography variant="subtitle2">Total de Despesas (Ano)</Typography>
-                      <Typography variant="h6">{formatCurrency(yearlySummary?.totalSpending)}</Typography>
-                    </Paper>
-                  </Grid>
-                  <Grid item xs={12} sm={4}>
-                    <Paper variant="outlined" sx={{ p: 2, textAlign: 'center', bgcolor: (yearlySummary?.balance || 0) >= 0 ? 'info.light' : 'warning.light' }}>
-                      <Typography variant="subtitle2">Saldo (Ano)</Typography>
-                      <Typography variant="h6">{formatCurrency(yearlySummary?.balance)}</Typography>
-                    </Paper>
-                  </Grid>
-                </Grid>
-              </Paper>
-            </Grid>
 
             <Grid item xs={12} md={6}>
               <Paper sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column' }}>
