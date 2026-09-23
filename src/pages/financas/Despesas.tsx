@@ -11,6 +11,7 @@ import {
 OutlinedInput, ListItemText, FormControl, InputLabel, Select } from '@mui/material';
 import { Add as AddIcon, Delete as DeleteIcon, Edit as EditIcon, History as HistoryIcon } from '@mui/icons-material';
 import { useAxiosWithAuth } from '@/services/useAxiosWithAuth';
+import { Link as RouterLink } from 'react-router-dom';
 import AppNavbar from '@/components/AppNavbar';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { useSnackbar } from '@/hooks/useSnackbar';
@@ -251,6 +252,7 @@ const Despesas: FC = () => {
   const [annualYear, setAnnualYear] = useState(today.getFullYear());
   const [annualType, setAnnualType] = useState('');
   const [appliedType, setAppliedType] = useState('');
+  const [filterType, setFilterType] = useState('');
 
   const [month, setMonth] = useState<number>(today.getMonth() + 1);
   const [year, setYear] = useState<number>(today.getFullYear());
@@ -331,7 +333,7 @@ const Despesas: FC = () => {
     if (newValue === 0) {
       setAppliedMonth(month);
       setAppliedYear(year);
-      setAppliedType('');
+      setAppliedType(filterType);
     } else {
       setAppliedMonth(annualMonth);
       setAppliedYear(annualYear);
@@ -468,6 +470,7 @@ const Despesas: FC = () => {
         <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
           <Button variant="outlined" sx={{ mr: 2 }} onClick={() => setOpenBatchModal(true)}>Lançamento em Lote</Button>
           <Button variant="contained" startIcon={<AddIcon />} onClick={handleOpenNew}>Nova Despesa</Button>
+          <Button variant="outlined" component={RouterLink} to="/financas/orcamentos" sx={{ ml: 2 }}>Metas e Orçamentos</Button>
         </Box>
 
         
@@ -481,13 +484,19 @@ const Despesas: FC = () => {
         {tabValue === 0 && (
           <Paper elevation={1} sx={{ p: 2, mb: 3, display: 'flex', gap: 2, alignItems: 'center', justifyContent: 'flex-end' }}>
             <Typography variant="subtitle2" color="text.secondary">Filtro Mensal:</Typography>
+            <TextField select label="Tipo" value={filterType || ''} onChange={e => setFilterType(e.target.value)} size="small" sx={{ minWidth: 150 }}>
+              <MenuItem value="">Todos</MenuItem>
+              {types.map(t => (
+                <MenuItem key={t.id} value={t.id}>{t.name}</MenuItem>
+              ))}
+            </TextField>
             <TextField select label="Mês" value={month} onChange={e => setMonth(Number(e.target.value))} size="small">
               {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
                 <MenuItem key={m} value={m}>{m.toString().padStart(2, '0')}</MenuItem>
               ))}
             </TextField>
             <TextField type="number" label="Ano" value={year} onChange={e => setYear(Number(e.target.value))} size="small" sx={{ width: 100 }} />
-            <Button variant="contained" onClick={() => { setAppliedMonth(month); setAppliedYear(year); setAppliedType(''); setPage(0); }}>Filtrar</Button>
+            <Button variant="contained" onClick={() => { setAppliedMonth(month); setAppliedYear(year); setAppliedType(filterType); setPage(0); }}>Filtrar</Button>
           </Paper>
         )}
 

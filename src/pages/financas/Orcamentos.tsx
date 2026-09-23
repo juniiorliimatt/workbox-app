@@ -1,6 +1,6 @@
 import { FC, useState, useEffect, useCallback } from 'react';
 import { Box, Container, Button, Paper, Typography, Grid, CircularProgress, TextField, MenuItem, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Tabs, Tab } from '@mui/material';
-import { Tooltip as RechartsTooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { Tooltip as RechartsTooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { useAxiosWithAuth } from '@/services/useAxiosWithAuth';
 import AppNavbar from '@/components/AppNavbar';
 import { TotalDTO, FiftyThirtyTwentyDTO, MonthlySummaryDTO, YearlySummaryDTO, TypeTotalDTO } from '@/interfaces/budget';
@@ -27,6 +27,10 @@ const Orcamentos: FC = () => {
   const [yearlySummary, setYearlySummary] = useState<YearlySummaryDTO | null>(null);
   const [revenuesByType, setRevenuesByType] = useState<TypeTotalDTO[]>([]);
   const [spendingsByType, setSpendingsByType] = useState<TypeTotalDTO[]>([]);
+  const [yearlyChartData, setYearlyChartData] = useState<any[]>([]);
+  const [monthlyRevsByType, setMonthlyRevsByType] = useState<TypeTotalDTO[]>([]);
+  const [monthlySpendsByType, setMonthlySpendsByType] = useState<TypeTotalDTO[]>([]);
+
 
 
   const loadData = useCallback(async () => {
@@ -35,22 +39,58 @@ const Orcamentos: FC = () => {
       
       const p = { month: appliedMonth, year: appliedYear };
       const pYear = { year: appliedYear };
-      const [revRes, spendRes, ruleRes, summaryRes, yearlyRes, revByTypeRes, spendByTypeRes] = await Promise.all([
+      const [revRes, spendRes, ruleRes, summaryRes, yearlyRes, revByTypeRes, spendByTypeRes, monthlyRevs, monthlySpends] = await Promise.all([
         api.get<TotalDTO>('/api/v1/revenues/total', { params: p }),
         api.get<TotalDTO>('/api/v1/spendings/total', { params: p }),
         api.get<FiftyThirtyTwentyDTO>('/api/v1/budget-rules/fifty-thirty-twenty', { params: p }),
         api.get<MonthlySummaryDTO>('/api/v1/budget-rules/monthly-summary', { params: p }),
         api.get<YearlySummaryDTO>('/api/v1/budget-rules/yearly-summary', { params: pYear }),
         api.get<TypeTotalDTO[]>('/api/v1/revenues/by-type', { params: pYear }),
-        api.get<TypeTotalDTO[]>('/api/v1/spendings/by-type', { params: pYear })
+        api.get<TypeTotalDTO[]>('/api/v1/spendings/by-type', { params: pYear }),
+        api.get<any>('/api/v1/revenues', { params: { ...p, size: 5000 } }),
+        api.get<any>('/api/v1/spendings', { params: { ...p, size: 5000 } })
       ]);
       setRevTotal(revRes.data.total || 0);
       setSpendTotal(spendRes.data.total || 0);
       setRuleData(ruleRes.data);
       setSummary(summaryRes.data);
       setYearlySummary(yearlyRes.data);
+      
       setRevenuesByType(revByTypeRes.data || []);
       setSpendingsByType(spendByTypeRes.data || []);
+
+      const monthsPromise = Array.from({ length: 12 }, (_, i) => 
+        api.get<FiftyThirtyTwentyDTO>('/api/v1/budget-rules/fifty-thirty-twenty', { params: { month: i + 1, year: appliedYear } }).catch(() => null)
+      );
+      const monthsRes = await Promise.all(monthsPromise);
+      const chartData = monthsRes.map((res, i) => {
+         const data = res?.data || { totalRevenue: 0, essential: { actual: 0 }, personal: { actual: 0 }, savings: { actual: 0 } };
+         return {
+            monthName: ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'][i],
+            receitas: data.totalRevenue || 0,
+            despesas: (data.essential?.actual || 0) + (data.personal?.actual || 0) + (data.savings?.actual || 0),
+            essenciais: data.essential?.actual || 0,
+            pessoais: data.personal?.actual || 0,
+            poupanca: data.savings?.actual || 0
+         };
+      });
+      setYearlyChartData(chartData);
+
+
+      const mRevs: Record<string, { typeId: string, typeName: string, total: number }> = {};
+      (monthlyRevs.data?.content || []).forEach((r: any) => {
+        if (!mRevs[r.typeId]) mRevs[r.typeId] = { typeId: r.typeId, typeName: r.typeName, total: 0 };
+        mRevs[r.typeId].total += Number(r.value || 0);
+      });
+      setMonthlyRevsByType(Object.values(mRevs).sort((a,b) => b.total - a.total));
+
+      const mSpends: Record<string, { typeId: string, typeName: string, total: number }> = {};
+      (monthlySpends.data?.content || []).forEach((s: any) => {
+        if (!mSpends[s.typeId]) mSpends[s.typeId] = { typeId: s.typeId, typeName: s.typeName, total: 0 };
+        mSpends[s.typeId].total += Number(s.value || 0);
+      });
+      setMonthlySpendsByType(Object.values(mSpends).sort((a,b) => b.total - a.total));
+
 
     } catch (e) {
       console.error(e);
@@ -88,6 +128,7 @@ const Orcamentos: FC = () => {
           <Tabs value={tabValue} onChange={(_, newValue) => setTabValue(newValue)} variant="fullWidth" centered>
             <Tab label="Visão Mensal" />
             <Tab label="Visão Anual" />
+            <Tab label="Visão Gráfica" />
           </Tabs>
         </Box>
 
@@ -165,6 +206,59 @@ const Orcamentos: FC = () => {
                 </Box>
               </Paper>
             </Grid>
+
+            <Grid item xs={12} md={6}>
+              <Paper sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column' }}>
+                <Typography variant="h6" align="center" gutterBottom>Receitas por Tipo (Mês atual)</Typography>
+                <TableContainer sx={{ mt: 2, border: '1px solid', borderColor: 'grey.200', borderRadius: 1 }}>
+                  <Table size="small" stickyHeader>
+                    <TableHead>
+                      <TableRow>
+                        <TableCell sx={{ fontWeight: 600, bgcolor: 'grey.100' }}>Tipo de Receita</TableCell>
+                        <TableCell align="right" sx={{ fontWeight: 600, bgcolor: 'grey.100' }}>Valor Arrecadado (R$)</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {monthlyRevsByType.length === 0 ? (
+                        <TableRow><TableCell colSpan={2} align="center">Nenhum dado.</TableCell></TableRow>
+                      ) : monthlyRevsByType.map(r => (
+                        <TableRow key={r.typeId} hover>
+                          <TableCell>{r.typeName}</TableCell>
+                          <TableCell align="right">{formatCurrency(r.total)}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              </Paper>
+            </Grid>
+
+            <Grid item xs={12} md={6}>
+              <Paper sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column' }}>
+                <Typography variant="h6" align="center" gutterBottom>Despesas por Tipo (Mês atual)</Typography>
+                <TableContainer sx={{ mt: 2, border: '1px solid', borderColor: 'grey.200', borderRadius: 1 }}>
+                  <Table size="small" stickyHeader>
+                    <TableHead>
+                      <TableRow>
+                        <TableCell sx={{ fontWeight: 600, bgcolor: 'grey.100' }}>Tipo de Despesa</TableCell>
+                        <TableCell align="right" sx={{ fontWeight: 600, bgcolor: 'grey.100' }}>Valor Gasto (R$)</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {monthlySpendsByType.length === 0 ? (
+                        <TableRow><TableCell colSpan={2} align="center">Nenhum dado.</TableCell></TableRow>
+                      ) : monthlySpendsByType.map(s => (
+                        <TableRow key={s.typeId} hover>
+                          <TableCell>{s.typeName}</TableCell>
+                          <TableCell align="right">{formatCurrency(s.total)}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              </Paper>
+            </Grid>
+
             
             
             <Grid item xs={12}>
@@ -332,6 +426,53 @@ const Orcamentos: FC = () => {
               </Paper>
             </Grid>
                         </Grid>
+            </Box>
+          
+            <Box sx={{ display: tabValue === 2 ? 'block' : 'none' }}>
+              <Paper elevation={1} sx={{ p: 2, mb: 3, display: 'flex', gap: 2, alignItems: 'center', justifyContent: 'flex-end' }}>
+                <Typography variant="subtitle2" color="text.secondary">Filtro do Gráfico:</Typography>
+                <TextField type="number" label="Ano" value={year} onChange={e => setYear(Number(e.target.value))} size="small" sx={{ width: 100 }} />
+                <Button variant="contained" onClick={() => { setAppliedYear(year); setAppliedMonth(month); }}>Filtrar</Button>
+              </Paper>
+              <Grid container spacing={3}>
+                <Grid item xs={12}>
+                  <Paper sx={{ p: 3, height: 400, display: 'flex', flexDirection: 'column' }}>
+                    <Typography variant="h6" align="center" gutterBottom>Despesas vs Receitas ({appliedYear})</Typography>
+                    <Box sx={{ flexGrow: 1, minHeight: 0, mt: 2 }}>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={yearlyChartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="monthName" />
+                          <YAxis tickFormatter={(val) => `R$ ${val}`} />
+                          <RechartsTooltip formatter={(value: unknown) => formatCurrency(value as number)} />
+                          <Legend />
+                          <Line type="monotone" dataKey="receitas" name="Receitas (Salário)" stroke="#82ca9d" strokeWidth={2} activeDot={{ r: 8 }} />
+                          <Line type="monotone" dataKey="despesas" name="Despesas" stroke="#ff7300" strokeWidth={2} />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </Box>
+                  </Paper>
+                </Grid>
+                <Grid item xs={12}>
+                  <Paper sx={{ p: 3, height: 400, display: 'flex', flexDirection: 'column' }}>
+                    <Typography variant="h6" align="center" gutterBottom>Regra 50/30/20 - Gastos por Categoria ({appliedYear})</Typography>
+                    <Box sx={{ flexGrow: 1, minHeight: 0, mt: 2 }}>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={yearlyChartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="monthName" />
+                          <YAxis tickFormatter={(val) => `R$ ${val}`} />
+                          <RechartsTooltip formatter={(value: unknown) => formatCurrency(value as number)} />
+                          <Legend />
+                          <Line type="monotone" dataKey="essenciais" name="Essenciais (50%)" stroke="#0088FE" strokeWidth={2} />
+                          <Line type="monotone" dataKey="pessoais" name="Pessoais (30%)" stroke="#00C49F" strokeWidth={2} />
+                          <Line type="monotone" dataKey="poupanca" name="Poupança (20%)" stroke="#FFBB28" strokeWidth={2} />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </Box>
+                  </Paper>
+                </Grid>
+              </Grid>
             </Box>
           </>
         )}
