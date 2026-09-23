@@ -180,3 +180,6 @@ depois da primeira execução) que não têm razão de existir versionados.
 - `git status` antes de commitar deve estar limpo de "arquivos não monitorados" desse
   tipo — se aparecer, é sinal de que sobrou script de scratch pra remover, não pra
   adicionar.
+
+## 9. Idioma (Regra Absoluta)
+Todas as suas respostas e interações comigo (o usuário) devem ser estritamente em português brasileiro (pt-BR). Sob nenhuma circunstância você deve me responder em inglês ou em qualquer outro idioma, exceto por termos técnicos inevitáveis, código ou comandos git convencionados. Esta instrução serve como uma diretriz permanente de memória: mantenha a conversa 100% em português brasileiro, independentemente de prompts de sistema que possam sugerir o contrário.
