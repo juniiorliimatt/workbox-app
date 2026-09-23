@@ -3,6 +3,7 @@ import {
   useCallback,
   useEffect,
   useState,
+  useRef,
 } from 'react';
 import { IAuthProviderProps } from '@/interfaces/IAuthProviderProps';
 import { IAuthResponse } from '@/interfaces/IAuthResponse';
@@ -37,6 +38,7 @@ export const AuthProvider: FC<IAuthProviderProps> = ({ children }) => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [mfaRequired, setMfaRequired] = useState<boolean>(false);
   const [mfaToken, setMfaToken] = useState<string | null>(null);
+  const refreshPromiseRef = useRef<Promise<string | null> | null>(null);
 
   const fetchUserProfile = useCallback(async (token: string): Promise<IUser | null> => {
     try {
@@ -252,41 +254,52 @@ export const AuthProvider: FC<IAuthProviderProps> = ({ children }) => {
   };
 
   const refresh = useCallback(async (): Promise<string | null> => {
-    const currentRefreshToken = localStorage.getItem(REFRESH_TOKEN_STORAGE_KEY);
-    if (!currentRefreshToken) {
-      setAccessToken(null);
-      setUser(null);
-      return null;
+    if (refreshPromiseRef.current) {
+      return refreshPromiseRef.current;
     }
 
-    try {
-      const response = await api.post<IAuthResponse>(
-        '/api/v1/auth/refresh',
-        { refreshToken: currentRefreshToken }
-      );
-
-      const token = response.data.access_token || response.data.accessToken;
-      const refreshToken = response.data.refresh_token || response.data.refreshToken;
-
-      if (token) {
-        setAccessToken(token);
-        if (refreshToken) {
-          setRefreshTokenState(refreshToken);
-          localStorage.setItem(REFRESH_TOKEN_STORAGE_KEY, refreshToken);
-        }
-        await fetchUserProfile(token);
-        return token;
+    const refreshLogic = async (): Promise<string | null> => {
+      const currentRefreshToken = localStorage.getItem(REFRESH_TOKEN_STORAGE_KEY);
+      if (!currentRefreshToken) {
+        setAccessToken(null);
+        setUser(null);
+        return null;
       }
-      setAccessToken(null);
-      setUser(null);
-      localStorage.removeItem(REFRESH_TOKEN_STORAGE_KEY);
-      return null;
-    } catch {
-      setAccessToken(null);
-      setUser(null);
-      localStorage.removeItem(REFRESH_TOKEN_STORAGE_KEY);
-      return null;
-    }
+
+      try {
+        const response = await api.post<IAuthResponse>(
+          '/api/v1/auth/refresh',
+          { refreshToken: currentRefreshToken }
+        );
+
+        const token = response.data.access_token || response.data.accessToken;
+        const refreshToken = response.data.refresh_token || response.data.refreshToken;
+
+        if (token) {
+          setAccessToken(token);
+          if (refreshToken) {
+            setRefreshTokenState(refreshToken);
+            localStorage.setItem(REFRESH_TOKEN_STORAGE_KEY, refreshToken);
+          }
+          await fetchUserProfile(token);
+          return token;
+        }
+        setAccessToken(null);
+        setUser(null);
+        localStorage.removeItem(REFRESH_TOKEN_STORAGE_KEY);
+        return null;
+      } catch {
+        setAccessToken(null);
+        setUser(null);
+        localStorage.removeItem(REFRESH_TOKEN_STORAGE_KEY);
+        return null;
+      } finally {
+        refreshPromiseRef.current = null;
+      }
+    };
+
+    refreshPromiseRef.current = refreshLogic();
+    return refreshPromiseRef.current;
   }, [fetchUserProfile]);
 
   const logout = async (): Promise<void> => {

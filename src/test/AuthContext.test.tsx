@@ -188,4 +188,60 @@ describe('AuthContext & AuthProvider', () => {
       expect(screen.getByTestId('token')).toHaveTextContent('Sem token');
     });
   });
+
+  it('garante que refresh é single-flight (apenas uma requisição concorrente à API)', async () => {
+    // Configura o localStorage com um token para o refresh ser ativado
+    localStorage.setItem('workbox_refresh_token', 'mock-refresh-token');
+
+    let apiResolve: any;
+    const pendingPromise = new Promise((resolve) => {
+      apiResolve = resolve;
+    });
+
+    // Mock do api.post para o /api/v1/auth/refresh
+    vi.mocked(api.post).mockReturnValueOnce(pendingPromise as any);
+
+    let capturedRefresh: (() => Promise<string | null>) | undefined;
+    const TestSingleFlight = () => {
+      const { refresh } = useAuth();
+      capturedRefresh = refresh;
+      return null;
+    };
+
+    render(
+      <AuthProvider>
+        <TestSingleFlight />
+      </AuthProvider>
+    );
+
+    // O primeiro refresh roda no mount do AuthProvider (no useEffect)
+    // Esperamos um pouco para pegar a função e também garantir que o mount foi concluído.
+    await waitFor(() => {
+      expect(capturedRefresh).toBeDefined();
+    });
+
+    // Dispara N requisições de refresh manuais (simulando múltiplas requisições 401 do interceptor)
+    const p1 = capturedRefresh!();
+    const p2 = capturedRefresh!();
+    const p3 = capturedRefresh!();
+
+    // Resolve a API com um novo par de tokens
+    apiResolve(mockAxiosResponse<IAuthResponse>({
+      access_token: 'new-single-flight-token',
+      refresh_token: 'new-single-flight-refresh'
+    }));
+
+    const results = await Promise.all([p1, p2, p3]);
+
+    // Todas as promises de refresh devem retornar o mesmo token
+    expect(results[0]).toBe('new-single-flight-token');
+    expect(results[1]).toBe('new-single-flight-token');
+    expect(results[2]).toBe('new-single-flight-token');
+
+    // A chamada para /api/v1/auth/refresh só deve ter acontecido UMA vez.
+    // (Lembrando que na montagem do AuthProvider o refresh é chamado uma vez)
+    const refreshCalls = vi.mocked(api.post).mock.calls.filter(c => c[0] === '/api/v1/auth/refresh');
+    expect(refreshCalls.length).toBe(1);
+  });
+
 });

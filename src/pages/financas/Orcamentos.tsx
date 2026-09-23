@@ -219,9 +219,9 @@ const Orcamentos: FC = () => {
                       </TableRow>
                     </TableHead>
                     <TableBody>
-                      {monthlyRevsByType.length === 0 ? (
+                      {monthlyRevsByType.filter(r => Number(r.total) > 0).length === 0 ? (
                         <TableRow><TableCell colSpan={2} align="center">Nenhum dado.</TableCell></TableRow>
-                      ) : monthlyRevsByType.map(r => (
+                      ) : monthlyRevsByType.filter(r => Number(r.total) > 0).map(r => (
                         <TableRow key={r.typeId} hover>
                           <TableCell>{r.typeName}</TableCell>
                           <TableCell align="right">{formatCurrency(r.total)}</TableCell>
@@ -245,9 +245,9 @@ const Orcamentos: FC = () => {
                       </TableRow>
                     </TableHead>
                     <TableBody>
-                      {monthlySpendsByType.length === 0 ? (
+                      {monthlySpendsByType.filter(s => Number(s.total) > 0).length === 0 ? (
                         <TableRow><TableCell colSpan={2} align="center">Nenhum dado.</TableCell></TableRow>
-                      ) : monthlySpendsByType.map(s => (
+                      ) : monthlySpendsByType.filter(s => Number(s.total) > 0).map(s => (
                         <TableRow key={s.typeId} hover>
                           <TableCell>{s.typeName}</TableCell>
                           <TableCell align="right">{formatCurrency(s.total)}</TableCell>
@@ -385,9 +385,9 @@ const Orcamentos: FC = () => {
                       </TableRow>
                     </TableHead>
                     <TableBody>
-                      {revenuesByType.length === 0 ? (
+                      {revenuesByType.filter(r => Number(r.total) > 0).length === 0 ? (
                         <TableRow><TableCell colSpan={2} align="center">Nenhum dado.</TableCell></TableRow>
-                      ) : revenuesByType.map(r => (
+                      ) : revenuesByType.filter(r => Number(r.total) > 0).map(r => (
                         <TableRow key={r.typeId} hover>
                           <TableCell>{r.typeName}</TableCell>
                           <TableCell align="right">{Number(r.total).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</TableCell>
@@ -411,9 +411,9 @@ const Orcamentos: FC = () => {
                       </TableRow>
                     </TableHead>
                     <TableBody>
-                      {spendingsByType.length === 0 ? (
+                      {spendingsByType.filter(s => Number(s.total) > 0).length === 0 ? (
                         <TableRow><TableCell colSpan={2} align="center">Nenhum dado.</TableCell></TableRow>
-                      ) : spendingsByType.map(s => (
+                      ) : spendingsByType.filter(s => Number(s.total) > 0).map(s => (
                         <TableRow key={s.typeId} hover>
                           <TableCell>{s.typeName}</TableCell>
                           <TableCell align="right">{Number(s.total).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</TableCell>
