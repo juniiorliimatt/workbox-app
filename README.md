@@ -4,7 +4,7 @@ O **Workbox App** é o frontend principal (SPA) do ecossistema [Workbox](../READ
 
 Atualmente, o destaque do sistema é o seu **Módulo Financeiro**, que permite o controle minucioso de metas, receitas e despesas com suporte avançado a regras de orçamento (50/30/20) e dashboards ricos.
 
-> 🤖 **Nota de Arquitetura IA:** O desenvolvimento deste frontend é conduzido e mantido de forma autônoma pelo agente de Inteligência Artificial **Antigravity**, respeitando estritamente os contratos OpenAPI e as convenções do monorepo (ver [AGENTS.md](../AGENTS.md) na raiz).
+> 🤖 **Nota de Arquitetura IA:** O desenvolvimento deste frontend é conduzido e mantido pelo agente de Inteligência Artificial **Claude Code** (antes era o Antigravity, descontinuado em 2026-10-03), respeitando estritamente os contratos OpenAPI e as convenções do monorepo (ver [CLAUDE.md](../CLAUDE.md) na raiz).
 
 Também espelhado no [GitHub](https://github.com/juniiorliimatt/workbox-app) — todo push
 pro GitLab é replicado automaticamente via git hook. Ver
@@ -198,7 +198,7 @@ Sempre em português (pt-BR), Conventional Commits com o prefixo de tipo em ingl
 
 Tipos aceitos: `feat`, `fix`, `docs`, `chore`, `test`, `refactor`, `style`, `perf`, `ci`,
 `revert`. Vale pros quatro repositórios do monorepo — regra completa e exemplo em
-[AGENTS.md](../AGENTS.md#convenção-de-mensagens-de-commit).
+[CLAUDE.md](../CLAUDE.md#convenção-de-mensagens-de-commit).
 
 ---
 
@@ -222,7 +222,7 @@ scaffold — remover ou implementar de fato antes de documentar como comportamen
 
 ## Contas de Teste (QA)
 
-Contas fixas no banco local para uso **exclusivo dos dois agentes de IA (Claude Code e Antigravity)** durante testes manuais/exploratórios (ver [`workbox-api/README.md`](../workbox-api/README.md#contas-de-teste-qa)):
+Contas fixas no banco local para uso **exclusivo do agente de IA (Claude Code)** durante testes manuais/exploratórios (ver [`workbox-api/README.md`](../workbox-api/README.md#contas-de-teste-qa)):
 
 | Papel | E-mail | Senha | Roles | Módulo Principal |
 |---|---|---|---|---|
