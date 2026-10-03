@@ -58,6 +58,9 @@ ao mexer, prefira extrair componente/hook em vez de crescer o arquivo.
   (`VITE_FORZA_API_URL`, default `:7057`). Hoje **não** há rota pra `notes-service`
   (`/api/v1/documents`) — qualquer integração futura precisa dos dois arquivos e do
   upstream no `docker-compose.yml` da raiz.
+- **Acesso pela LAN (celular)**: o nginx repassa `Host: $http_host` (**com a porta**), não `$host`. Sem a porta o Spring
+  trata o `Origin` do browser (`http://<ip-da-lan>:7053`) como de outro site, aplica a allowlist de CORS (só `localhost`)
+  e responde 403 "Invalid CORS request" em tudo — o login carregava mas não entrava. Não voltar para `$host`.
 - `api.ts`: `baseURL` vem de `VITE_PUBLIC_URL_API` (vazio = proxy), `withCredentials:
   true`. `useAxiosWithAuth` injeta `Authorization: Bearer` e, em `401`, renova via
   `POST /api/v1/auth/refresh` (corpo `{ "refreshToken": ... }`) e repete a chamada.

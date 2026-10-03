@@ -4,7 +4,9 @@ server {
     root /usr/share/nginx/html;
     index index.html;
 
-    proxy_set_header Host $host;
+    # $http_host (com a porta), não $host: sem a porta o Spring enxerga o Origin do browser (ex.: http://192.168.100.36:7053)
+    # como de outro site e aplica a allowlist de CORS (só localhost) → 403 "Invalid CORS request" pelo celular/LAN.
+    proxy_set_header Host $http_host;
     proxy_set_header X-Real-IP $remote_addr;
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     proxy_set_header Authorization $http_authorization;
