@@ -193,13 +193,13 @@ describe('AuthContext & AuthProvider', () => {
     // Configura o localStorage com um token para o refresh ser ativado
     localStorage.setItem('workbox_refresh_token', 'mock-refresh-token');
 
-    let apiResolve: any;
+    let apiResolve: (value: unknown) => void = () => undefined;
     const pendingPromise = new Promise((resolve) => {
       apiResolve = resolve;
     });
 
     // Mock do api.post para o /api/v1/auth/refresh
-    vi.mocked(api.post).mockReturnValueOnce(pendingPromise as any);
+    vi.mocked(api.post).mockReturnValueOnce(pendingPromise as unknown as ReturnType<typeof api.post>);
 
     let capturedRefresh: (() => Promise<string | null>) | undefined;
     const TestSingleFlight = () => {

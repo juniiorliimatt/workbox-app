@@ -328,7 +328,7 @@ const Despesas: FC = () => {
 
   
   
-  const handleTabChange = (_: any, newValue: number) => {
+  const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
     if (newValue === 0) {
       setAppliedMonth(month);

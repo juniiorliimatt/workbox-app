@@ -1,107 +1,62 @@
 import { FC, useState, useEffect, useCallback } from 'react';
 import { Box, Container, Button, Paper, Typography, Grid, CircularProgress, TextField, MenuItem, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Tabs, Tab } from '@mui/material';
 import { Tooltip as RechartsTooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid } from 'recharts';
+import axios from 'axios';
 import { useAxiosWithAuth } from '@/services/useAxiosWithAuth';
+import { loadOrcamentos, OrcamentosData } from '@/services/budgetApi';
+import { useSnackbar } from '@/hooks/useSnackbar';
 import AppNavbar from '@/components/AppNavbar';
-import { TotalDTO, FiftyThirtyTwentyDTO, MonthlySummaryDTO, YearlySummaryDTO, TypeTotalDTO } from '@/interfaces/budget';
+import { formatCurrency } from '@/utils/format';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28'];
 
-const formatCurrency = (val: number | undefined | null) => Number(val || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+/** Gráficos de pizza da visão mensal ocultos a pedido (commit "oculta gráficos de pizza"); mude para reexibir. */
+const SHOW_MONTHLY_PIE_CHARTS = false;
 
 const Orcamentos: FC = () => {
   const api = useAxiosWithAuth();
+  const { showSnackbar } = useSnackbar();
   const today = new Date();
   const [month, setMonth] = useState(today.getMonth() + 1);
   const [year, setYear] = useState(today.getFullYear());
   const [appliedMonth, setAppliedMonth] = useState(today.getMonth() + 1);
   const [appliedYear, setAppliedYear] = useState(today.getFullYear());
   const [tabValue, setTabValue] = useState(0);
-  
+
   const [loading, setLoading] = useState(false);
-  const [revTotal, setRevTotal] = useState(0);
-  const [spendTotal, setSpendTotal] = useState(0);
-  const [ruleData, setRuleData] = useState<FiftyThirtyTwentyDTO | null>(null);
-  
-  const [summary, setSummary] = useState<MonthlySummaryDTO | null>(null);
-  const [yearlySummary, setYearlySummary] = useState<YearlySummaryDTO | null>(null);
-  const [revenuesByType, setRevenuesByType] = useState<TypeTotalDTO[]>([]);
-  const [spendingsByType, setSpendingsByType] = useState<TypeTotalDTO[]>([]);
-  const [yearlyChartData, setYearlyChartData] = useState<any[]>([]);
-  const [monthlyRevsByType, setMonthlyRevsByType] = useState<TypeTotalDTO[]>([]);
-  const [monthlySpendsByType, setMonthlySpendsByType] = useState<TypeTotalDTO[]>([]);
+  const [data, setData] = useState<OrcamentosData | null>(null);
 
-
-
-  const loadData = useCallback(async () => {
-    setLoading(true);
-    try {
-      
-      const p = { month: appliedMonth, year: appliedYear };
-      const pYear = { year: appliedYear };
-      const [revRes, spendRes, ruleRes, summaryRes, yearlyRes, revByTypeRes, spendByTypeRes, monthlyRevs, monthlySpends] = await Promise.all([
-        api.get<TotalDTO>('/api/v1/revenues/total', { params: p }),
-        api.get<TotalDTO>('/api/v1/spendings/total', { params: p }),
-        api.get<FiftyThirtyTwentyDTO>('/api/v1/budget-rules/fifty-thirty-twenty', { params: p }),
-        api.get<MonthlySummaryDTO>('/api/v1/budget-rules/monthly-summary', { params: p }),
-        api.get<YearlySummaryDTO>('/api/v1/budget-rules/yearly-summary', { params: pYear }),
-        api.get<TypeTotalDTO[]>('/api/v1/revenues/by-type', { params: pYear }),
-        api.get<TypeTotalDTO[]>('/api/v1/spendings/by-type', { params: pYear }),
-        api.get<any>('/api/v1/revenues', { params: { ...p, size: 5000 } }),
-        api.get<any>('/api/v1/spendings', { params: { ...p, size: 5000 } })
-      ]);
-      setRevTotal(revRes.data.total || 0);
-      setSpendTotal(spendRes.data.total || 0);
-      setRuleData(ruleRes.data);
-      setSummary(summaryRes.data);
-      setYearlySummary(yearlyRes.data);
-      
-      setRevenuesByType(revByTypeRes.data || []);
-      setSpendingsByType(spendByTypeRes.data || []);
-
-      const monthsPromise = Array.from({ length: 12 }, (_, i) => 
-        api.get<FiftyThirtyTwentyDTO>('/api/v1/budget-rules/fifty-thirty-twenty', { params: { month: i + 1, year: appliedYear } }).catch(() => null)
-      );
-      const monthsRes = await Promise.all(monthsPromise);
-      const chartData = monthsRes.map((res, i) => {
-         const data = res?.data || { totalRevenue: 0, essential: { actual: 0 }, personal: { actual: 0 }, savings: { actual: 0 } };
-         return {
-            monthName: ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'][i],
-            receitas: data.totalRevenue || 0,
-            despesas: (data.essential?.actual || 0) + (data.personal?.actual || 0) + (data.savings?.actual || 0),
-            essenciais: data.essential?.actual || 0,
-            pessoais: data.personal?.actual || 0,
-            poupanca: data.savings?.actual || 0
-         };
-      });
-      setYearlyChartData(chartData);
-
-
-      const mRevs: Record<string, { typeId: string, typeName: string, total: number }> = {};
-      (monthlyRevs.data?.content || []).forEach((r: any) => {
-        if (!mRevs[r.typeId]) mRevs[r.typeId] = { typeId: r.typeId, typeName: r.typeName, total: 0 };
-        mRevs[r.typeId].total += Number(r.value || 0);
-      });
-      setMonthlyRevsByType(Object.values(mRevs).sort((a,b) => b.total - a.total));
-
-      const mSpends: Record<string, { typeId: string, typeName: string, total: number }> = {};
-      (monthlySpends.data?.content || []).forEach((s: any) => {
-        if (!mSpends[s.typeId]) mSpends[s.typeId] = { typeId: s.typeId, typeName: s.typeName, total: 0 };
-        mSpends[s.typeId].total += Number(s.value || 0);
-      });
-      setMonthlySpendsByType(Object.values(mSpends).sort((a,b) => b.total - a.total));
-
-
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
-  }, [api, appliedMonth, appliedYear]);
+  const loadData = useCallback(
+    async (signal: AbortSignal) => {
+      setLoading(true);
+      try {
+        setData(await loadOrcamentos(api, { month: appliedMonth, year: appliedYear }, signal));
+      } catch (e) {
+        if (axios.isCancel(e)) return;
+        showSnackbar('Não foi possível carregar os dados de orçamento.', 'error');
+      } finally {
+        if (!signal.aborted) setLoading(false);
+      }
+    },
+    [api, appliedMonth, appliedYear, showSnackbar],
+  );
 
   useEffect(() => {
-    loadData();
+    const controller = new AbortController();
+    loadData(controller.signal);
+    return () => controller.abort();
   }, [loadData]);
+
+  const revTotal = data?.revTotal ?? 0;
+  const spendTotal = data?.spendTotal ?? 0;
+  const ruleData = data?.rule ?? null;
+  const summary = data?.summary ?? null;
+  const yearlySummary = data?.yearly ?? null;
+  const revenuesByType = data?.revenuesByType ?? [];
+  const spendingsByType = data?.spendingsByType ?? [];
+  const yearlyChartData = data?.yearlyChart ?? [];
+  const monthlyRevsByType = data?.monthlyRevenuesByType ?? [];
+  const monthlySpendsByType = data?.monthlySpendingsByType ?? [];
 
   const revSpendPieData = [
     { name: 'Receitas', value: revTotal, fill: '#4caf50' },
@@ -186,7 +141,7 @@ const Orcamentos: FC = () => {
               </Paper>
             </Grid>
             {/* GRÁFICOS OCULTOS CONFORME SOLICITADO */}
-            {false && (<>
+            {SHOW_MONTHLY_PIE_CHARTS && (<>
 <Grid item xs={12} md={6}>
               <Paper sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column' }}>
                 <Typography variant="h6" align="center" gutterBottom>Receitas vs Despesas</Typography>

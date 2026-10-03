@@ -114,3 +114,13 @@ export interface TypeTotalDTO {
   typeName: string;
   total: number;
 }
+
+/** Ponto do gráfico anual: valores do mês pela regra 50/30/20. */
+export interface YearlyChartPoint {
+  monthName: string;
+  receitas: number;
+  despesas: number;
+  essenciais: number;
+  pessoais: number;
+  poupanca: number;
+}
