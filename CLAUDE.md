@@ -84,6 +84,11 @@ ao mexer, prefira extrair componente/hook em vez de crescer o arquivo.
   de apresentação em `components/forza/`.
 - `components/forza/DataOutHint`: mostra o IP da máquina + porta do Data Out (de `/live/info`; senão o
   host do navegador; senão texto genérico) em "Ao vivo" e na lista vazia de sessões.
+- **Ao vivo**: poll de 200 ms (`LIVE_POLL_MS`, 5 Hz — 1 Hz perderia o ponto de troca; ideal seria
+  push/SSE do serviço). `ShiftLights` (12 LEDs verde→vermelho→azul, 70%–95% do `engineMaxRpm` **do carro
+  atual**; a 95% todos acendem piscando + texto "Troque de marcha", respeitando `prefers-reduced-motion`;
+  o último LED só acende junto com o aviso). Barras de rotação/pedais com 1 cm e **sem transição** CSS
+  (senão o preenchimento atrasa em relação às leituras). Nome do carro: `carLabel(carName, ordinal)`.
 - Temperatura de pneu chega em °F do jogo: converter pra °C só na exibição.
 
 ## Tela de Metas e Orçamentos (referência de carregamento de dados)
