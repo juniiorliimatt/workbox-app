@@ -7,6 +7,8 @@ import {
   SessionDTO,
   SessionPageDTO,
   TuningCarDTO,
+  TuningHistoryDTO,
+  TuningHistoryItemDTO,
   TuningRecommendationDTO,
   TuningSummary,
 } from '@/interfaces/forza';
@@ -65,7 +67,14 @@ export const listTuningCars = async (api: AxiosInstance, signal?: AbortSignal): 
 export const getTuningRecommendation = async (api: AxiosInstance, carOrdinal: number, signal?: AbortSignal): Promise<TuningRecommendationDTO> =>
   (await api.get<TuningRecommendationDTO>(`/api/v1/tuning/cars/${carOrdinal}`, { signal })).data;
 
-/** Reinicia a coleta do carro (só sessões novas passam a contar). */
+/** Tunings já feitos, do mais recente para o mais antigo. */
+export const listTuningHistory = async (api: AxiosInstance, signal?: AbortSignal): Promise<TuningHistoryItemDTO[]> =>
+  (await api.get<TuningHistoryItemDTO[]>('/api/v1/tuning/history', { signal })).data;
+
+export const getTuningHistoryEntry = async (api: AxiosInstance, id: string, signal?: AbortSignal): Promise<TuningHistoryDTO> =>
+  (await api.get<TuningHistoryDTO>(`/api/v1/tuning/history/${id}`, { signal })).data;
+
+/** Reinicia a coleta do carro (só sessões novas passam a contar). Com recomendação pronta, o backend a salva no histórico. */
 export const resetTuningCollection = async (api: AxiosInstance, carOrdinal: number): Promise<void> => {
   await api.post(`/api/v1/tuning/cars/${carOrdinal}/checkpoint`);
 };

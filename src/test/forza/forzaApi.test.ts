@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import type { AxiosInstance } from 'axios';
-import { getLiveInfo, getTuningRecommendation, listTuningCars, resetTuningCollection, getLiveSnapshot, getSession, getSessionLaps, getSessionSamples, getSessionSummary, listSessions } from '@/services/forzaApi';
+import { getLiveInfo, getTuningHistoryEntry, getTuningRecommendation, listTuningCars, listTuningHistory, resetTuningCollection, getLiveSnapshot, getSession, getSessionLaps, getSessionSamples, getSessionSummary, listSessions } from '@/services/forzaApi';
 
 const makeApi = (data: unknown = {}) => ({ get: vi.fn().mockResolvedValue({ data }) }) as unknown as AxiosInstance & { get: ReturnType<typeof vi.fn> };
 
@@ -82,6 +82,15 @@ describe('forzaApi', () => {
     await getTuningRecommendation(api, 3667);
 
     expect(api.get.mock.calls.map((c) => c[0])).toEqual(['/api/v1/tuning/cars', '/api/v1/tuning/cars/3667']);
+  });
+
+  it('listTuningHistory and getTuningHistoryEntry hit the history resources', async () => {
+    const api = makeApi([]);
+
+    await listTuningHistory(api);
+    await getTuningHistoryEntry(api, 'abc-123');
+
+    expect(api.get.mock.calls.map((c) => c[0])).toEqual(['/api/v1/tuning/history', '/api/v1/tuning/history/abc-123']);
   });
 
   it('resetTuningCollection posts to the checkpoint of the car', async () => {

@@ -88,6 +88,10 @@ ao mexer, prefira extrair componente/hook em vez de crescer o arquivo.
   detalhe com "Aplicar neste ciclo" (≤ 3 ajustes, sentido em texto + ícone, evidência) e **todas** as 9 guias em
   acordeões com status em texto (Ajustar / OK / Sem sinal). Enquanto coleta, só progresso e o que falta. "Reiniciar
   coleta" (com confirmação) chama `POST .../checkpoint`. Rotas `/api/v1/tuning` roteadas no Vite e no nginx.
+- **Tunings feitos** (`/forza/tuning/historico`, `.../:id`): botão "Tunings feitos" na lista de carros. O backend grava a foto
+  da recomendação ao reiniciar a coleta (só se estava pronta); o detalhe reaproveita `components/forza/TuningRecommendation`
+  (mesma renderização da tela ao vivo) com `snapshot`: só leitura, sem barras de progresso nem instrução de reiniciar.
+  Rota estática `historico` convive com `/forza/tuning/:carOrdinal` (o React Router prioriza o segmento estático).
 - Equilíbrio de freio na tela de tuning vira "Mover para a dianteira/traseira" (pelo eixo da sugestão) com aviso de que o
   slider do FH5 é invertido; os demais parâmetros seguem "Aumentar/Reduzir".
 - **Ao vivo**: poll de 200 ms (`LIVE_POLL_MS`, 5 Hz — 1 Hz perderia o ponto de troca; ideal seria

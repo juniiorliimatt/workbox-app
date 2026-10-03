@@ -196,6 +196,29 @@ export interface TuningGuideDTO {
   suggestions: TuningSuggestionDTO[];
 }
 
+/** `GET /api/v1/tuning/history` — um tuning salvo (foto gravada ao reiniciar a coleta do carro com recomendação pronta). */
+export interface TuningHistoryItemDTO {
+  id: string;
+  carOrdinal: number;
+  carName?: string | null;
+  carClass: number;
+  performanceIndex: number;
+  drivetrain: string;
+  savedAt: string;
+  windowFrom: string;
+  windowTo: string;
+  sessions: number;
+  samples: number;
+  adjustments: number;
+}
+
+/** `GET /api/v1/tuning/history/{id}` — a recomendação como estava quando foi salva. */
+export interface TuningHistoryDTO {
+  id: string;
+  savedAt: string;
+  recommendation: TuningRecommendationDTO;
+}
+
 /** `GET /api/v1/tuning/cars/{carOrdinal}`. `guides` vem vazio enquanto `readiness.ready` for falso. */
 export interface TuningRecommendationDTO {
   carOrdinal: number;

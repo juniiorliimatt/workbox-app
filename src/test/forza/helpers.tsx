@@ -5,7 +5,7 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { AuthContext } from '@/contexts/AuthContextValue';
 import { SnackbarProvider } from '@/contexts/SnackbarContext';
 import { IAuthContext } from '@/interfaces/IAuthContext';
-import { SessionDTO, TuningCarDTO, TuningGuideDTO, TuningRecommendationDTO, TuningSummary } from '@/interfaces/forza';
+import { SessionDTO, TuningCarDTO, TuningGuideDTO, TuningHistoryItemDTO, TuningRecommendationDTO, TuningSummary } from '@/interfaces/forza';
 
 export const createAuthValue = (overrides?: Partial<IAuthContext>): IAuthContext => ({
   accessToken: 'mock-access-token',
@@ -109,6 +109,22 @@ export const makeTuningCar = (overrides?: Partial<TuningCarDTO>): TuningCarDTO =
   requiredSessions: 10,
   ready: true,
   lastSessionAt: '2026-10-10T12:00:00Z',
+  ...overrides,
+});
+
+export const makeTuningHistoryItem = (overrides?: Partial<TuningHistoryItemDTO>): TuningHistoryItemDTO => ({
+  id: '22222222-2222-2222-2222-222222222222',
+  carOrdinal: 1105,
+  carName: '1964 Aston Martin DB5 Vantage',
+  carClass: 3,
+  performanceIndex: 700,
+  drivetrain: 'RWD',
+  savedAt: '2026-10-03T19:50:00Z',
+  windowFrom: '2026-10-03T19:02:00Z',
+  windowTo: '2026-10-03T19:28:00Z',
+  sessions: 12,
+  samples: 30523,
+  adjustments: 2,
   ...overrides,
 });
 

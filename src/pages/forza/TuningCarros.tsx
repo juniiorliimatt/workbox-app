@@ -16,7 +16,7 @@ import {
   TableRow,
   Typography,
 } from '@mui/material';
-import { SportsMotorsports as ForzaIcon } from '@mui/icons-material';
+import { History as HistoryIcon, SportsMotorsports as ForzaIcon } from '@mui/icons-material';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import AppNavbar from '@/components/AppNavbar';
@@ -62,12 +62,19 @@ const TuningCarros: FC = () => {
       <AppNavbar title="Workbox Forza" icon={<ForzaIcon sx={{ mr: 0.5 }} />} showBackButton backPath="/forza" backLabel="Voltar" />
 
       <Container maxWidth="lg" sx={{ mt: 4, mb: 4, flexGrow: 1 }}>
-        <Typography variant="h5" component="h2" sx={{ fontWeight: 600, mb: 0.5 }}>
-          Tuning (FH6)
-        </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          Escolha um carro para ver a recomendação de ajustes calculada a partir das suas sessões.
-        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 2, flexWrap: 'wrap', mb: 2 }}>
+          <Box>
+            <Typography variant="h5" component="h2" sx={{ fontWeight: 600, mb: 0.5 }}>
+              Tuning (FH6)
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Escolha um carro para ver a recomendação de ajustes calculada a partir das suas sessões.
+            </Typography>
+          </Box>
+          <Button variant="outlined" startIcon={<HistoryIcon />} onClick={() => navigate('/forza/tuning/historico')}>
+            Tunings feitos
+          </Button>
+        </Box>
 
         {cars.length > 0 && (
           <Alert severity="info" sx={{ mb: 3 }}>

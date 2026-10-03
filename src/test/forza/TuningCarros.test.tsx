@@ -64,6 +64,16 @@ describe('Forza · Tuning · carros', () => {
     expect(screen.getByText(/pelo menos 10 sessões/i)).toBeInTheDocument();
   });
 
+  it('links to the history of saved tunings, with or without active cars', async () => {
+    const user = userEvent.setup();
+    mockApi.get.mockResolvedValue({ data: [] });
+
+    renderPage();
+    await user.click(await screen.findByRole('button', { name: /Tunings feitos/i }));
+
+    expect(mockNavigate).toHaveBeenCalledWith('/forza/tuning/historico');
+  });
+
   it('shows the empty state pointing to the sessions collection', async () => {
     mockApi.get.mockResolvedValue({ data: [] });
 

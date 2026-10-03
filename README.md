@@ -123,6 +123,9 @@ Consome só `forza-telemetry-service/openapi/openapi.yaml` (tipos em `src/interf
 - **Tuning (FH6)** (`/forza/tuning`): recomendação de ajustes por carro a partir das sessões coletadas (mínimo de 10
   sessões e volume de amostras por carro). Mostra o que aplicar neste ciclo (até 3, só o **sentido** — o jogo não envia
   os valores do setup) e todas as 9 guias de tuning, mesmo as sem ajuste; "Reiniciar coleta" após aplicar mudanças.
+- **Tunings feitos** (`/forza/tuning/historico`, `/forza/tuning/historico/:id`): ao reiniciar a coleta de um carro com
+  recomendação pronta, o serviço guarda uma foto dela; a lista mostra carro, classe/PI, data, sessões usadas e quantos
+  ajustes indicava, e o detalhe reabre a recomendação completa (ciclo + 9 guias) como era na época, só leitura.
 - Páginas carregadas sob demanda (`lazy` do React Router).
 
 ### 3. Meu Perfil & Segurança (`/perfil`)
