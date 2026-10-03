@@ -63,7 +63,7 @@ describe('Dashboard Component', () => {
     vi.clearAllMocks();
   });
 
-  it('renders all 12 cards with Administração as the first card when user is an administrator', () => {
+  it('renders all 13 cards with Administração as the first card when user is an administrator', () => {
     renderDashboard({ isAdmin: true });
 
     expect(screen.getByText(/Olá, Administrador! Selecione um módulo/i)).toBeInTheDocument();
@@ -71,6 +71,8 @@ describe('Dashboard Component', () => {
     const titles = screen.getAllByRole('heading', { level: 3 }).map((h) => h.textContent);
     expect(titles[0]).toBe('Administração');
     expect(titles[1]).toBe('Finanças');
+    expect(titles[2]).toBe('Forza');
+    expect(titles).toHaveLength(13);
 
     expect(screen.getByText('Administração')).toBeInTheDocument();
     expect(screen.getByText('Finanças')).toBeInTheDocument();
@@ -128,6 +130,15 @@ describe('Dashboard Component', () => {
     await user.click(financasCard);
 
     expect(mockNavigate).toHaveBeenCalledWith('/financas');
+  });
+
+  it('navigates to /forza when clicking the Forza card', async () => {
+    const user = userEvent.setup();
+    renderDashboard();
+
+    await user.click(screen.getByText('Forza'));
+
+    expect(mockNavigate).toHaveBeenCalledWith('/forza');
   });
 
   it('calls logout when clicking the Sair button', async () => {

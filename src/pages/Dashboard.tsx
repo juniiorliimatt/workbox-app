@@ -24,6 +24,7 @@ import {
   Inventory as InventoryIcon,
   Badge as RhIcon,
   AutoFixHigh as AutomationIcon,
+  SportsMotorsports as ForzaIcon,
   Settings as SettingsIcon,
   SupportAgent as SupportIcon,
 } from '@mui/icons-material';
@@ -55,6 +56,14 @@ const MODULES_LIST: IModuleCard[] = [
     description: 'Controle de receitas, despesas, contas, metas e orçamentos.',
     icon: <WalletIcon sx={{ fontSize: 40 }} color="primary" />,
     path: '/financas',
+    enabled: true,
+  },
+  {
+    id: 'forza',
+    title: 'Forza',
+    description: 'Telemetria do Forza: sessões, voltas, resumo de tuning e leitura ao vivo.',
+    icon: <ForzaIcon sx={{ fontSize: 40 }} color="primary" />,
+    path: '/forza',
     enabled: true,
   },
   {

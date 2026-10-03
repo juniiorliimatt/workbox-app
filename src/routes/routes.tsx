@@ -58,6 +58,22 @@ export const router = createBrowserRouter([
         element: <GerenciarTipos />,
       },
       {
+        path: '/forza',
+        lazy: async () => ({ Component: (await import('@/pages/Forza')).default }),
+      },
+      {
+        path: '/forza/sessoes',
+        lazy: async () => ({ Component: (await import('@/pages/forza/Sessoes')).default }),
+      },
+      {
+        path: '/forza/sessoes/:id',
+        lazy: async () => ({ Component: (await import('@/pages/forza/SessaoDetalhe')).default }),
+      },
+      {
+        path: '/forza/ao-vivo',
+        lazy: async () => ({ Component: (await import('@/pages/forza/AoVivo')).default }),
+      },
+      {
         path: '/admin',
         element: <Admin />,
       },
