@@ -56,20 +56,23 @@ src/
 │   └── ...
 ├── pages/           # Telas da aplicação
 │   ├── Login.tsx          # Login, auto-cadastro e desafio MFA TOTP
-│   ├── Dashboard.tsx      # Hub central de módulos (12 cards temáticos)
+│   ├── Dashboard.tsx      # Hub central de módulos (13 cards temáticos)
 │   ├── Perfil.tsx         # Edição cadastral, foto de perfil, troca de senha e MFA
 │   ├── Admin.tsx          # Hub de acesso aos módulos administrativos
 │   ├── AdminUsuarios.tsx  # Gestão completa de usuários (CRUD + fotos + papéis)
 │   ├── AdminPapeis.tsx    # Gestão de papéis e permissões
 │   ├── AdminAuditoria.tsx # Trilha de auditoria e segurança de logins
-│   └── Financas.tsx       # Módulo de Finanças Pessoais (budget)
+│   ├── Financas.tsx       # Módulo de Finanças Pessoais (budget)
+│   ├── Forza.tsx          # Hub do módulo Forza (telemetria)
+│   └── forza/             # Sessoes (lista), SessaoDetalhe (resumo/voltas/telemetria), AoVivo
 ├── routes/          # Definição e configuração das rotas
 │   ├── routes.tsx         # Rotas (catch-all "*" redireciona pra "/")
 │   ├── ProtectedRoute.tsx # Guarda de rota autenticada
 │   └── PublicRoute.tsx    # Guarda de rota pública (redireciona autenticados)
 ├── services/        # Configuração de clientes HTTP
 │   ├── api.ts             # Instância configurada do Axios
-│   └── useAxiosWithAuth.ts # Interceptors de requisição e renovação de token (401 retry)
+│   ├── useAxiosWithAuth.ts # Interceptors de requisição e renovação de token (401 retry)
+│   └── forzaApi.ts        # Cliente tipado do forza-telemetry-service (funções puras sobre o Axios)
 └── test/            # Suíte de testes automatizados e E2E
     ├── AdminPages.test.tsx
     ├── AuthContext.test.tsx
@@ -77,6 +80,7 @@ src/
     ├── Login.test.tsx
     ├── Perfil.test.tsx
     ├── UserAvatar.test.tsx
+    ├── forza/              # testes do módulo Forza (utils, cliente, páginas) + helpers
     ├── setupTests.ts
     └── browser-e2e.mjs     # Teste ponta a ponta no Google Chrome headless
 ```
@@ -102,13 +106,21 @@ em uso).
   - Renovação automática transparente via interceptors do Axios em respostas 401.
 
 ### 2. Hub de Módulos (`/dashboard`)
-- Tela inicial pós-login contendo **12 cards de módulos**:
+- Tela inicial pós-login contendo **13 cards de módulos**:
   1. **Administração** (`/admin`): Exibido com prioridade para usuários com papel `ADMIN`.
   2. **Finanças** (`/financas`): Acesso ao módulo de finanças pessoais (*budget-service*).
    - **Metas e Orçamento:** Resumos formatados em padrão monetário (BRL), gráficos de proporção (Receitas vs Despesas em PieChart), e painéis semânticos de acompanhamento de metas em abas mensais e anuais.
    - **Receitas e Despesas:** Grids completos com filtro de competência, controle de pagamento, autocomplete inteligente e **Lançamentos em Lote** (componentizados para garantir alta performance).
    - **Gerenciamento de Tipos:** Controle de categorias, regras 50/30/20 para despesas, e flags dinâmicas para Receitas (`includeInTotals` e `includeInMonthlyTotals`) ocultando os tipos desejados da contagem e gráficos.
-  3. Demais 10 módulos com badge *"Em breve"* e estado desabilitado (RH, Vendas, Relatórios, CRM, Estoque, etc.).
+  3. **Forza** (`/forza`): telemetria do Forza (*forza-telemetry-service*, porta 7057) — ver seção abaixo.
+  4. Demais 10 módulos com badge *"Em breve"* e estado desabilitado (RH, Vendas, Relatórios, CRM, Estoque, etc.).
+
+#### Módulo Forza (`/forza`)
+Consome só `forza-telemetry-service/openapi/openapi.yaml` (tipos em `src/interfaces/forza`; o `summary` é objeto livre no contrato, então `TuningSummary` espelha o `SummaryCalculator` do serviço).
+- **Sessões** (`/forza/sessoes`): lista com paginação por cursor ("Carregar mais"), estados de carregamento/vazio/erro com retentativa; a linha abre o detalhe.
+- **Detalhe** (`/forza/sessoes/:id`): cabeçalho (carro, classe/PI, tração, formato) e três abas — **Resumo de tuning** (suspensão, equilíbrio em curva, frenagem/tração, câmbio, pneus; botão para copiar o JSON e colar na skill `forza-tuning-engineer`), **Voltas** (tempos, diferença e melhor volta) e **Telemetria** (gráficos de velocidade/rotação e pedais, carregados só ao abrir a aba, série decimada a 1000 pontos).
+- **Ao vivo** (`/forza/ao-vivo`): polling de 1 s em `/api/v1/live/snapshot` (não empilha requisições, pausa com a aba oculta, aborta ao sair); 404 do serviço vira "Aguardando telemetria", não erro. Temperaturas de pneu convertidas de °F para °C.
+- Páginas carregadas sob demanda (`lazy` do React Router).
 
 ### 3. Meu Perfil & Segurança (`/perfil`)
 - **Dados Cadastrais**: Visualização e edição de Nome Social e E-mail.
@@ -159,7 +171,8 @@ Exclusivo para contas com permissão de administrador (papel `ADMIN`):
 npm install
 
 # Servidor de desenvolvimento (com proxy reverso /api -> http://localhost:7051,
-# rotas de budget-service -> http://localhost:7052, ver vite.config.ts)
+# rotas de budget-service -> http://localhost:7052, forza (/api/v1/sessions e /live)
+# -> http://localhost:7057, ver vite.config.ts)
 npm run dev       # http://localhost:7053
 
 # Verificação estática de código (ESLint)
@@ -210,6 +223,8 @@ produção usa os mesmos defaults do `.env`, servido pelo Nginx do container).
 | Variável | Descrição | Padrão |
 |---|---|---|
 | `VITE_PUBLIC_URL_API` | Única variável efetivamente lida pelo código (`src/services/api.ts`) — base URL da API (`workbox-api`). Em dev, vazio utiliza o proxy do Vite `/api`. | `""` |
+
+O proxy de desenvolvimento (`vite.config.ts`, só `npm run dev`) lê, via `process.env`, `VITE_API_URL` (default `http://localhost:7051`), `VITE_BUDGET_API_URL` (`http://localhost:7052`) e `VITE_FORZA_API_URL` (`http://localhost:7057`). No container, o nginx usa `WORKBOX_API_UPSTREAM`, `BUDGET_SERVICE_UPSTREAM` e `FORZA_SERVICE_UPSTREAM` (definidas no `docker-compose.yml` da raiz).
 
 As demais chaves em `.env`/`.env.development` (`VITE_PUBLIC_URL_API_ORIGIN`,
 `VITE_INITIAL_PATH`, `VITE_PUBLIC_SSO_LOGIN_URL`, `VITE_PUBLIC_SSO_LOGOUT_URL`,

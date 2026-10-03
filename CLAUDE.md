@@ -11,8 +11,9 @@
 
 ## Papel e autoria
 - SPA do ecossistema Workbox: login/MFA/perfil, administração (usuários, papéis,
-  auditoria) e o módulo **Finanças** (`budget-service`). Hub com 12 cards, só 2 ativos
-  (Administração, Finanças); os demais são "Em breve".
+  auditoria), o módulo **Finanças** (`budget-service`) e o módulo **Forza**
+  (`forza-telemetry-service`). Hub com 13 cards, só 3 ativos
+  (Administração, Finanças, Forza); os demais são "Em breve".
 - Desenvolvido pelo **Claude Code** (full-stack): mudança de contrato observável de um
   backend entra **na mesma tarefa** que o ajuste aqui (ver raiz).
 
@@ -44,18 +45,19 @@ Páginas grandes (Perfil 921, AdminUsuarios 754, Despesas 703, Receitas 670 linh
 ao mexer, prefira extrair componente/hook em vez de crescer o arquivo.
 
 ## Integração com backends
-- Consome **só** `workbox-api` e `budget-service`, e **apenas** a partir do
+- Consome `workbox-api`, `budget-service` e `forza-telemetry-service`, e **apenas** a partir do
   `openapi/openapi.yaml` de cada um. Não inferir endpoint; contrato ausente/desatualizado
   → apontar, não assumir. Tipos hoje são escritos à mão em `interfaces/` (não há
   `openapi-typescript`); se for introduzir geração, é dependência nova (confirmar).
 - **Roteamento** idêntico em dois lugares — mudar um exige mudar o outro:
   `vite.config.ts` (dev: `revenues|spendings|revenue-types|spending-types|budget-rules`
   → `VITE_BUDGET_API_URL` ou `:7052`; resto de `/api` → `VITE_API_URL` ou `:7051`) e
-  `nginx.conf.template` (prod/container: mesmas rotas via `BUDGET_SERVICE_UPSTREAM` e
-  `WORKBOX_API_UPSTREAM`; nginx escolhe o prefixo mais específico). Hoje **não** há rota
-  pra `notes-service` (`/api/v1/documents`) nem pra `forza-telemetry-service`
-  (`/api/v1/sessions`, `/api/v1/live`) — qualquer integração futura precisa dos dois
-  arquivos (e do contrato do serviço, que no forza ainda não existe).
+  `nginx.conf.template` (prod/container: mesmas rotas via `BUDGET_SERVICE_UPSTREAM`,
+  `FORZA_SERVICE_UPSTREAM` e `WORKBOX_API_UPSTREAM`; nginx escolhe o prefixo mais
+  específico). Forza: `/api/v1/sessions` e `/api/v1/live` → `forza-telemetry-service`
+  (`VITE_FORZA_API_URL`, default `:7057`). Hoje **não** há rota pra `notes-service`
+  (`/api/v1/documents`) — qualquer integração futura precisa dos dois arquivos e do
+  upstream no `docker-compose.yml` da raiz.
 - `api.ts`: `baseURL` vem de `VITE_PUBLIC_URL_API` (vazio = proxy), `withCredentials:
   true`. `useAxiosWithAuth` injeta `Authorization: Bearer` e, em `401`, renova via
   `POST /api/v1/auth/refresh` (corpo `{ "refreshToken": ... }`) e repete a chamada.
@@ -68,6 +70,18 @@ ao mexer, prefira extrair componente/hook em vez de crescer o arquivo.
   simulam o **JWT decodificado** usam `ROLE_*`; as que simulam resposta de CRUD, não.
 - Só `VITE_PUBLIC_URL_API` é lida pelo código; as demais chaves de `.env`/
   `.env.development` são resíduo de scaffold (não documentar como comportamento real).
+
+## Padrão do módulo Forza (referência pra módulos novos)
+- Cliente HTTP em `services/forzaApi.ts`: funções **puras** sobre a instância Axios (a de
+  `useAxiosWithAuth`), com `AbortSignal`; erro esperado (404 do `/live/snapshot`) vira
+  retorno `null`, não exceção. Tipos em `interfaces/forza`, formatação/conversões em
+  `utils/forza.ts`.
+- Polling em hook dedicado (`hooks/useLiveSnapshot.ts`): sem requisições empilhadas, pausa
+  com a aba oculta, aborta ao desmontar. Dado secundário (amostras da telemetria) só é
+  buscado ao abrir a aba. Séries grandes passam por `decimate` antes do recharts.
+- Rotas do módulo com `lazy` do React Router (`routes.tsx`); páginas finas, componentes
+  de apresentação em `components/forza/`.
+- Temperatura de pneu chega em °F do jogo: converter pra °C só na exibição.
 
 ## Regras de código e armadilhas
 - **`catch (e: unknown)` + axios**: nunca acessar `e.response`/`e.message` direto — use
