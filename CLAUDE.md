@@ -82,6 +82,8 @@ ao mexer, prefira extrair componente/hook em vez de crescer o arquivo.
 - **Todas** as rotas autenticadas usam `lazy` do React Router (`routes.tsx`; só Login/ResetPassword
   são estáticas) — o recharts fica fora do bundle principal. Páginas finas, componentes
   de apresentação em `components/forza/`.
+- `components/forza/DataOutHint`: mostra o IP da máquina + porta do Data Out (de `/live/info`; senão o
+  host do navegador; senão texto genérico) em "Ao vivo" e na lista vazia de sessões.
 - Temperatura de pneu chega em °F do jogo: converter pra °C só na exibição.
 
 ## Tela de Metas e Orçamentos (referência de carregamento de dados)
@@ -89,6 +91,10 @@ ao mexer, prefira extrair componente/hook em vez de crescer o arquivo.
   por tipo (anual e do mês) vêm agregados do servidor (`by-type?year&month`) — **nunca**
   baixar listas de lançamentos pra somar no cliente. O gráfico anual vem de **uma** chamada
   (`budget-rules/monthly-series?year`); se só ela falhar, o gráfico mostra zeros e a tela segue.
+- **Cada aba só carrega quando é exibida** (`hooks/useLazyTabData` + um carregador por aba:
+  `loadMonthlyView`, `loadYearlyView`, `loadChartView`): cache por chave (`mês-ano` / `ano`), aba
+  oculta fica velha quando o filtro muda e recarrega só ao abrir, requisição superada é abortada.
+  Ao abrir a tela são 4 chamadas (mensal); Anual e Gráfica só ao clicar.
 - Erro de carregamento sempre avisa por snackbar; cancelamento (`axios.isCancel`) não.
 - `formatCurrency` único em `utils/format.ts`; cards de hub via `components/SectionCard`.
 
