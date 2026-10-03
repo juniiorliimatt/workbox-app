@@ -196,10 +196,10 @@ npm run preview
 
 ## CI/CD
 
-`.gitlab-ci.yml`: um único job, `sonarcloud-check` (stage `test`), análise estática via
-`sonar-scanner` — dispara em merge requests e em pushes diretos à `main` (não `develop`).
-Não há job de build/teste automatizado no CI deste repo hoje — `npm test`/`npm run lint`
-rodam só localmente.
+`.gitlab-ci.yml`: `lint-test-build` (stage `verify`, `node:22`: `npm ci`, `npm run lint`, `npm test`,
+`npm run build`) roda em toda branch e MR; `sonarcloud-check` (stage `test`, `sonar-scanner`) dispara
+em merge requests e em pushes diretos à `main` (não `develop`). O E2E (`npm run test:e2e`) depende
+de Docker + Chrome e não roda no CI.
 
 ## Convenção de commits
 

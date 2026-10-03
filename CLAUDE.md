@@ -79,9 +79,18 @@ ao mexer, prefira extrair componente/hook em vez de crescer o arquivo.
 - Polling em hook dedicado (`hooks/useLiveSnapshot.ts`): sem requisições empilhadas, pausa
   com a aba oculta, aborta ao desmontar. Dado secundário (amostras da telemetria) só é
   buscado ao abrir a aba. Séries grandes passam por `decimate` antes do recharts.
-- Rotas do módulo com `lazy` do React Router (`routes.tsx`); páginas finas, componentes
+- **Todas** as rotas autenticadas usam `lazy` do React Router (`routes.tsx`; só Login/ResetPassword
+  são estáticas) — o recharts fica fora do bundle principal. Páginas finas, componentes
   de apresentação em `components/forza/`.
 - Temperatura de pneu chega em °F do jogo: converter pra °C só na exibição.
+
+## Tela de Metas e Orçamentos (referência de carregamento de dados)
+- `services/budgetApi.ts#loadOrcamentos` carrega tudo em paralelo com `AbortSignal`; totais
+  por tipo (anual e do mês) vêm agregados do servidor (`by-type?year&month`) — **nunca**
+  baixar listas de lançamentos pra somar no cliente. O gráfico anual ainda faz 12 chamadas
+  (não há endpoint de série mensal no budget-service); falha de um mês vira zeros.
+- Erro de carregamento sempre avisa por snackbar; cancelamento (`axios.isCancel`) não.
+- `formatCurrency` único em `utils/format.ts`; cards de hub via `components/SectionCard`.
 
 ## Regras de código e armadilhas
 - **`catch (e: unknown)` + axios**: nunca acessar `e.response`/`e.message` direto — use
@@ -124,8 +133,9 @@ ao mexer, prefira extrair componente/hook em vez de crescer o arquivo.
   (`admin@`/`user@workbox.local`) não têm senha estável.
 - **Validação visual**: após alterar UI, validar render/interação/console no browser
   (skills `webapp-testing` / Chrome) e relatar em 1 linha o que foi verificado.
-- CI do repo só roda Sonar (`sonarcloud-check`, em MR e `main`) — **lint/testes/build
-  não rodam no CI**; rode localmente antes de commitar.
+- CI (`.gitlab-ci.yml`): `lint-test-build` (node:22: `npm ci`, `npm run lint`, `npm test`,
+  `npm run build`) em **toda** branch/MR, e `sonarcloud-check` só em MR e `main`. O E2E
+  (`test:e2e`, Docker + Chrome) não roda no CI. Lint está zerado de erros — mantenha assim.
 
 ## Manutenção do README
 Mudou comportamento observável (rota/página, componente relevante, campo de formulário,
