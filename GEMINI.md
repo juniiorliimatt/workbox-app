@@ -1,7 +1,7 @@
 > Cópia estática de `~/GEMINI.md` (config global do usuário), versionada aqui em
 > 2026-08-28 para que o projeto carregue as mesmas instruções em qualquer máquina onde
 > for clonado. Pode divergir do original global com o tempo — não é sincronizada
-> automaticamente. Ver [AGENTS.md](../AGENTS.md).
+> automaticamente. Ver [CLAUDE.md](../CLAUDE.md).
 
 # Regras e Diretrizes Globais de Comportamento
 Role: Principal Frontend Architect & Tech Lead (Antigravity / Browser-Agent Mode)
@@ -119,7 +119,7 @@ para os endpoints de CRUD — só é verdade pra um lugar específico.
   "Administrador").
 - `src/pages/AdminAuditoria.tsx` (~46, ~62) — strings mockadas com `ROLE_ADMIN`/
   `ROLE_USER` embutidas no texto; ajustar quando ligar essa tela nos endpoints reais de
-  `/api/v1/audit/**` (ver aviso de contrato em `AGENTS.md`).
+  `/api/v1/audit/**` (ver regras de contrato em `../CLAUDE.md`).
 - Fixtures de teste (`src/test/AdminPages.test.tsx`, `src/test/Dashboard.test.tsx`,
   `src/test/Perfil.test.tsx`) — os mocks de `roles`/`authority` usados pra simular
   resposta de `/api/v1/user/**` e `/api/v1/role` devem usar valores sem prefixo
