@@ -1,8 +1,9 @@
 import { FC } from 'react';
-import { Box, Card, CardActionArea, CardContent, Container, Divider, Grid, Paper, Typography } from '@mui/material';
+import { Box, Container, Grid, Paper, Typography } from '@mui/material';
 import { Sensors as LiveIcon, SportsMotorsports as ForzaIcon, History as SessionsIcon } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import AppNavbar from '@/components/AppNavbar';
+import SectionCard from '@/components/SectionCard';
 
 const Forza: FC = () => {
   const navigate = useNavigate();
@@ -30,37 +31,20 @@ const Forza: FC = () => {
 
         <Grid container spacing={3}>
           <Grid item xs={12} md={6}>
-            <Card elevation={2} sx={{ height: '100%', borderRadius: 2 }}>
-              <CardActionArea sx={{ height: '100%' }} onClick={() => navigate('/forza/sessoes')}>
-                <CardContent>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                    <SessionsIcon color="primary" sx={{ mr: 1 }} />
-                    <Typography variant="h6">Sessões</Typography>
-                  </Box>
-                  <Divider sx={{ mb: 2 }} />
-                  <Typography variant="body2" color="text.secondary">
-                    Histórico de sessões com voltas, gráficos de telemetria e o resumo de tuning para ajustar o setup.
-                  </Typography>
-                </CardContent>
-              </CardActionArea>
-            </Card>
+            <SectionCard
+              title="Sessões"
+              description="Histórico de sessões com voltas, gráficos de telemetria e o resumo de tuning para ajustar o setup."
+              icon={<SessionsIcon color="primary" />}
+              onClick={() => navigate('/forza/sessoes')}
+            />
           </Grid>
-
           <Grid item xs={12} md={6}>
-            <Card elevation={2} sx={{ height: '100%', borderRadius: 2 }}>
-              <CardActionArea sx={{ height: '100%' }} onClick={() => navigate('/forza/ao-vivo')}>
-                <CardContent>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                    <LiveIcon color="success" sx={{ mr: 1 }} />
-                    <Typography variant="h6">Ao vivo</Typography>
-                  </Box>
-                  <Divider sx={{ mb: 2 }} />
-                  <Typography variant="body2" color="text.secondary">
-                    Velocidade, marcha, pedais, pneus e voltas em tempo real enquanto você pilota.
-                  </Typography>
-                </CardContent>
-              </CardActionArea>
-            </Card>
+            <SectionCard
+              title="Ao vivo"
+              description="Velocidade, marcha, pedais, pneus e voltas em tempo real enquanto você pilota."
+              icon={<LiveIcon color="success" />}
+              onClick={() => navigate('/forza/ao-vivo')}
+            />
           </Grid>
         </Grid>
       </Container>

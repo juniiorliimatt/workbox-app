@@ -1,5 +1,5 @@
 import { FC } from 'react';
-import { Box, Card, CardContent, Container, Divider, Grid, Paper, Typography, CardActionArea } from '@mui/material';
+import { Box, Container, Grid, Paper, Typography } from '@mui/material';
 import {
   AccountBalanceWallet as WalletIcon,
   TrendingUp as TrendingUpIcon,
@@ -8,6 +8,7 @@ import {
   Category as CategoryIcon,
 } from '@mui/icons-material';
 import AppNavbar from '@/components/AppNavbar';
+import SectionCard from '@/components/SectionCard';
 import { useNavigate } from 'react-router-dom';
 
 const Financas: FC = () => {
@@ -35,71 +36,16 @@ const Financas: FC = () => {
 
         <Grid container spacing={3}>
           <Grid item xs={12} md={6}>
-            <Card elevation={2} sx={{ height: '100%', borderRadius: 2 }}>
-              <CardActionArea sx={{ height: '100%' }} onClick={() => navigate('/financas/receitas')}>
-                <CardContent>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                    <TrendingUpIcon color="success" sx={{ mr: 1 }} />
-                    <Typography variant="h6">Receitas</Typography>
-                  </Box>
-                  <Divider sx={{ mb: 2 }} />
-                  <Typography variant="body2" color="text.secondary">
-                    Controle de entradas financeiras e fontes de receita.
-                  </Typography>
-                </CardContent>
-              </CardActionArea>
-            </Card>
+            <SectionCard title="Receitas" description="Controle de entradas financeiras e fontes de receita." icon={<TrendingUpIcon color="success" />} onClick={() => navigate('/financas/receitas')} />
           </Grid>
-
           <Grid item xs={12} md={6}>
-            <Card elevation={2} sx={{ height: '100%', borderRadius: 2 }}>
-              <CardActionArea sx={{ height: '100%' }} onClick={() => navigate('/financas/despesas')}>
-                <CardContent>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                    <TrendingDownIcon color="error" sx={{ mr: 1 }} />
-                    <Typography variant="h6">Despesas</Typography>
-                  </Box>
-                  <Divider sx={{ mb: 2 }} />
-                  <Typography variant="body2" color="text.secondary">
-                    Categorização de saídas, contas e cartões de crédito.
-                  </Typography>
-                </CardContent>
-              </CardActionArea>
-            </Card>
+            <SectionCard title="Despesas" description="Categorização de saídas, contas e cartões de crédito." icon={<TrendingDownIcon color="error" />} onClick={() => navigate('/financas/despesas')} />
           </Grid>
-
           <Grid item xs={12} md={6}>
-            <Card elevation={2} sx={{ height: '100%', borderRadius: 2 }}>
-              <CardActionArea sx={{ height: '100%' }} onClick={() => navigate('/financas/orcamentos')}>
-                <CardContent>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                    <SavingsIcon color="primary" sx={{ mr: 1 }} />
-                    <Typography variant="h6">Metas e Orçamentos</Typography>
-                  </Box>
-                  <Divider sx={{ mb: 2 }} />
-                  <Typography variant="body2" color="text.secondary">
-                    Planejamento mensal e reserva de emergência (regra 50-30-20).
-                  </Typography>
-                </CardContent>
-              </CardActionArea>
-            </Card>
+            <SectionCard title="Metas e Orçamentos" description="Planejamento mensal e reserva de emergência (regra 50-30-20)." icon={<SavingsIcon color="primary" />} onClick={() => navigate('/financas/orcamentos')} />
           </Grid>
-        
           <Grid item xs={12} md={6}>
-            <Card elevation={2} sx={{ height: '100%', borderRadius: 2 }}>
-              <CardActionArea sx={{ height: '100%' }} onClick={() => navigate('/financas/tipos')}>
-                <CardContent>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                    <CategoryIcon color="secondary" sx={{ mr: 1 }} />
-                    <Typography variant="h6">Gerenciamento de Tipos</Typography>
-                  </Box>
-                  <Divider sx={{ mb: 2 }} />
-                  <Typography variant="body2" color="text.secondary">
-                    Gestão centralizada dos tipos de receitas e despesas.
-                  </Typography>
-                </CardContent>
-              </CardActionArea>
-            </Card>
+            <SectionCard title="Gerenciamento de Tipos" description="Gestão centralizada dos tipos de receitas e despesas." icon={<CategoryIcon color="secondary" />} onClick={() => navigate('/financas/tipos')} />
           </Grid>
         </Grid>
 
