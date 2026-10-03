@@ -124,3 +124,12 @@ export interface YearlyChartPoint {
   pessoais: number;
   poupanca: number;
 }
+
+/** `GET /api/v1/budget-rules/monthly-series?year=` — 12 pontos, valores realizados por categoria 50/30/20. */
+export interface MonthlySeriesPointDTO {
+  month: number;
+  totalRevenue: number;
+  essential: number;
+  personal: number;
+  savings: number;
+}

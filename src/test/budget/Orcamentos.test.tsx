@@ -17,6 +17,8 @@ const respond = (url: string, params: Record<string, unknown> = {}) => {
       return { total: 3000 };
     case '/api/v1/budget-rules/fifty-thirty-twenty':
       return { totalRevenue: 1000, essential: { actual: 500, target: 500, difference: 0 }, personal: { actual: 300, target: 300, difference: 0 }, savings: { actual: 200, target: 200, difference: 0 } };
+    case '/api/v1/budget-rules/monthly-series':
+      return Array.from({ length: 12 }, (_, i) => ({ month: i + 1, totalRevenue: 0, essential: 0, personal: 0, savings: 0 }));
     case '/api/v1/budget-rules/monthly-summary':
       return { totalRevenue: 5000, totalSpending: 3000, totalPaid: 2000, totalPending: 1000, projectedBalance: 2000 };
     case '/api/v1/budget-rules/yearly-summary':

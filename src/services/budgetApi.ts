@@ -1,6 +1,7 @@
 import { AxiosInstance } from 'axios';
 import {
   FiftyThirtyTwentyDTO,
+  MonthlySeriesPointDTO,
   MonthlySummaryDTO,
   TotalDTO,
   TypeTotalDTO,
@@ -32,29 +33,22 @@ const MONTH_NAMES = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Se
 
 const EMPTY_POINT = { receitas: 0, despesas: 0, essenciais: 0, pessoais: 0, poupanca: 0 };
 
-const toChartPoint = (monthName: string, rule: FiftyThirtyTwentyDTO | null): YearlyChartPoint => {
-  if (!rule) return { monthName, ...EMPTY_POINT };
-  const essenciais = rule.essential?.actual || 0;
-  const pessoais = rule.personal?.actual || 0;
-  const poupanca = rule.savings?.actual || 0;
-  return { monthName, receitas: rule.totalRevenue || 0, despesas: essenciais + pessoais + poupanca, essenciais, pessoais, poupanca };
+const toChartPoint = (monthName: string, point: MonthlySeriesPointDTO | undefined): YearlyChartPoint => {
+  if (!point) return { monthName, ...EMPTY_POINT };
+  const essenciais = point.essential || 0;
+  const pessoais = point.personal || 0;
+  const poupanca = point.savings || 0;
+  return { monthName, receitas: point.totalRevenue || 0, despesas: essenciais + pessoais + poupanca, essenciais, pessoais, poupanca };
 };
 
 /**
- * Carrega tudo da tela em paralelo. Totais por tipo vêm agregados do servidor (anual e do mês).
- * O gráfico anual ainda faz uma chamada por mês (não há endpoint de série); a falha de um mês
- * vira zeros, sem derrubar a tela. Qualquer outra falha rejeita.
+ * Carrega tudo da tela em paralelo (10 chamadas). Totais por tipo (anual e do mês) e a série anual
+ * 50/30/20 (`monthly-series`) vêm agregados do servidor. Se só a série falhar, o gráfico anual
+ * mostra zeros e a tela segue utilizável; qualquer outra falha rejeita.
  */
 export const loadOrcamentos = async (api: AxiosInstance, { month, year }: OrcamentosFilter, signal?: AbortSignal): Promise<OrcamentosData> => {
   const monthParams = { month, year };
   const yearParams = { year };
-
-  const monthSeries = Array.from({ length: 12 }, (_, i) =>
-    api
-      .get<FiftyThirtyTwentyDTO>('/api/v1/budget-rules/fifty-thirty-twenty', { params: { month: i + 1, year }, signal })
-      .then((res) => res.data)
-      .catch(() => null),
-  );
 
   const [revTotal, spendTotal, rule, summary, yearly, revenuesByType, spendingsByType, monthlyRevenuesByType, monthlySpendingsByType, series] =
     await Promise.all([
@@ -67,7 +61,10 @@ export const loadOrcamentos = async (api: AxiosInstance, { month, year }: Orcame
       api.get<TypeTotalDTO[]>('/api/v1/spendings/by-type', { params: yearParams, signal }),
       api.get<TypeTotalDTO[]>('/api/v1/revenues/by-type', { params: monthParams, signal }),
       api.get<TypeTotalDTO[]>('/api/v1/spendings/by-type', { params: monthParams, signal }),
-      Promise.all(monthSeries),
+      api
+        .get<MonthlySeriesPointDTO[]>('/api/v1/budget-rules/monthly-series', { params: yearParams, signal })
+        .then((res) => res.data)
+        .catch(() => [] as MonthlySeriesPointDTO[]),
     ]);
 
   return {
@@ -80,6 +77,6 @@ export const loadOrcamentos = async (api: AxiosInstance, { month, year }: Orcame
     spendingsByType: spendingsByType.data || [],
     monthlyRevenuesByType: monthlyRevenuesByType.data || [],
     monthlySpendingsByType: monthlySpendingsByType.data || [],
-    yearlyChart: series.map((point, i) => toChartPoint(MONTH_NAMES[i], point)),
+    yearlyChart: MONTH_NAMES.map((name, i) => toChartPoint(name, series.find((p) => p.month === i + 1))),
   };
 };

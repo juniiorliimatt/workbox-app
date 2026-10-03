@@ -9,6 +9,15 @@ const rule = (m: number) => ({
   savings: { actual: m, target: 0, difference: 0 },
 });
 
+const series = () =>
+  Array.from({ length: 12 }, (_, i) => ({
+    month: i + 1,
+    totalRevenue: 1000 * (i + 1),
+    essential: 100 * (i + 1),
+    personal: 10 * (i + 1),
+    savings: i + 1,
+  }));
+
 const makeApi = (overrides?: Record<string, (params: Record<string, unknown>) => unknown>) => {
   const get = vi.fn((url: string, config?: { params?: Record<string, unknown> }) => {
     const params = config?.params ?? {};
@@ -25,6 +34,8 @@ const makeApi = (overrides?: Record<string, (params: Record<string, unknown>) =>
         return Promise.resolve({ data: { total: 3000 } });
       case '/api/v1/budget-rules/fifty-thirty-twenty':
         return Promise.resolve({ data: rule(Number(params.month ?? 0)) });
+      case '/api/v1/budget-rules/monthly-series':
+        return Promise.resolve({ data: series() });
       case '/api/v1/budget-rules/monthly-summary':
         return Promise.resolve({ data: { totalRevenue: 5000, totalSpending: 3000, totalPaid: 2000, totalPending: 1000, projectedBalance: 2000 } });
       case '/api/v1/budget-rules/yearly-summary':
@@ -68,24 +79,39 @@ describe('loadOrcamentos', () => {
     expect(data.spendingsByType[0].typeName).toBe('Aluguel (ano)');
   });
 
-  it('builds the 12-point yearly chart from the 50/30/20 rule of each month', async () => {
-    const data = await loadOrcamentos(makeApi(), { month: 3, year: 2026 });
+  it('builds the 12-point yearly chart from a single monthly-series call', async () => {
+    const api = makeApi();
+
+    const data = await loadOrcamentos(api, { month: 3, year: 2026 });
 
     expect(data.yearlyChart).toHaveLength(12);
     expect(data.yearlyChart[0]).toEqual({ monthName: 'Jan', receitas: 1000, despesas: 111, essenciais: 100, pessoais: 10, poupanca: 1 });
     expect(data.yearlyChart[11].monthName).toBe('Dez');
     expect(data.yearlyChart[11].receitas).toBe(12000);
+    const seriesCalls = api.get.mock.calls.filter((c) => c[0] === '/api/v1/budget-rules/monthly-series');
+    expect(seriesCalls).toHaveLength(1);
+    expect(seriesCalls[0][1].params).toEqual({ year: 2026 });
   });
 
-  it('keeps going when a single month of the chart fails, using zeros for it', async () => {
-    const api = makeApi({
-      '/api/v1/budget-rules/fifty-thirty-twenty': (params) => (params.month === 7 ? new Error('falhou') : rule(Number(params.month))),
-    });
+  it('no longer fires one fifty-thirty-twenty request per month (only the selected month)', async () => {
+    const api = makeApi();
+
+    await loadOrcamentos(api, { month: 3, year: 2026 });
+
+    const rule = api.get.mock.calls.filter((c) => c[0] === '/api/v1/budget-rules/fifty-thirty-twenty');
+    expect(rule).toHaveLength(1);
+    expect(rule[0][1].params).toEqual({ month: 3, year: 2026 });
+    expect(api.get).toHaveBeenCalledTimes(10);
+  });
+
+  it('keeps the page usable when the series fails, charting zeros', async () => {
+    const api = makeApi({ '/api/v1/budget-rules/monthly-series': () => new Error('falhou') });
 
     const data = await loadOrcamentos(api, { month: 3, year: 2026 });
 
-    expect(data.yearlyChart[6]).toEqual({ monthName: 'Jul', receitas: 0, despesas: 0, essenciais: 0, pessoais: 0, poupanca: 0 });
-    expect(data.yearlyChart[0].receitas).toBe(1000);
+    expect(data.yearlyChart).toHaveLength(12);
+    expect(data.yearlyChart.every((p) => p.receitas === 0 && p.despesas === 0)).toBe(true);
+    expect(data.revTotal).toBe(5000);
   });
 
   it('rejects when a main request fails (so the page can tell the user)', async () => {
