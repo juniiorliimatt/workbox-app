@@ -1,6 +1,6 @@
-import { screen, waitFor } from '@testing-library/react';
+import { act, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { afterEach, describe, it, expect, vi, beforeEach } from 'vitest';
 import Sessoes from '@/pages/forza/Sessoes';
 import { makeSession, renderAt } from './helpers';
 
@@ -96,6 +96,118 @@ describe('Forza · Sessões', () => {
     expect(screen.getByText('#1')).toBeInTheDocument();
     expect(mockApi.get.mock.calls[1][1].params).toEqual({ size: 20, cursor: 'c2' });
     expect(screen.queryByRole('button', { name: /Carregar mais/i })).not.toBeInTheDocument();
+  });
+
+  describe('lazy loading (infinite scroll)', () => {
+    /** O jsdom não tem IntersectionObserver: este falso deixa o teste "rolar" a lista até o fim. */
+    class FakeObserver {
+      static instances: FakeObserver[] = [];
+      disconnected = false;
+      constructor(private readonly callback: (entries: { isIntersecting: boolean }[]) => void) {
+        FakeObserver.instances.push(this);
+      }
+      observe() {}
+      unobserve() {}
+      disconnect() {
+        this.disconnected = true;
+      }
+      trigger(isIntersecting = true) {
+        this.callback([{ isIntersecting }]);
+      }
+      static active(): FakeObserver[] {
+        return FakeObserver.instances.filter((o) => !o.disconnected);
+      }
+    }
+
+    beforeEach(() => {
+      FakeObserver.instances = [];
+      vi.stubGlobal('IntersectionObserver', FakeObserver);
+    });
+
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
+    it('loads the next page by itself when the end of the list scrolls into view', async () => {
+      mockApi.get
+        .mockResolvedValueOnce({ data: { items: [makeSession({ id: 'a', carOrdinal: 1 })], nextCursor: 'c2' } })
+        .mockResolvedValueOnce({ data: { items: [makeSession({ id: 'b', carOrdinal: 2 })], nextCursor: null } });
+
+      renderPage();
+      await screen.findByText('#1');
+      await waitFor(() => expect(FakeObserver.active()).toHaveLength(1));
+      act(() => FakeObserver.active()[0].trigger());
+
+      expect(await screen.findByText('#2')).toBeInTheDocument();
+      expect(mockApi.get.mock.calls[1][1].params).toEqual({ size: 20, cursor: 'c2' });
+    });
+
+    it('ignores the observer when the end of the list is not visible', async () => {
+      mockApi.get.mockResolvedValue({ data: { items: [makeSession()], nextCursor: 'c2' } });
+
+      renderPage();
+      await screen.findByText('#1234');
+      await waitFor(() => expect(FakeObserver.active()).toHaveLength(1));
+      act(() => FakeObserver.active()[0].trigger(false));
+
+      expect(mockApi.get).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not request another page while one is still loading', async () => {
+      let resolveSecond: (value: unknown) => void = () => {};
+      mockApi.get
+        .mockResolvedValueOnce({ data: { items: [makeSession({ id: 'a', carOrdinal: 1 })], nextCursor: 'c2' } })
+        .mockReturnValueOnce(new Promise((resolve) => (resolveSecond = resolve)));
+
+      renderPage();
+      await screen.findByText('#1');
+      await waitFor(() => expect(FakeObserver.active()).toHaveLength(1));
+      const observer = FakeObserver.active()[0];
+      act(() => {
+        observer.trigger();
+        observer.trigger();
+      });
+
+      expect(mockApi.get).toHaveBeenCalledTimes(2);
+      await act(async () => resolveSecond({ data: { items: [makeSession({ id: 'b', carOrdinal: 2 })], nextCursor: null } }));
+      expect(await screen.findByText('#2')).toBeInTheDocument();
+    });
+
+    it('watches the end of the list again after each page, so a short page keeps loading', async () => {
+      mockApi.get
+        .mockResolvedValueOnce({ data: { items: [makeSession({ id: 'a', carOrdinal: 1 })], nextCursor: 'c2' } })
+        .mockResolvedValueOnce({ data: { items: [makeSession({ id: 'b', carOrdinal: 2 })], nextCursor: 'c3' } })
+        .mockResolvedValueOnce({ data: { items: [makeSession({ id: 'c', carOrdinal: 3 })], nextCursor: null } });
+
+      renderPage();
+      await screen.findByText('#1');
+      await waitFor(() => expect(FakeObserver.active()).toHaveLength(1));
+      act(() => FakeObserver.active()[0].trigger());
+      await screen.findByText('#2');
+      await waitFor(() => expect(FakeObserver.active()).toHaveLength(1));
+      act(() => FakeObserver.active()[0].trigger());
+
+      expect(await screen.findByText('#3')).toBeInTheDocument();
+      expect(mockApi.get.mock.calls[2][1].params).toEqual({ size: 20, cursor: 'c3' });
+    });
+
+    it('stops watching on the last page', async () => {
+      mockApi.get.mockResolvedValue({ data: { items: [makeSession()], nextCursor: null } });
+
+      renderPage();
+      await screen.findByText('#1234');
+
+      expect(FakeObserver.active()).toHaveLength(0);
+    });
+
+    it('keeps the "Carregar mais" button as a keyboard-friendly fallback', async () => {
+      mockApi.get.mockResolvedValue({ data: { items: [makeSession()], nextCursor: 'c2' } });
+
+      renderPage();
+      await screen.findByText('#1234');
+
+      expect(screen.getByRole('button', { name: /Carregar mais/i })).toBeInTheDocument();
+    });
   });
 
   it('hides "Carregar mais" on the last page', async () => {

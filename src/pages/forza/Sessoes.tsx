@@ -1,4 +1,4 @@
-import { FC, useCallback, useEffect, useState } from 'react';
+import { FC, useCallback, useEffect, useRef, useState } from 'react';
 import {
   Alert,
   Box,
@@ -63,8 +63,12 @@ const Sessoes: FC = () => {
     return () => controller.abort();
   }, [loadFirstPage]);
 
-  const loadMore = async () => {
-    if (!nextCursor) return;
+  // Trava síncrona: dois disparos no mesmo instante (observer + botão) não podem pedir a mesma página duas vezes.
+  const inFlight = useRef(false);
+
+  const loadMore = useCallback(async () => {
+    if (!nextCursor || inFlight.current) return;
+    inFlight.current = true;
     setLoadingMore(true);
     try {
       const page = await listSessions(api, { size: PAGE_SIZE, cursor: nextCursor });
@@ -73,9 +77,26 @@ const Sessoes: FC = () => {
     } catch {
       showSnackbar('Falha ao carregar mais sessões.', 'error');
     } finally {
+      inFlight.current = false;
       setLoadingMore(false);
     }
-  };
+  }, [api, nextCursor, showSnackbar]);
+
+  // Carregamento sob demanda: ao chegar perto do fim da lista, pede a próxima página. O observer é refeito a cada página
+  // (se o fim ainda estiver à vista, dispara de novo) e o botão "Carregar mais" continua como alternativa (teclado/sem suporte).
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!nextCursor || loadingMore || !sentinel || typeof IntersectionObserver === 'undefined') return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) loadMore();
+      },
+      { rootMargin: '300px' },
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [nextCursor, loadingMore, loadMore]);
 
   const open = (id: string) => navigate(`/forza/sessoes/${id}`);
 
@@ -172,7 +193,7 @@ const Sessoes: FC = () => {
             </TableContainer>
 
             {nextCursor && (
-              <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
+              <Box ref={sentinelRef} sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
                 <Button variant="outlined" onClick={loadMore} disabled={loadingMore}>
                   {loadingMore ? 'Carregando…' : 'Carregar mais'}
                 </Button>
