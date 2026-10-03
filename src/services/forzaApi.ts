@@ -1,5 +1,5 @@
 import axios, { AxiosInstance } from 'axios';
-import { LapDTO, LiveSnapshotDTO, SampleDTO, SessionDTO, SessionPageDTO, TuningSummary } from '@/interfaces/forza';
+import { LapDTO, LiveInfoDTO, LiveSnapshotDTO, SampleDTO, SessionDTO, SessionPageDTO, TuningSummary } from '@/interfaces/forza';
 
 /**
  * Cliente do forza-telemetry-service. Contrato: forza-telemetry-service/openapi/openapi.yaml.
@@ -45,3 +45,6 @@ export const getLiveSnapshot = async (api: AxiosInstance, signal?: AbortSignal):
     throw e;
   }
 };
+
+export const getLiveInfo = async (api: AxiosInstance, signal?: AbortSignal): Promise<LiveInfoDTO> =>
+  (await api.get<LiveInfoDTO>('/api/v1/live/info', { signal })).data;

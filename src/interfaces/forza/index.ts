@@ -139,3 +139,9 @@ export interface TuningSummary {
   laps?: { times: { lap: number; timeS: number }[]; bestS: number | null };
   onRumbleStripPct?: number;
 }
+
+/** `GET /api/v1/live/info` — onde apontar o Data Out do jogo. `hostAddresses` vazio = não configurado no serviço. */
+export interface LiveInfoDTO {
+  hostAddresses: string[];
+  udpPort: number;
+}

@@ -2,6 +2,7 @@ import { FC } from 'react';
 import { Alert, Box, Chip, CircularProgress, Container, Grid, LinearProgress, Paper, Typography } from '@mui/material';
 import { SportsMotorsports as ForzaIcon } from '@mui/icons-material';
 import AppNavbar from '@/components/AppNavbar';
+import DataOutHint from '@/components/forza/DataOutHint';
 import StatTile from '@/components/forza/StatTile';
 import { useLiveSnapshot } from '@/hooks/useLiveSnapshot';
 import { LiveSnapshotDTO } from '@/interfaces/forza';
@@ -152,7 +153,7 @@ const AoVivo: FC = () => {
               Aguardando telemetria do jogo
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              Ative o Data Out no jogo apontando para o IP deste PC, porta 5310. Nenhum pacote chegou nos últimos 5 segundos.
+              <DataOutHint /> Nenhum pacote chegou nos últimos 5 segundos.
             </Typography>
           </Paper>
         )}

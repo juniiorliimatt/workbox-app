@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   carClassLabel,
   decimate,
+  resolveDataOutHosts,
   describeDrivetrain,
   fahrenheitToCelsius,
   formatDuration,
@@ -134,5 +135,28 @@ describe('decimate', () => {
   it('handles empty input and tiny limits', () => {
     expect(decimate([], 10)).toEqual([]);
     expect(decimate(range(100), 2)).toEqual([0, 99]);
+  });
+});
+
+describe('resolveDataOutHosts', () => {
+  it('prefers the IPs announced by the service', () => {
+    expect(resolveDataOutHosts({ hostAddresses: ['192.168.0.10', '10.0.0.5'], udpPort: 5310 }, '192.168.0.99')).toEqual(['192.168.0.10', '10.0.0.5']);
+  });
+
+  it('falls back to the host the browser used to reach the app', () => {
+    expect(resolveDataOutHosts({ hostAddresses: [], udpPort: 5310 }, '192.168.0.99')).toEqual(['192.168.0.99']);
+    expect(resolveDataOutHosts(null, 'meu-pc.local')).toEqual(['meu-pc.local']);
+  });
+
+  it('does not offer a loopback address (useless for the console)', () => {
+    for (const host of ['localhost', '127.0.0.1', '::1', '[::1]', '']) {
+      expect(resolveDataOutHosts({ hostAddresses: [], udpPort: 5310 }, host)).toEqual([]);
+    }
+  });
+
+  it('ignores malformed announcements', () => {
+    expect(resolveDataOutHosts({ hostAddresses: undefined, udpPort: 5310 } as never, 'localhost')).toEqual([]);
+    expect(resolveDataOutHosts({ items: [] } as never, 'localhost')).toEqual([]);
+    expect(resolveDataOutHosts({ hostAddresses: ['', '  '], udpPort: 1 }, 'localhost')).toEqual([]);
   });
 });

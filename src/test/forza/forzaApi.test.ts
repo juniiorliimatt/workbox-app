@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import type { AxiosInstance } from 'axios';
-import { getLiveSnapshot, getSession, getSessionLaps, getSessionSamples, getSessionSummary, listSessions } from '@/services/forzaApi';
+import { getLiveInfo, getLiveSnapshot, getSession, getSessionLaps, getSessionSamples, getSessionSummary, listSessions } from '@/services/forzaApi';
 
 const makeApi = (data: unknown = {}) => ({ get: vi.fn().mockResolvedValue({ data }) }) as unknown as AxiosInstance & { get: ReturnType<typeof vi.fn> };
 
@@ -66,5 +66,12 @@ describe('forzaApi', () => {
 
     await expect(getLiveSnapshot(api)).resolves.toEqual({ rpm: 5000 });
     expect(api.get).toHaveBeenCalledWith('/api/v1/live/snapshot', { signal: undefined });
+  });
+
+  it('getLiveInfo reads the announced Data Out address', async () => {
+    const api = makeApi({ hostAddresses: ['192.168.0.10'], udpPort: 5310 });
+
+    await expect(getLiveInfo(api)).resolves.toEqual({ hostAddresses: ['192.168.0.10'], udpPort: 5310 });
+    expect(api.get).toHaveBeenCalledWith('/api/v1/live/info', { signal: undefined });
   });
 });

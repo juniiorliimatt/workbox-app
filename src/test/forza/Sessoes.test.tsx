@@ -55,7 +55,8 @@ describe('Forza · Sessões', () => {
     renderPage();
 
     expect(await screen.findByText(/Nenhuma sessão registrada ainda/i)).toBeInTheDocument();
-    expect(screen.getByText(/porta 5310/i)).toBeInTheDocument();
+    expect(screen.getByText(/Ative o Data Out no jogo/i)).toBeInTheDocument();
+    expect(await screen.findByText('5310')).toBeInTheDocument();
   });
 
   it('shows an error with retry, and retrying reloads the list', async () => {

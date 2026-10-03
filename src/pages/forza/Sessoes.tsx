@@ -19,6 +19,7 @@ import { SportsMotorsports as ForzaIcon } from '@mui/icons-material';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import AppNavbar from '@/components/AppNavbar';
+import DataOutHint from '@/components/forza/DataOutHint';
 import { useSnackbar } from '@/hooks/useSnackbar';
 import { SessionDTO } from '@/interfaces/forza';
 import { listSessions } from '@/services/forzaApi';
@@ -115,7 +116,7 @@ const Sessoes: FC = () => {
               Nenhuma sessão registrada ainda
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              Ative o Data Out no jogo apontando para o IP deste PC, porta 5310, e entre em uma corrida.
+              <DataOutHint /> Depois entre em uma corrida.
             </Typography>
           </Paper>
         )}

@@ -66,3 +66,18 @@ export const decimate = <T,>(items: T[], maxPoints: number): T[] => {
   }
   return out;
 };
+
+const LOOPBACK_HOSTS = new Set(['', 'localhost', '127.0.0.1', '::1', '[::1]']);
+
+/**
+ * IP(s) pra configurar no Data Out: os anunciados pelo serviço; se não houver, o host que o
+ * navegador usou pra abrir o app (útil quando se acessa pelo IP da LAN). Loopback nunca serve
+ * (o console não alcança o `localhost` do PC), então devolve lista vazia.
+ */
+export const resolveDataOutHosts = (info: { hostAddresses?: unknown; udpPort?: unknown } | null | undefined, browserHostname: string): string[] => {
+  const announced = Array.isArray(info?.hostAddresses)
+    ? (info.hostAddresses as unknown[]).filter((host): host is string => typeof host === 'string' && host.trim() !== '').map((host) => host.trim())
+    : [];
+  if (announced.length > 0) return announced;
+  return LOOPBACK_HOSTS.has(browserHostname) ? [] : [browserHostname];
+};

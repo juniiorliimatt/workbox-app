@@ -80,6 +80,17 @@ describe('Forza · Ao vivo', () => {
     expect(screen.queryByText(/Falha ao consultar/i)).not.toBeInTheDocument();
   });
 
+  it('shows the machine IP and port to point the game at while waiting', async () => {
+    mockApi.get.mockImplementation((url: string) =>
+      url === '/api/v1/live/info' ? Promise.resolve({ data: { hostAddresses: ['192.168.100.36'], udpPort: 5310 } }) : Promise.reject(notFound),
+    );
+
+    renderPage();
+
+    expect(await screen.findByText('192.168.100.36')).toBeInTheDocument();
+    expect(screen.getByText(/Nenhum pacote chegou nos últimos 5 segundos/)).toBeInTheDocument();
+  });
+
   it('polls every second', async () => {
     mockApi.get.mockResolvedValue({ data: snapshot() });
 
