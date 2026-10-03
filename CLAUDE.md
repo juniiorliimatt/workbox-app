@@ -87,10 +87,10 @@ ao mexer, prefira extrair componente/hook em vez de crescer o arquivo.
   de apresentação em `components/forza/`.
 - `components/forza/DataOutHint`: mostra o IP da máquina + porta do Data Out (de `/live/info`; senão o
   host do navegador; senão texto genérico) em "Ao vivo" e na lista vazia de sessões.
-- **Sessões** (`/forza/sessoes`): paginação por cursor com **scroll lazy** — `IntersectionObserver` (rootMargin 300 px) num sentinela
-  abaixo da tabela pede a próxima página; o observer é recriado a cada página (se o fim ainda estiver à vista, dispara de novo),
-  há trava síncrona contra pedido duplo e o botão "Carregar mais" fica como alternativa (teclado / sem suporte). A lista
-  vai crescer muito: se o DOM pesar, o próximo passo é virtualizar as linhas.
+- **Sessões** (`/forza/sessoes`): paginação clássica (`TablePagination`) sobre a API por cursor — **5 por página** por padrão e opções
+  5 / 15 / 30; guarda o cursor de cada página vista para voltar (`cursors` ref), trocar o tamanho reinicia na 1ª página, total
+  desconhecido enquanto há próxima página (`count=-1`) e exato na última, controles travados durante o carregamento. Substituiu o
+  scroll lazy (decisão do desenvolvedor: lista vai crescer muito e 5 por página basta).
 - **Tuning (FH6)** (`/forza/tuning`, `/forza/tuning/:carOrdinal/:performanceClass`): lista de carros **por classe de PI**
   (D, C, B, A, S1, S2, R — cada classe é uma build, então o mesmo carro aparece uma vez por classe; o rótulo vem do
   `performanceClass` da API, não do `carClass` cru do pacote) com progresso até 10 sessões e

@@ -1,4 +1,4 @@
-import { FC, useCallback, useEffect, useRef, useState } from 'react';
+import { ChangeEvent, FC, useCallback, useEffect, useRef, useState } from 'react';
 import {
   Alert,
   Box,
@@ -12,6 +12,7 @@ import {
   TableCell,
   TableContainer,
   TableHead,
+  TablePagination,
   TableRow,
   Typography,
 } from '@mui/material';
@@ -26,7 +27,8 @@ import { listSessions } from '@/services/forzaApi';
 import { useAxiosWithAuth } from '@/services/useAxiosWithAuth';
 import { carClassLabel, carLabel, formatNumber, formatSessionStart } from '@/utils/forza';
 
-const PAGE_SIZE = 20;
+const PAGE_SIZE_OPTIONS = [5, 15, 30];
+const DEFAULT_PAGE_SIZE = 5;
 
 const Sessoes: FC = () => {
   const api = useAxiosWithAuth();
@@ -34,19 +36,38 @@ const Sessoes: FC = () => {
   const { showSnackbar } = useSnackbar();
 
   const [sessions, setSessions] = useState<SessionDTO[]>([]);
-  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
+  const [pageIndex, setPageIndex] = useState(0);
+  const [hasNext, setHasNext] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
+  const [pageLoading, setPageLoading] = useState(false);
   const [error, setError] = useState(false);
 
+  // A API pagina por cursor (sem OFFSET): guardamos o cursor de cada página já vista para poder voltar.
+  // cursors.current[i] = cursor que abre a página i (a primeira não tem).
+  const cursors = useRef<(string | undefined)[]>([undefined]);
+  // Trava síncrona: dois cliques seguidos não podem pedir a mesma página duas vezes.
+  const inFlight = useRef(false);
+
+  const fetchPage = useCallback(
+    async (index: number, size: number, signal?: AbortSignal) => {
+      const cursor = cursors.current[index];
+      const page = await listSessions(api, cursor ? { size, cursor } : { size }, signal);
+      cursors.current[index + 1] = page.nextCursor ?? undefined;
+      setSessions(page.items);
+      setHasNext(Boolean(page.nextCursor));
+      setPageIndex(index);
+    },
+    [api],
+  );
+
   const loadFirstPage = useCallback(
-    async (signal?: AbortSignal) => {
+    async (signal?: AbortSignal, size = DEFAULT_PAGE_SIZE) => {
       setLoading(true);
       setError(false);
+      cursors.current = [undefined];
       try {
-        const page = await listSessions(api, { size: PAGE_SIZE }, signal);
-        setSessions(page.items);
-        setNextCursor(page.nextCursor ?? null);
+        await fetchPage(0, size, signal);
       } catch (e) {
         if (axios.isCancel(e)) return;
         setError(true);
@@ -54,7 +75,7 @@ const Sessoes: FC = () => {
         if (!signal?.aborted) setLoading(false);
       }
     },
-    [api],
+    [fetchPage],
   );
 
   useEffect(() => {
@@ -63,40 +84,34 @@ const Sessoes: FC = () => {
     return () => controller.abort();
   }, [loadFirstPage]);
 
-  // Trava síncrona: dois disparos no mesmo instante (observer + botão) não podem pedir a mesma página duas vezes.
-  const inFlight = useRef(false);
+  /** Troca de página ou de tamanho: mantém a lista atual se falhar (só avisa). */
+  const goTo = useCallback(
+    async (index: number, size: number) => {
+      if (inFlight.current) return;
+      inFlight.current = true;
+      setPageLoading(true);
+      try {
+        await fetchPage(index, size);
+      } catch {
+        showSnackbar('Falha ao carregar a página.', 'error');
+      } finally {
+        inFlight.current = false;
+        setPageLoading(false);
+      }
+    },
+    [fetchPage, showSnackbar],
+  );
 
-  const loadMore = useCallback(async () => {
-    if (!nextCursor || inFlight.current) return;
-    inFlight.current = true;
-    setLoadingMore(true);
-    try {
-      const page = await listSessions(api, { size: PAGE_SIZE, cursor: nextCursor });
-      setSessions((previous) => [...previous, ...page.items]);
-      setNextCursor(page.nextCursor ?? null);
-    } catch {
-      showSnackbar('Falha ao carregar mais sessões.', 'error');
-    } finally {
-      inFlight.current = false;
-      setLoadingMore(false);
-    }
-  }, [api, nextCursor, showSnackbar]);
+  const changePage = (_event: unknown, newPage: number) => {
+    goTo(newPage, pageSize);
+  };
 
-  // Carregamento sob demanda: ao chegar perto do fim da lista, pede a próxima página. O observer é refeito a cada página
-  // (se o fim ainda estiver à vista, dispara de novo) e o botão "Carregar mais" continua como alternativa (teclado/sem suporte).
-  const sentinelRef = useRef<HTMLDivElement | null>(null);
-  useEffect(() => {
-    const sentinel = sentinelRef.current;
-    if (!nextCursor || loadingMore || !sentinel || typeof IntersectionObserver === 'undefined') return;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries.some((entry) => entry.isIntersecting)) loadMore();
-      },
-      { rootMargin: '300px' },
-    );
-    observer.observe(sentinel);
-    return () => observer.disconnect();
-  }, [nextCursor, loadingMore, loadMore]);
+  const changePageSize = (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const size = Number.parseInt(event.target.value, 10);
+    setPageSize(size);
+    cursors.current = [undefined];
+    goTo(0, size);
+  };
 
   const open = (id: string) => navigate(`/forza/sessoes/${id}`);
 
@@ -192,13 +207,24 @@ const Sessoes: FC = () => {
               </Table>
             </TableContainer>
 
-            {nextCursor && (
-              <Box ref={sentinelRef} sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
-                <Button variant="outlined" onClick={loadMore} disabled={loadingMore}>
-                  {loadingMore ? 'Carregando…' : 'Carregar mais'}
-                </Button>
-              </Box>
-            )}
+            <Paper elevation={0} sx={{ mt: 1, borderRadius: 2 }}>
+              <TablePagination
+                component="nav"
+                aria-label="Paginação das sessões"
+                // Sem total na API (cursor): enquanto houver próxima página o total é desconhecido (-1); na última é exato.
+                count={hasNext ? -1 : pageIndex * pageSize + sessions.length}
+                page={pageIndex}
+                rowsPerPage={pageSize}
+                rowsPerPageOptions={PAGE_SIZE_OPTIONS}
+                onPageChange={changePage}
+                onRowsPerPageChange={changePageSize}
+                labelRowsPerPage="Por página:"
+                labelDisplayedRows={({ from, to, count }) => (count === -1 ? `${from}–${to}` : `${from}–${to} de ${count}`)}
+                getItemAriaLabel={(type) => ({ first: 'Primeira página', last: 'Última página', next: 'Próxima página', previous: 'Página anterior' })[type]}
+                backIconButtonProps={{ disabled: pageIndex === 0 || pageLoading }}
+                nextIconButtonProps={{ disabled: !hasNext || pageLoading }}
+              />
+            </Paper>
           </>
         )}
       </Container>

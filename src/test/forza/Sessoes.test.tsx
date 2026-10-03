@@ -1,6 +1,6 @@
-import { act, screen, waitFor } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { afterEach, describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import Sessoes from '@/pages/forza/Sessoes';
 import { makeSession, renderAt } from './helpers';
 
@@ -48,7 +48,7 @@ describe('Forza · Sessões', () => {
     await waitFor(() => expect(mockApi.get).toHaveBeenCalled());
     const [url, config] = mockApi.get.mock.calls[0];
     expect(url).toBe('/api/v1/sessions');
-    expect(config.params).toEqual({ size: 20 });
+    expect(config.params).toEqual({ size: 5 });
   });
 
   it('marks a session that is still receiving packets as active', async () => {
@@ -82,141 +82,153 @@ describe('Forza · Sessões', () => {
     expect(mockApi.get).toHaveBeenCalledTimes(2);
   });
 
-  it('loads the next page with the cursor and appends the rows', async () => {
-    const user = userEvent.setup();
-    mockApi.get
-      .mockResolvedValueOnce({ data: { items: [makeSession({ id: 'a', carOrdinal: 1 })], nextCursor: 'c2' } })
-      .mockResolvedValueOnce({ data: { items: [makeSession({ id: 'b', carOrdinal: 2 })], nextCursor: null } });
+  describe('paginação (5 / 15 / 30 por página)', () => {
+    const rowsOf = (...ordinals: number[]) => ordinals.map((n) => makeSession({ id: `s${n}`, carOrdinal: n }));
+    const pager = () => screen.getByRole('navigation', { name: /Paginação das sessões/i });
 
-    renderPage();
-    await screen.findByText('#1');
-    await user.click(screen.getByRole('button', { name: /Carregar mais/i }));
-
-    expect(await screen.findByText('#2')).toBeInTheDocument();
-    expect(screen.getByText('#1')).toBeInTheDocument();
-    expect(mockApi.get.mock.calls[1][1].params).toEqual({ size: 20, cursor: 'c2' });
-    expect(screen.queryByRole('button', { name: /Carregar mais/i })).not.toBeInTheDocument();
-  });
-
-  describe('lazy loading (infinite scroll)', () => {
-    /** O jsdom não tem IntersectionObserver: este falso deixa o teste "rolar" a lista até o fim. */
-    class FakeObserver {
-      static instances: FakeObserver[] = [];
-      disconnected = false;
-      constructor(private readonly callback: (entries: { isIntersecting: boolean }[]) => void) {
-        FakeObserver.instances.push(this);
-      }
-      observe() {}
-      unobserve() {}
-      disconnect() {
-        this.disconnected = true;
-      }
-      trigger(isIntersecting = true) {
-        this.callback([{ isIntersecting }]);
-      }
-      static active(): FakeObserver[] {
-        return FakeObserver.instances.filter((o) => !o.disconnected);
-      }
-    }
-
-    beforeEach(() => {
-      FakeObserver.instances = [];
-      vi.stubGlobal('IntersectionObserver', FakeObserver);
-    });
-
-    afterEach(() => {
-      vi.unstubAllGlobals();
-    });
-
-    it('loads the next page by itself when the end of the list scrolls into view', async () => {
-      mockApi.get
-        .mockResolvedValueOnce({ data: { items: [makeSession({ id: 'a', carOrdinal: 1 })], nextCursor: 'c2' } })
-        .mockResolvedValueOnce({ data: { items: [makeSession({ id: 'b', carOrdinal: 2 })], nextCursor: null } });
+    it('starts with 5 per page and offers 5, 15 and 30 per page', async () => {
+      const user = userEvent.setup();
+      mockApi.get.mockResolvedValue({ data: { items: rowsOf(1, 2, 3, 4, 5), nextCursor: 'c2' } });
 
       renderPage();
       await screen.findByText('#1');
-      await waitFor(() => expect(FakeObserver.active()).toHaveLength(1));
-      act(() => FakeObserver.active()[0].trigger());
 
-      expect(await screen.findByText('#2')).toBeInTheDocument();
-      expect(mockApi.get.mock.calls[1][1].params).toEqual({ size: 20, cursor: 'c2' });
+      const select = within(pager()).getByRole('combobox', { name: /Por página/i });
+      expect(select).toHaveTextContent('5');
+      await user.click(select);
+      const options = screen.getAllByRole('option').map((o) => o.textContent);
+      expect(options).toEqual(['5', '15', '30']);
     });
 
-    it('ignores the observer when the end of the list is not visible', async () => {
-      mockApi.get.mockResolvedValue({ data: { items: [makeSession()], nextCursor: 'c2' } });
+    it('goes to the next page by the cursor and REPLACES the rows (one page at a time)', async () => {
+      const user = userEvent.setup();
+      mockApi.get
+        .mockResolvedValueOnce({ data: { items: rowsOf(1, 2), nextCursor: 'c2' } })
+        .mockResolvedValueOnce({ data: { items: rowsOf(3, 4), nextCursor: null } });
 
       renderPage();
-      await screen.findByText('#1234');
-      await waitFor(() => expect(FakeObserver.active()).toHaveLength(1));
-      act(() => FakeObserver.active()[0].trigger(false));
+      await screen.findByText('#1');
+      await user.click(within(pager()).getByRole('button', { name: /Próxima página/i }));
 
-      expect(mockApi.get).toHaveBeenCalledTimes(1);
+      expect(await screen.findByText('#3')).toBeInTheDocument();
+      expect(screen.queryByText('#1')).not.toBeInTheDocument();
+      expect(mockApi.get.mock.calls[1][1].params).toEqual({ size: 5, cursor: 'c2' });
     });
 
-    it('does not request another page while one is still loading', async () => {
+    it('goes back to the previous page (same cursor as before) and shows its rows again', async () => {
+      const user = userEvent.setup();
+      mockApi.get
+        .mockResolvedValueOnce({ data: { items: rowsOf(1, 2), nextCursor: 'c2' } })
+        .mockResolvedValueOnce({ data: { items: rowsOf(3, 4), nextCursor: 'c3' } })
+        .mockResolvedValueOnce({ data: { items: rowsOf(1, 2), nextCursor: 'c2' } });
+
+      renderPage();
+      await screen.findByText('#1');
+      await user.click(within(pager()).getByRole('button', { name: /Próxima página/i }));
+      await screen.findByText('#3');
+      await user.click(within(pager()).getByRole('button', { name: /Página anterior/i }));
+
+      expect(await screen.findByText('#1')).toBeInTheDocument();
+      expect(screen.queryByText('#3')).not.toBeInTheDocument();
+      expect(mockApi.get.mock.calls[2][1].params).toEqual({ size: 5 });
+    });
+
+    it('disables "previous" on the first page and "next" on the last one', async () => {
+      const user = userEvent.setup();
+      mockApi.get
+        .mockResolvedValueOnce({ data: { items: rowsOf(1), nextCursor: 'c2' } })
+        .mockResolvedValueOnce({ data: { items: rowsOf(2), nextCursor: null } });
+
+      renderPage();
+      await screen.findByText('#1');
+      expect(within(pager()).getByRole('button', { name: /Página anterior/i })).toBeDisabled();
+      expect(within(pager()).getByRole('button', { name: /Próxima página/i })).toBeEnabled();
+
+      await user.click(within(pager()).getByRole('button', { name: /Próxima página/i }));
+      await screen.findByText('#2');
+
+      expect(within(pager()).getByRole('button', { name: /Próxima página/i })).toBeDisabled();
+      expect(within(pager()).getByRole('button', { name: /Página anterior/i })).toBeEnabled();
+    });
+
+    it('changing the page size reloads from the first page with the new size', async () => {
+      const user = userEvent.setup();
+      mockApi.get
+        .mockResolvedValueOnce({ data: { items: rowsOf(1, 2), nextCursor: 'c2' } })
+        .mockResolvedValueOnce({ data: { items: rowsOf(3, 4), nextCursor: 'c3' } })
+        .mockResolvedValueOnce({ data: { items: rowsOf(1, 2, 3, 4), nextCursor: null } });
+
+      renderPage();
+      await screen.findByText('#1');
+      await user.click(within(pager()).getByRole('button', { name: /Próxima página/i }));
+      await screen.findByText('#3');
+      await user.click(within(pager()).getByRole('combobox', { name: /Por página/i }));
+      await user.click(screen.getByRole('option', { name: '15' }));
+
+      expect(await screen.findByText('#1')).toBeInTheDocument();
+      expect(mockApi.get.mock.calls[2][1].params).toEqual({ size: 15 });
+      expect(within(pager()).getByRole('button', { name: /Página anterior/i })).toBeDisabled();
+    });
+
+    it('offers 30 per page', async () => {
+      const user = userEvent.setup();
+      mockApi.get.mockResolvedValue({ data: { items: rowsOf(1), nextCursor: null } });
+
+      renderPage();
+      await screen.findByText('#1');
+      await user.click(within(pager()).getByRole('combobox', { name: /Por página/i }));
+      await user.click(screen.getByRole('option', { name: '30' }));
+
+      await waitFor(() => expect(mockApi.get.mock.calls[1][1].params).toEqual({ size: 30 }));
+    });
+
+    it('shows which rows are on screen (range), counting from the first page', async () => {
+      const user = userEvent.setup();
+      mockApi.get
+        .mockResolvedValueOnce({ data: { items: rowsOf(1, 2, 3, 4, 5), nextCursor: 'c2' } })
+        .mockResolvedValueOnce({ data: { items: rowsOf(6, 7), nextCursor: null } });
+
+      renderPage();
+      await screen.findByText('#1');
+      expect(within(pager()).getByText(/1–5/)).toBeInTheDocument();
+
+      await user.click(within(pager()).getByRole('button', { name: /Próxima página/i }));
+      await screen.findByText('#6');
+
+      expect(within(pager()).getByText(/6–7 de 7/)).toBeInTheDocument();
+    });
+
+    it('keeps the current page and warns when loading another page fails', async () => {
+      const user = userEvent.setup();
+      mockApi.get
+        .mockResolvedValueOnce({ data: { items: rowsOf(1, 2), nextCursor: 'c2' } })
+        .mockRejectedValueOnce(new Error('Network Error'));
+
+      renderPage();
+      await screen.findByText('#1');
+      await user.click(within(pager()).getByRole('button', { name: /Próxima página/i }));
+
+      expect(await screen.findByText(/Falha ao carregar a página/i)).toBeInTheDocument();
+      expect(screen.getByText('#1')).toBeInTheDocument();
+    });
+
+    it('locks the controls while a page is loading, so the same page is never requested twice', async () => {
+      const user = userEvent.setup();
       let resolveSecond: (value: unknown) => void = () => {};
       mockApi.get
-        .mockResolvedValueOnce({ data: { items: [makeSession({ id: 'a', carOrdinal: 1 })], nextCursor: 'c2' } })
+        .mockResolvedValueOnce({ data: { items: rowsOf(1), nextCursor: 'c2' } })
         .mockReturnValueOnce(new Promise((resolve) => (resolveSecond = resolve)));
 
       renderPage();
       await screen.findByText('#1');
-      await waitFor(() => expect(FakeObserver.active()).toHaveLength(1));
-      const observer = FakeObserver.active()[0];
-      act(() => {
-        observer.trigger();
-        observer.trigger();
-      });
+      await user.click(within(pager()).getByRole('button', { name: /Próxima página/i }));
 
+      expect(within(pager()).getByRole('button', { name: /Próxima página/i })).toBeDisabled();
+      expect(within(pager()).getByRole('button', { name: /Página anterior/i })).toBeDisabled();
       expect(mockApi.get).toHaveBeenCalledTimes(2);
-      await act(async () => resolveSecond({ data: { items: [makeSession({ id: 'b', carOrdinal: 2 })], nextCursor: null } }));
+      resolveSecond({ data: { items: rowsOf(2), nextCursor: null } });
       expect(await screen.findByText('#2')).toBeInTheDocument();
     });
-
-    it('watches the end of the list again after each page, so a short page keeps loading', async () => {
-      mockApi.get
-        .mockResolvedValueOnce({ data: { items: [makeSession({ id: 'a', carOrdinal: 1 })], nextCursor: 'c2' } })
-        .mockResolvedValueOnce({ data: { items: [makeSession({ id: 'b', carOrdinal: 2 })], nextCursor: 'c3' } })
-        .mockResolvedValueOnce({ data: { items: [makeSession({ id: 'c', carOrdinal: 3 })], nextCursor: null } });
-
-      renderPage();
-      await screen.findByText('#1');
-      await waitFor(() => expect(FakeObserver.active()).toHaveLength(1));
-      act(() => FakeObserver.active()[0].trigger());
-      await screen.findByText('#2');
-      await waitFor(() => expect(FakeObserver.active()).toHaveLength(1));
-      act(() => FakeObserver.active()[0].trigger());
-
-      expect(await screen.findByText('#3')).toBeInTheDocument();
-      expect(mockApi.get.mock.calls[2][1].params).toEqual({ size: 20, cursor: 'c3' });
-    });
-
-    it('stops watching on the last page', async () => {
-      mockApi.get.mockResolvedValue({ data: { items: [makeSession()], nextCursor: null } });
-
-      renderPage();
-      await screen.findByText('#1234');
-
-      expect(FakeObserver.active()).toHaveLength(0);
-    });
-
-    it('keeps the "Carregar mais" button as a keyboard-friendly fallback', async () => {
-      mockApi.get.mockResolvedValue({ data: { items: [makeSession()], nextCursor: 'c2' } });
-
-      renderPage();
-      await screen.findByText('#1234');
-
-      expect(screen.getByRole('button', { name: /Carregar mais/i })).toBeInTheDocument();
-    });
-  });
-
-  it('hides "Carregar mais" on the last page', async () => {
-    mockApi.get.mockResolvedValue({ data: { items: [makeSession()], nextCursor: null } });
-
-    renderPage();
-    await screen.findByText('#1234');
-
-    expect(screen.queryByRole('button', { name: /Carregar mais/i })).not.toBeInTheDocument();
   });
 
   it('navigates to the session detail when a row is clicked', async () => {
