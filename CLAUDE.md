@@ -87,8 +87,8 @@ ao mexer, prefira extrair componente/hook em vez de crescer o arquivo.
 ## Tela de Metas e Orçamentos (referência de carregamento de dados)
 - `services/budgetApi.ts#loadOrcamentos` carrega tudo em paralelo com `AbortSignal`; totais
   por tipo (anual e do mês) vêm agregados do servidor (`by-type?year&month`) — **nunca**
-  baixar listas de lançamentos pra somar no cliente. O gráfico anual ainda faz 12 chamadas
-  (não há endpoint de série mensal no budget-service); falha de um mês vira zeros.
+  baixar listas de lançamentos pra somar no cliente. O gráfico anual vem de **uma** chamada
+  (`budget-rules/monthly-series?year`); se só ela falhar, o gráfico mostra zeros e a tela segue.
 - Erro de carregamento sempre avisa por snackbar; cancelamento (`axios.isCancel`) não.
 - `formatCurrency` único em `utils/format.ts`; cards de hub via `components/SectionCard`.
 
