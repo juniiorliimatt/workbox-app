@@ -84,7 +84,7 @@ describe('Forza · Tuning · carros', () => {
     expect(screen.queryByText(/Gravando agora/)).not.toBeInTheDocument();
   });
 
-  it('refreshes the list periodically, without a loading spinner, so the recording progress moves', async () => {
+  it('refreshes the list every 15 seconds, without a loading spinner, so the recording progress moves', async () => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
     try {
       mockApi.get.mockResolvedValueOnce({ data: [makeTuningCar({ activeSession: { samples: 1000, targetSamples: 5000, startedAt: '2026-10-10T12:30:00Z' } })] });
@@ -92,7 +92,9 @@ describe('Forza · Tuning · carros', () => {
 
       renderPage();
       expect(await screen.findByText(/Gravando agora: 1\.000 de 5\.000/)).toBeInTheDocument();
-      await vi.advanceTimersByTimeAsync(10_000);
+      await vi.advanceTimersByTimeAsync(14_000);
+      expect(mockApi.get).toHaveBeenCalledTimes(1);   // ainda não: o intervalo é de 15 s
+      await vi.advanceTimersByTimeAsync(1_000);
 
       expect(await screen.findByText(/Gravando agora: 1\.600 de 5\.000/)).toBeInTheDocument();
       expect(screen.queryByRole('progressbar', { name: '' })).not.toBeInTheDocument();

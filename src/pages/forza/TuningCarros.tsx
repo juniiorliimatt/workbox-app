@@ -26,7 +26,7 @@ import { useAxiosWithAuth } from '@/services/useAxiosWithAuth';
 import { carLabel, formatNumber } from '@/utils/forza';
 
 /** Atualiza o progresso da sessão em andamento (e as que fecharam) sem o usuário recarregar a página. */
-const REFRESH_MS = 10_000;
+const REFRESH_MS = 15_000;
 
 const TuningCarros: FC = () => {
   const api = useAxiosWithAuth();

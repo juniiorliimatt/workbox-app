@@ -126,7 +126,8 @@ Consome só `forza-telemetry-service/openapi/openapi.yaml` (tipos em `src/interf
   os valores do setup) e todas as 9 guias de tuning, mesmo as sem ajuste; "Reiniciar coleta" após aplicar mudanças. Cada ajuste mostra
   **quanto mexer** neste ciclo na unidade do jogo (ex.: "Reduzir 0,2 bar", "Mover 2 pontos percentuais para a dianteira") e o
   tamanho do passo (pequeno/médio/grande, conforme a severidade) — é o passo do ciclo, não o valor final. Na lista, a sessão em
-  andamento aparece como "Gravando agora: X de Y amostras" (fora do progresso até fechar).
+  andamento aparece como "Gravando agora: X de Y amostras" (fora do progresso até fechar); a lista se atualiza sozinha **a cada
+  15 s**, sem spinner e pausando com a aba oculta.
 - **Tunings feitos** (`/forza/tuning/historico`, `/forza/tuning/historico/:id`): ao reiniciar a coleta de um carro com
   recomendação pronta, o serviço guarda uma foto dela; a lista mostra carro, classe/PI, data, sessões usadas e quantos
   ajustes indicava, e o detalhe reabre a recomendação completa (ciclo + 9 guias) como era na época, só leitura.
