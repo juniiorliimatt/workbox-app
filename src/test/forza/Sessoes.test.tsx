@@ -30,6 +30,16 @@ describe('Forza · Sessões', () => {
     expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
   });
 
+  it('shows the exact car name instead of the ordinal when the service knows it', async () => {
+    mockApi.get.mockResolvedValue({ data: { items: [makeSession({ carOrdinal: 3667, carName: '2021 Porsche 911 GT3' })], nextCursor: null } });
+
+    renderPage();
+
+    expect(await screen.findByText('2021 Porsche 911 GT3')).toBeInTheDocument();
+    expect(screen.queryByText('#3667')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Abrir sessão 2021 Porsche 911 GT3/i })).toBeInTheDocument();
+  });
+
   it('requests the first page without cursor', async () => {
     mockApi.get.mockResolvedValue({ data: { items: [], nextCursor: null } });
 

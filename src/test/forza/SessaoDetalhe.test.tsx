@@ -37,6 +37,15 @@ describe('Forza · Detalhe da sessão', () => {
     expect(urls).toEqual(expect.arrayContaining([`/api/v1/sessions/${ID}`, `/api/v1/sessions/${ID}/laps`, `/api/v1/sessions/${ID}/summary`]));
   });
 
+  it('titles the session with the exact car name and keeps the ordinal visible', async () => {
+    stub({ session: makeSession({ id: ID, carOrdinal: 3667, carName: '2021 Porsche 911 GT3' }) });
+
+    renderPage();
+
+    expect(await screen.findByRole('heading', { name: /2021 Porsche 911 GT3/i })).toBeInTheDocument();
+    expect(screen.getByText('#3667')).toBeInTheDocument();
+  });
+
   it('renders the tuning summary tiles and the suspension table by default', async () => {
     stub();
 

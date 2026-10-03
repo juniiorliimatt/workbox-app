@@ -151,7 +151,7 @@ const SessaoDetalhe: FC = () => {
             <Paper elevation={1} sx={{ p: 3, mb: 3, borderRadius: 2 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap', mb: 1 }}>
                 <Typography variant="h5" component="h2" sx={{ fontWeight: 600 }}>
-                  Sessão #{session.carOrdinal}
+                  {session.carName ? session.carName : `Sessão #${session.carOrdinal}`}
                 </Typography>
                 <Chip
                   size="small"
@@ -161,6 +161,7 @@ const SessaoDetalhe: FC = () => {
                 />
               </Box>
               <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 1 }}>
+                <Chip size="small" label={`#${session.carOrdinal}`} variant="outlined" />
                 <Chip size="small" label={`${carClassLabel(session.carClass)} · PI ${session.performanceIndex}`} />
                 <Chip size="small" label={describeDrivetrain(session.drivetrain)} />
                 <Chip size="small" label={`${session.cylinders} cilindros`} />

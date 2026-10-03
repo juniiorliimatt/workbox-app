@@ -3,7 +3,11 @@ import axios, { AxiosInstance } from 'axios';
 import { LiveSnapshotDTO } from '@/interfaces/forza';
 import { getLiveSnapshot } from '@/services/forzaApi';
 
-export const LIVE_POLL_MS = 1000;
+/**
+ * 5 Hz: o shift light precisa de leitura frequente (1 Hz perderia o ponto de troca). O jogo manda ~60
+ * pacotes/s e o serviço só devolve o último — consultas locais e leves; não empilha requisições.
+ */
+export const LIVE_POLL_MS = 200;
 
 /** `loading` só antes da 1ª resposta; `waiting` = serviço sem pacote recente (404); `error` = falha real. */
 export type LiveStatus = 'loading' | 'ready' | 'waiting' | 'error';

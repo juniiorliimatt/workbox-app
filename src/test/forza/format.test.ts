@@ -1,8 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import {
   carClassLabel,
+  carLabel,
   decimate,
   resolveDataOutHosts,
+  shiftLightLevel,
+  SHIFT_LED_COUNT,
   describeDrivetrain,
   fahrenheitToCelsius,
   formatDuration,
@@ -57,6 +60,19 @@ describe('carClassLabel', () => {
   it('falls back for unknown indexes', () => {
     expect(carClassLabel(9)).toBe('Classe 9');
     expect(carClassLabel(-1)).toBe('Classe -1');
+  });
+});
+
+describe('carLabel', () => {
+  it('prefers the exact car name', () => {
+    expect(carLabel('2021 Porsche 911 GT3', 3667)).toBe('2021 Porsche 911 GT3');
+  });
+
+  it('falls back to #ordinal when the name is unknown', () => {
+    expect(carLabel(null, 3667)).toBe('#3667');
+    expect(carLabel(undefined, 3667)).toBe('#3667');
+    expect(carLabel('', 3667)).toBe('#3667');
+    expect(carLabel('   ', 3667)).toBe('#3667');
   });
 });
 
@@ -158,5 +174,49 @@ describe('resolveDataOutHosts', () => {
     expect(resolveDataOutHosts({ hostAddresses: undefined, udpPort: 5310 } as never, 'localhost')).toEqual([]);
     expect(resolveDataOutHosts({ items: [] } as never, 'localhost')).toEqual([]);
     expect(resolveDataOutHosts({ hostAddresses: ['', '  '], udpPort: 1 }, 'localhost')).toEqual([]);
+  });
+});
+
+describe('shiftLightLevel', () => {
+  it('has no LED lit at low rpm', () => {
+    expect(shiftLightLevel(3000, 8000)).toEqual({ lit: 0, shiftNow: false });
+    expect(shiftLightLevel(0, 8000)).toEqual({ lit: 0, shiftNow: false });
+  });
+
+  it('starts lighting at 70% of the limit and lights progressively', () => {
+    expect(shiftLightLevel(5600, 8000).lit).toBe(0);
+    const levels = [5700, 6000, 6400, 6800, 7200, 7500].map((rpm) => shiftLightLevel(rpm, 8000).lit);
+    expect([...levels].sort((a, b) => a - b)).toEqual(levels);
+    expect(levels[0]).toBeGreaterThan(0);
+    expect(levels[levels.length - 1]).toBeGreaterThan(levels[0]);
+  });
+
+  it('only lights every LED together with the shift cue (never all lit without "shift now")', () => {
+    for (let rpm = 5600; rpm < 7600; rpm += 10) {
+      const level = shiftLightLevel(rpm, 8000);
+      expect(level.lit).toBeLessThan(SHIFT_LED_COUNT);
+      expect(level.shiftNow).toBe(false);
+    }
+    expect(shiftLightLevel(7599, 8000).lit).toBe(SHIFT_LED_COUNT - 1);
+  });
+
+  it('lights every LED and asks to shift at 95% of the limit', () => {
+    expect(shiftLightLevel(7599, 8000)).toMatchObject({ shiftNow: false });
+    expect(shiftLightLevel(7600, 8000)).toEqual({ lit: SHIFT_LED_COUNT, shiftNow: true });
+  });
+
+  it('caps at all LEDs when rpm exceeds the limiter', () => {
+    expect(shiftLightLevel(9000, 8000)).toEqual({ lit: SHIFT_LED_COUNT, shiftNow: true });
+  });
+
+  it('uses each car\'s own limit (same rpm, different cars)', () => {
+    expect(shiftLightLevel(7600, 9000).shiftNow).toBe(false);
+    expect(shiftLightLevel(7600, 7800).shiftNow).toBe(true);
+  });
+
+  it('never fires on invalid data', () => {
+    for (const [rpm, max] of [[5000, 0], [5000, -1], [Number.NaN, 8000], [5000, Number.NaN], [-100, 8000]]) {
+      expect(shiftLightLevel(rpm, max)).toEqual({ lit: 0, shiftNow: false });
+    }
   });
 });

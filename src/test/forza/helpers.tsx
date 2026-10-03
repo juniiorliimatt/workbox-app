@@ -48,6 +48,7 @@ export const makeSession = (overrides?: Partial<SessionDTO>): SessionDTO => ({
   id: '11111111-1111-1111-1111-111111111111',
   gameFormat: 'FH4/FH5/FH6',
   carOrdinal: 1234,
+  carName: null,
   carClass: 4,
   performanceIndex: 812,
   drivetrain: 'AWD',

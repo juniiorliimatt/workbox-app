@@ -81,3 +81,28 @@ export const resolveDataOutHosts = (info: { hostAddresses?: unknown; udpPort?: u
   if (announced.length > 0) return announced;
   return LOOPBACK_HOSTS.has(browserHostname) ? [] : [browserHostname];
 };
+
+/** Quantidade de LEDs do shift light (estilo volante de F1). */
+export const SHIFT_LED_COUNT = 12;
+
+/** Os LEDs começam a acender em 70% do limite de rotação do carro... */
+export const SHIFT_LIGHT_START = 0.7;
+/** ...e todos acendem (e piscam: "troque de marcha") a partir de 95%. */
+export const SHIFT_LIGHT_SHIFT_AT = 0.95;
+
+/**
+ * Estado do shift light a partir da rotação atual e do limite do carro (`EngineMaxRpm` do pacote —
+ * cada veículo manda o seu). `lit` = LEDs acesos (0..SHIFT_LED_COUNT); `shiftNow` = hora de subir a
+ * marcha. Dado inválido nunca acende nada.
+ */
+export const shiftLightLevel = (rpm: number, maxRpm: number): { lit: number; shiftNow: boolean } => {
+  if (!isFiniteNumber(rpm) || !isFiniteNumber(maxRpm) || maxRpm <= 0 || rpm <= 0) return { lit: 0, shiftNow: false };
+  const ratio = rpm / maxRpm;
+  if (ratio >= SHIFT_LIGHT_SHIFT_AT) return { lit: SHIFT_LED_COUNT, shiftNow: true };
+  const progress = (ratio - SHIFT_LIGHT_START) / (SHIFT_LIGHT_SHIFT_AT - SHIFT_LIGHT_START);
+  // O último LED só acende junto com o aviso de troca (shiftNow), nunca antes.
+  return { lit: Math.min(SHIFT_LED_COUNT - 1, Math.max(0, Math.ceil(progress * SHIFT_LED_COUNT))), shiftNow: false };
+};
+
+/** Nome exato do carro (catálogo do serviço) ou `#ordinal` quando não é conhecido. */
+export const carLabel = (name: string | null | undefined, ordinal: number): string => (name && name.trim() !== '' ? name.trim() : `#${ordinal}`);

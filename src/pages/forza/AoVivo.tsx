@@ -3,11 +3,15 @@ import { Alert, Box, Chip, CircularProgress, Container, Grid, LinearProgress, Pa
 import { SportsMotorsports as ForzaIcon } from '@mui/icons-material';
 import AppNavbar from '@/components/AppNavbar';
 import DataOutHint from '@/components/forza/DataOutHint';
+import ShiftLights from '@/components/forza/ShiftLights';
 import StatTile from '@/components/forza/StatTile';
 import { useLiveSnapshot } from '@/hooks/useLiveSnapshot';
 import { LiveSnapshotDTO } from '@/interfaces/forza';
 import { useAxiosWithAuth } from '@/services/useAxiosWithAuth';
-import { formatLapTime, formatNumber, formatTemperature } from '@/utils/forza';
+import { carLabel, formatLapTime, formatNumber, formatTemperature } from '@/utils/forza';
+
+/** 1 cm de espessura; sem transição, senão o preenchimento fica atrasado em relação às leituras a 5 Hz. */
+const BAR_SX = { height: '1cm', borderRadius: '0.5cm', '& .MuiLinearProgress-bar': { transition: 'none !important' } };
 
 const TIRE_LABELS = ['FL', 'FR', 'RL', 'RR'];
 const PEDAL_MAX = 255;
@@ -19,7 +23,7 @@ const Pedal: FC<{ label: string; value: number | null | undefined; color: 'succe
   return (
     <Box sx={{ mb: 1.5 }}>
       <Typography variant="body2" component="p">{`${label} ${percent}%`}</Typography>
-      <LinearProgress variant="determinate" value={percent} color={color} aria-label={label} sx={{ height: 10, borderRadius: 5 }} />
+      <LinearProgress variant="determinate" value={percent} color={color} aria-label={label} sx={BAR_SX} />
     </Box>
   );
 };
@@ -32,10 +36,11 @@ const LivePanel: FC<{ snapshot: LiveSnapshotDTO }> = ({ snapshot }) => {
     <Grid container spacing={3}>
       <Grid item xs={12}>
         <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
+          <ShiftLights rpm={snapshot.rpm} maxRpm={snapshot.engineMaxRpm} />
           <Typography variant="body2" component="p" sx={{ mb: 0.5 }}>
             {`${formatNumber(snapshot.rpm, 0)} / ${formatNumber(snapshot.engineMaxRpm, 0)} rpm`}
           </Typography>
-          <LinearProgress variant="determinate" value={rpmPercent} aria-label="Rotação do motor" sx={{ height: 12, borderRadius: 6 }} />
+          <LinearProgress variant="determinate" value={rpmPercent} aria-label="Rotação do motor" sx={BAR_SX} />
         </Paper>
       </Grid>
 
@@ -127,12 +132,12 @@ const AoVivo: FC = () => {
             <Chip
               size="small"
               variant="outlined"
-              label={`${snapshot.gameFormat} · carro #${snapshot.carOrdinal} · PI ${snapshot.performanceIndex}`}
+              label={`${snapshot.gameFormat} · ${carLabel(snapshot.carName, snapshot.carOrdinal)} · PI ${snapshot.performanceIndex}`}
             />
           )}
         </Box>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-          Atualiza a cada segundo enquanto a aba estiver visível.
+          Atualiza várias vezes por segundo enquanto a aba estiver visível.
         </Typography>
 
         {status === 'error' && (

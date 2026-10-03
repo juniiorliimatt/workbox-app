@@ -2,6 +2,7 @@ import { act, screen } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import AoVivo from '@/pages/forza/AoVivo';
 import { LiveSnapshotDTO } from '@/interfaces/forza';
+import { LIVE_POLL_MS } from '@/hooks/useLiveSnapshot';
 import { renderAt } from './helpers';
 
 const { mockApi } = vi.hoisted(() => ({ mockApi: { get: vi.fn() } }));
@@ -12,6 +13,7 @@ const snapshot = (overrides?: Partial<LiveSnapshotDTO>): LiveSnapshotDTO => ({
   gameFormat: 'FH4/FH5/FH6',
   raceOn: true,
   carOrdinal: 1234,
+  carName: null,
   performanceIndex: 812,
   rpm: 5000,
   engineMaxRpm: 8000,
@@ -60,6 +62,39 @@ describe('Forza · Ao vivo', () => {
     expect(mockApi.get.mock.calls[0][0]).toBe('/api/v1/live/snapshot');
   });
 
+  it('shows the exact car name in the header chip when known, else the ordinal', async () => {
+    mockApi.get.mockResolvedValue({ data: snapshot({ carOrdinal: 3667, carName: '2021 Porsche 911 GT3' }) });
+    const { unmount } = renderPage();
+    expect(await screen.findByText(/2021 Porsche 911 GT3/)).toBeInTheDocument();
+    unmount();
+
+    mockApi.get.mockResolvedValue({ data: snapshot({ carOrdinal: 1234, carName: null }) });
+    renderPage();
+    expect(await screen.findByText(/#1234/)).toBeInTheDocument();
+  });
+
+  it('draws the rpm and pedal bars 1 cm thick', async () => {
+    mockApi.get.mockResolvedValue({ data: snapshot() });
+
+    renderPage();
+    await screen.findByText('72 km/h');
+
+    for (const name of ['Rotação do motor', 'Acelerador', 'Freio']) {
+      expect(screen.getByRole('progressbar', { name })).toHaveStyle({ height: '1cm' });
+    }
+  });
+
+  it('fills the bars instantly (no CSS transition lagging behind the 5 Hz updates)', async () => {
+    mockApi.get.mockResolvedValue({ data: snapshot() });
+
+    renderPage();
+    await screen.findByText('72 km/h');
+
+    // jsdom não resolve seletor aninhado/!important no estilo computado: confere a regra emitida.
+    const css = Array.from(document.querySelectorAll('style')).map((style) => style.textContent ?? '').join('\n');
+    expect(css).toMatch(/\.MuiLinearProgress-bar\s*\{[^}]*transition:\s*none\s*!important/);
+  });
+
   it('shows tire temperatures in Celsius and lap times', async () => {
     mockApi.get.mockResolvedValue({ data: snapshot() });
 
@@ -91,16 +126,57 @@ describe('Forza · Ao vivo', () => {
     expect(screen.getByText(/Nenhum pacote chegou nos últimos 5 segundos/)).toBeInTheDocument();
   });
 
-  it('polls every second', async () => {
+  it('polls fast enough for a shift light (not once per second)', async () => {
+    expect(LIVE_POLL_MS).toBeLessThanOrEqual(250);
     mockApi.get.mockResolvedValue({ data: snapshot() });
 
     renderPage();
     await screen.findByText('72 km/h');
     const before = mockApi.get.mock.calls.length;
-    await tick(1000);
-    await tick(1000);
+    await tick(LIVE_POLL_MS * 5);
 
-    expect(mockApi.get.mock.calls.length).toBe(before + 2);
+    expect(mockApi.get.mock.calls.length).toBeGreaterThanOrEqual(before + 4);
+  });
+
+  it('shows the shift cue when rpm reaches the limit of the current car', async () => {
+    mockApi.get.mockResolvedValue({ data: snapshot({ rpm: 7800, engineMaxRpm: 8000 }) });
+
+    renderPage();
+
+    expect(await screen.findByText(/Troque de marcha/i)).toBeInTheDocument();
+  });
+
+  it('does not show the shift cue at cruising rpm', async () => {
+    mockApi.get.mockResolvedValue({ data: snapshot({ rpm: 4000, engineMaxRpm: 8000 }) });
+
+    renderPage();
+    await screen.findByText('72 km/h');
+
+    expect(screen.queryByText(/Troque de marcha/i)).not.toBeInTheDocument();
+  });
+
+  it('keeps the shift lights on the Sled format too (rpm exists there)', async () => {
+    mockApi.get.mockResolvedValue({ data: snapshot({ gameFormat: 'Sled', rpm: 7800, speedKmh: null, gear: null, accel: null, brake: null, steer: null, tireTempF: null, lapNumber: null }) });
+
+    renderPage();
+
+    expect(await screen.findByText(/Troque de marcha/i)).toBeInTheDocument();
+  });
+
+  it('does not stack requests when one is still in flight', async () => {
+    let resolveSlow: (v: unknown) => void = () => undefined;
+    mockApi.get
+      .mockResolvedValueOnce({ data: snapshot() })
+      .mockImplementationOnce(() => new Promise((resolve) => { resolveSlow = resolve; }))
+      .mockResolvedValue({ data: snapshot() });
+
+    renderPage();
+    await screen.findByText('72 km/h');
+    await tick(LIVE_POLL_MS * 5);
+    const whileSlow = mockApi.get.mock.calls.length;
+    await act(async () => resolveSlow({ data: snapshot() }));
+
+    expect(whileSlow).toBe(2);
   });
 
   it('updates the screen with the newest snapshot', async () => {

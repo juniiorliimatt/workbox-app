@@ -11,6 +11,8 @@ export interface SessionDTO {
   id: string;
   gameFormat: string;
   carOrdinal: number;
+  /** Nome exato do carro (catálogo do serviço); ausente quando o ordinal não é conhecido. */
+  carName?: string | null;
   carClass: number;
   performanceIndex: number;
   drivetrain: 'FWD' | 'RWD' | 'AWD' | 'UNKNOWN' | string;
@@ -63,6 +65,7 @@ export interface LiveSnapshotDTO {
   gameFormat: string;
   raceOn: boolean;
   carOrdinal: number;
+  carName?: string | null;
   performanceIndex: number;
   rpm: number;
   engineMaxRpm: number;

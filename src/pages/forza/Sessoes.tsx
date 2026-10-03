@@ -24,7 +24,7 @@ import { useSnackbar } from '@/hooks/useSnackbar';
 import { SessionDTO } from '@/interfaces/forza';
 import { listSessions } from '@/services/forzaApi';
 import { useAxiosWithAuth } from '@/services/useAxiosWithAuth';
-import { carClassLabel, formatNumber, formatSessionStart } from '@/utils/forza';
+import { carClassLabel, carLabel, formatNumber, formatSessionStart } from '@/utils/forza';
 
 const PAGE_SIZE = 20;
 
@@ -143,14 +143,14 @@ const Sessoes: FC = () => {
                       <TableCell>
                         <Button
                           size="small"
-                          aria-label={`Abrir sessão #${session.carOrdinal}`}
+                          aria-label={`Abrir sessão ${carLabel(session.carName, session.carOrdinal)}`}
                           sx={{ textTransform: 'none', fontWeight: 600, fontSize: '0.875rem', minWidth: 0, px: 1 }}
                           onClick={(event) => {
                             event.stopPropagation();
                             open(session.id);
                           }}
                         >
-                          #{session.carOrdinal}
+                          {carLabel(session.carName, session.carOrdinal)}
                         </Button>
                       </TableCell>
                       <TableCell>{`${carClassLabel(session.carClass)} · PI ${session.performanceIndex}`}</TableCell>
