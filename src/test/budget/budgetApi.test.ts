@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import type { AxiosInstance } from 'axios';
-import { loadOrcamentos } from '@/services/budgetApi';
+import { loadChartView, loadMonthlyView, loadYearlyView } from '@/services/budgetApi';
 
 const rule = (m: number) => ({
   totalRevenue: 1000 * m,
@@ -51,80 +51,85 @@ const makeApi = (overrides?: Record<string, (params: Record<string, unknown>) =>
   return { get } as unknown as AxiosInstance & { get: ReturnType<typeof vi.fn> };
 };
 
-describe('loadOrcamentos', () => {
-  it('maps totals, summaries and rule data', async () => {
-    const data = await loadOrcamentos(makeApi(), { month: 3, year: 2026 });
+describe('budgetApi — uma função por aba', () => {
+  it('monthly view: summary, 50/30/20 buckets and by-type totals of the month, with no yearly or series calls', async () => {
+    const api = makeApi();
 
-    expect(data.revTotal).toBe(5000);
-    expect(data.spendTotal).toBe(3000);
+    const data = await loadMonthlyView(api, { month: 3, year: 2026 });
+
     expect(data.summary.projectedBalance).toBe(2000);
-    expect(data.yearly.balance).toBe(24000);
     expect(data.rule.totalRevenue).toBe(3000);
+    expect(data.revenuesByType[0].typeName).toBe('Salário (mês)');
+    expect(data.spendingsByType[0].typeName).toBe('Aluguel (mês)');
+    const urls = api.get.mock.calls.map((c) => c[0]);
+    expect(urls.sort()).toEqual([
+      '/api/v1/budget-rules/fifty-thirty-twenty',
+      '/api/v1/budget-rules/monthly-summary',
+      '/api/v1/revenues/by-type',
+      '/api/v1/spendings/by-type',
+    ]);
+    expect(api.get.mock.calls.every((c) => c[1]?.params?.month === 3 && c[1]?.params?.year === 2026)).toBe(true);
   });
 
-  it('asks the server for by-type totals of the month instead of downloading raw rows', async () => {
+  it('monthly view never downloads raw rows', async () => {
     const api = makeApi();
 
-    const data = await loadOrcamentos(api, { month: 3, year: 2026 });
+    await loadMonthlyView(api, { month: 3, year: 2026 });
 
-    const calls = api.get.mock.calls.map((c) => [c[0], c[1]?.params]);
-    expect(calls).toContainEqual(['/api/v1/revenues/by-type', { month: 3, year: 2026 }]);
-    expect(calls).toContainEqual(['/api/v1/spendings/by-type', { month: 3, year: 2026 }]);
-    expect(calls).toContainEqual(['/api/v1/revenues/by-type', { year: 2026 }]);
-    expect(calls).toContainEqual(['/api/v1/spendings/by-type', { year: 2026 }]);
     expect(api.get.mock.calls.some((c) => c[0] === '/api/v1/revenues' || c[0] === '/api/v1/spendings')).toBe(false);
-    expect(data.monthlyRevenuesByType[0].typeName).toBe('Salário (mês)');
+  });
+
+  it('yearly view: only the yearly summary and the by-type totals of the year', async () => {
+    const api = makeApi();
+
+    const data = await loadYearlyView(api, 2026);
+
+    expect(data.yearly.balance).toBe(24000);
     expect(data.revenuesByType[0].typeName).toBe('Salário (ano)');
-    expect(data.monthlySpendingsByType[0].typeName).toBe('Aluguel (mês)');
     expect(data.spendingsByType[0].typeName).toBe('Aluguel (ano)');
+    expect(api.get.mock.calls.map((c) => c[0]).sort()).toEqual([
+      '/api/v1/budget-rules/yearly-summary',
+      '/api/v1/revenues/by-type',
+      '/api/v1/spendings/by-type',
+    ]);
+    expect(api.get.mock.calls.every((c) => JSON.stringify(c[1]?.params) === JSON.stringify({ year: 2026 }))).toBe(true);
   });
 
-  it('builds the 12-point yearly chart from a single monthly-series call', async () => {
+  it('chart view: a single monthly-series call mapped to 12 points', async () => {
     const api = makeApi();
 
-    const data = await loadOrcamentos(api, { month: 3, year: 2026 });
+    const chart = await loadChartView(api, 2026);
 
-    expect(data.yearlyChart).toHaveLength(12);
-    expect(data.yearlyChart[0]).toEqual({ monthName: 'Jan', receitas: 1000, despesas: 111, essenciais: 100, pessoais: 10, poupanca: 1 });
-    expect(data.yearlyChart[11].monthName).toBe('Dez');
-    expect(data.yearlyChart[11].receitas).toBe(12000);
-    const seriesCalls = api.get.mock.calls.filter((c) => c[0] === '/api/v1/budget-rules/monthly-series');
-    expect(seriesCalls).toHaveLength(1);
-    expect(seriesCalls[0][1].params).toEqual({ year: 2026 });
+    expect(api.get).toHaveBeenCalledTimes(1);
+    expect(api.get.mock.calls[0][0]).toBe('/api/v1/budget-rules/monthly-series');
+    expect(api.get.mock.calls[0][1].params).toEqual({ year: 2026 });
+    expect(chart).toHaveLength(12);
+    expect(chart[0]).toEqual({ monthName: 'Jan', receitas: 1000, despesas: 111, essenciais: 100, pessoais: 10, poupanca: 1 });
+    expect(chart[11]).toMatchObject({ monthName: 'Dez', receitas: 12000 });
   });
 
-  it('no longer fires one fifty-thirty-twenty request per month (only the selected month)', async () => {
-    const api = makeApi();
+  it('chart view fills zeros for months missing in the series', async () => {
+    const api = makeApi({ '/api/v1/budget-rules/monthly-series': () => [{ month: 2, totalRevenue: 50, essential: 5, personal: 0, savings: 0 }] });
 
-    await loadOrcamentos(api, { month: 3, year: 2026 });
+    const chart = await loadChartView(api, 2026);
 
-    const rule = api.get.mock.calls.filter((c) => c[0] === '/api/v1/budget-rules/fifty-thirty-twenty');
-    expect(rule).toHaveLength(1);
-    expect(rule[0][1].params).toEqual({ month: 3, year: 2026 });
-    expect(api.get).toHaveBeenCalledTimes(10);
+    expect(chart[0]).toEqual({ monthName: 'Jan', receitas: 0, despesas: 0, essenciais: 0, pessoais: 0, poupanca: 0 });
+    expect(chart[1]).toMatchObject({ monthName: 'Fev', receitas: 50, despesas: 5 });
   });
 
-  it('keeps the page usable when the series fails, charting zeros', async () => {
-    const api = makeApi({ '/api/v1/budget-rules/monthly-series': () => new Error('falhou') });
-
-    const data = await loadOrcamentos(api, { month: 3, year: 2026 });
-
-    expect(data.yearlyChart).toHaveLength(12);
-    expect(data.yearlyChart.every((p) => p.receitas === 0 && p.despesas === 0)).toBe(true);
-    expect(data.revTotal).toBe(5000);
+  it('every view rejects when its request fails, so the page can tell the user', async () => {
+    await expect(loadMonthlyView(makeApi({ '/api/v1/budget-rules/monthly-summary': () => new Error('500') }), { month: 3, year: 2026 })).rejects.toThrow('500');
+    await expect(loadYearlyView(makeApi({ '/api/v1/budget-rules/yearly-summary': () => new Error('500') }), 2026)).rejects.toThrow('500');
+    await expect(loadChartView(makeApi({ '/api/v1/budget-rules/monthly-series': () => new Error('500') }), 2026)).rejects.toThrow('500');
   });
 
-  it('rejects when a main request fails (so the page can tell the user)', async () => {
-    const api = makeApi({ '/api/v1/revenues/total': () => new Error('500') });
-
-    await expect(loadOrcamentos(api, { month: 3, year: 2026 })).rejects.toThrow('500');
-  });
-
-  it('forwards the abort signal to every request', async () => {
+  it('forwards the abort signal to every request of every view', async () => {
     const api = makeApi();
     const signal = new AbortController().signal;
 
-    await loadOrcamentos(api, { month: 3, year: 2026 }, signal);
+    await loadMonthlyView(api, { month: 3, year: 2026 }, signal);
+    await loadYearlyView(api, 2026, signal);
+    await loadChartView(api, 2026, signal);
 
     expect(api.get.mock.calls.every((c) => c[1]?.signal === signal)).toBe(true);
   });

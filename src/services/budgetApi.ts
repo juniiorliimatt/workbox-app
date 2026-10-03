@@ -3,7 +3,6 @@ import {
   FiftyThirtyTwentyDTO,
   MonthlySeriesPointDTO,
   MonthlySummaryDTO,
-  TotalDTO,
   TypeTotalDTO,
   YearlyChartPoint,
   YearlySummaryDTO,
@@ -16,17 +15,19 @@ export interface OrcamentosFilter {
   year: number;
 }
 
-export interface OrcamentosData {
-  revTotal: number;
-  spendTotal: number;
+/** Aba "Visão Mensal": resumo do mês, fatias 50/30/20 e totais por tipo do mês. */
+export interface MonthlyViewData {
   rule: FiftyThirtyTwentyDTO;
   summary: MonthlySummaryDTO;
+  revenuesByType: TypeTotalDTO[];
+  spendingsByType: TypeTotalDTO[];
+}
+
+/** Aba "Visão Anual": resumo do ano e totais por tipo do ano. */
+export interface YearlyViewData {
   yearly: YearlySummaryDTO;
   revenuesByType: TypeTotalDTO[];
   spendingsByType: TypeTotalDTO[];
-  monthlyRevenuesByType: TypeTotalDTO[];
-  monthlySpendingsByType: TypeTotalDTO[];
-  yearlyChart: YearlyChartPoint[];
 }
 
 const MONTH_NAMES = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
@@ -41,42 +42,31 @@ const toChartPoint = (monthName: string, point: MonthlySeriesPointDTO | undefine
   return { monthName, receitas: point.totalRevenue || 0, despesas: essenciais + pessoais + poupanca, essenciais, pessoais, poupanca };
 };
 
-/**
- * Carrega tudo da tela em paralelo (10 chamadas). Totais por tipo (anual e do mês) e a série anual
- * 50/30/20 (`monthly-series`) vêm agregados do servidor. Se só a série falhar, o gráfico anual
- * mostra zeros e a tela segue utilizável; qualquer outra falha rejeita.
- */
-export const loadOrcamentos = async (api: AxiosInstance, { month, year }: OrcamentosFilter, signal?: AbortSignal): Promise<OrcamentosData> => {
-  const monthParams = { month, year };
-  const yearParams = { year };
+/** Cada aba tem o seu carregador — a tela só chama o da aba exibida (ver `useLazyTabData`). */
 
-  const [revTotal, spendTotal, rule, summary, yearly, revenuesByType, spendingsByType, monthlyRevenuesByType, monthlySpendingsByType, series] =
-    await Promise.all([
-      api.get<TotalDTO>('/api/v1/revenues/total', { params: monthParams, signal }),
-      api.get<TotalDTO>('/api/v1/spendings/total', { params: monthParams, signal }),
-      api.get<FiftyThirtyTwentyDTO>('/api/v1/budget-rules/fifty-thirty-twenty', { params: monthParams, signal }),
-      api.get<MonthlySummaryDTO>('/api/v1/budget-rules/monthly-summary', { params: monthParams, signal }),
-      api.get<YearlySummaryDTO>('/api/v1/budget-rules/yearly-summary', { params: yearParams, signal }),
-      api.get<TypeTotalDTO[]>('/api/v1/revenues/by-type', { params: yearParams, signal }),
-      api.get<TypeTotalDTO[]>('/api/v1/spendings/by-type', { params: yearParams, signal }),
-      api.get<TypeTotalDTO[]>('/api/v1/revenues/by-type', { params: monthParams, signal }),
-      api.get<TypeTotalDTO[]>('/api/v1/spendings/by-type', { params: monthParams, signal }),
-      api
-        .get<MonthlySeriesPointDTO[]>('/api/v1/budget-rules/monthly-series', { params: yearParams, signal })
-        .then((res) => res.data)
-        .catch(() => [] as MonthlySeriesPointDTO[]),
-    ]);
+export const loadMonthlyView = async (api: AxiosInstance, { month, year }: OrcamentosFilter, signal?: AbortSignal): Promise<MonthlyViewData> => {
+  const params = { month, year };
+  const [rule, summary, revenuesByType, spendingsByType] = await Promise.all([
+    api.get<FiftyThirtyTwentyDTO>('/api/v1/budget-rules/fifty-thirty-twenty', { params, signal }),
+    api.get<MonthlySummaryDTO>('/api/v1/budget-rules/monthly-summary', { params, signal }),
+    api.get<TypeTotalDTO[]>('/api/v1/revenues/by-type', { params, signal }),
+    api.get<TypeTotalDTO[]>('/api/v1/spendings/by-type', { params, signal }),
+  ]);
+  return { rule: rule.data, summary: summary.data, revenuesByType: revenuesByType.data || [], spendingsByType: spendingsByType.data || [] };
+};
 
-  return {
-    revTotal: revTotal.data.total || 0,
-    spendTotal: spendTotal.data.total || 0,
-    rule: rule.data,
-    summary: summary.data,
-    yearly: yearly.data,
-    revenuesByType: revenuesByType.data || [],
-    spendingsByType: spendingsByType.data || [],
-    monthlyRevenuesByType: monthlyRevenuesByType.data || [],
-    monthlySpendingsByType: monthlySpendingsByType.data || [],
-    yearlyChart: MONTH_NAMES.map((name, i) => toChartPoint(name, series.find((p) => p.month === i + 1))),
-  };
+export const loadYearlyView = async (api: AxiosInstance, year: number, signal?: AbortSignal): Promise<YearlyViewData> => {
+  const params = { year };
+  const [yearly, revenuesByType, spendingsByType] = await Promise.all([
+    api.get<YearlySummaryDTO>('/api/v1/budget-rules/yearly-summary', { params, signal }),
+    api.get<TypeTotalDTO[]>('/api/v1/revenues/by-type', { params, signal }),
+    api.get<TypeTotalDTO[]>('/api/v1/spendings/by-type', { params, signal }),
+  ]);
+  return { yearly: yearly.data, revenuesByType: revenuesByType.data || [], spendingsByType: spendingsByType.data || [] };
+};
+
+/** Série anual 50/30/20 numa chamada só (`monthly-series`); meses ausentes viram zeros. */
+export const loadChartView = async (api: AxiosInstance, year: number, signal?: AbortSignal): Promise<YearlyChartPoint[]> => {
+  const { data } = await api.get<MonthlySeriesPointDTO[]>('/api/v1/budget-rules/monthly-series', { params: { year }, signal });
+  return MONTH_NAMES.map((name, i) => toChartPoint(name, (data || []).find((p) => p.month === i + 1)));
 };

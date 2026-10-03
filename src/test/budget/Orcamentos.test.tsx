@@ -1,4 +1,5 @@
 import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import Orcamentos from '@/pages/financas/Orcamentos';
@@ -43,29 +44,105 @@ const renderPage = () =>
     </AuthContext.Provider>,
   );
 
+const urlsCalled = () => mockApi.get.mock.calls.map((c) => c[0] as string);
+const callsTo = (url: string) => mockApi.get.mock.calls.filter((c) => c[0] === url);
+
 describe('Finanças · Metas e Orçamentos', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockApi.get.mockImplementation((url: string, config?: { params?: Record<string, unknown> }) => Promise.resolve({ data: respond(url, config?.params) }));
   });
 
-  it('shows the monthly summary in BRL and the by-type lists after loading', async () => {
-    mockApi.get.mockImplementation((url: string, config?: { params?: Record<string, unknown> }) => Promise.resolve({ data: respond(url, config?.params) }));
-
+  it('on open, loads only the monthly tab: summary in BRL, by-type lists of the month and the 50/30/20 buckets', async () => {
     renderPage();
 
+    expect(await screen.findByText('Total de Receitas')).toBeInTheDocument();
     expect((await screen.findAllByText(/R\$\s?5\.000,00/)).length).toBeGreaterThan(0);
-    expect(screen.getByText('Total de Receitas')).toBeInTheDocument();
     expect(screen.getByText('Salário do mês')).toBeInTheDocument();
     expect(screen.getByText('Aluguel do mês')).toBeInTheDocument();
+    expect(urlsCalled().sort()).toEqual([
+      '/api/v1/budget-rules/fifty-thirty-twenty',
+      '/api/v1/budget-rules/monthly-summary',
+      '/api/v1/revenues/by-type',
+      '/api/v1/spendings/by-type',
+    ]);
   });
 
-  it('never downloads the raw revenue/spending lists', async () => {
-    mockApi.get.mockImplementation((url: string, config?: { params?: Record<string, unknown> }) => Promise.resolve({ data: respond(url, config?.params) }));
-
+  it('does NOT load the yearly or chart data until their tabs are opened', async () => {
     renderPage();
     await screen.findByText('Total de Receitas');
 
-    expect(mockApi.get.mock.calls.some((c) => c[0] === '/api/v1/revenues' || c[0] === '/api/v1/spendings')).toBe(false);
+    expect(callsTo('/api/v1/budget-rules/yearly-summary')).toHaveLength(0);
+    expect(callsTo('/api/v1/budget-rules/monthly-series')).toHaveLength(0);
+  });
+
+  it('loads the yearly data only when "Visão Anual" is clicked', async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await screen.findByText('Total de Receitas');
+
+    await user.click(screen.getByRole('tab', { name: /Visão Anual/i }));
+
+    expect((await screen.findAllByText(/R\$\s?60\.000,00/)).length).toBeGreaterThan(0);
+    expect(screen.getByText('Salário do ano')).toBeInTheDocument();
+    expect(callsTo('/api/v1/budget-rules/yearly-summary')).toHaveLength(1);
+    expect(callsTo('/api/v1/budget-rules/monthly-series')).toHaveLength(0);
+  });
+
+  it('loads the chart series only when "Visão Gráfica" is clicked', async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await screen.findByText('Total de Receitas');
+
+    await user.click(screen.getByRole('tab', { name: /Visão Gráfica/i }));
+
+    await waitFor(() => expect(callsTo('/api/v1/budget-rules/monthly-series')).toHaveLength(1));
+    expect(callsTo('/api/v1/budget-rules/yearly-summary')).toHaveLength(0);
+  });
+
+  it('does not refetch when going back to a tab that was already loaded', async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await screen.findByText('Total de Receitas');
+    await user.click(screen.getByRole('tab', { name: /Visão Anual/i }));
+    await screen.findByText('Salário do ano');
+    const before = mockApi.get.mock.calls.length;
+
+    await user.click(screen.getByRole('tab', { name: /Visão Mensal/i }));
+    await user.click(screen.getByRole('tab', { name: /Visão Anual/i }));
+
+    expect(await screen.findByText('Salário do ano')).toBeInTheDocument();
+    expect(mockApi.get.mock.calls.length).toBe(before);
+  });
+
+  it('applying a new year reloads the visible tab and marks the others stale until opened', async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await screen.findByText('Total de Receitas');
+    await user.click(screen.getByRole('tab', { name: /Visão Anual/i }));
+    await screen.findByText('Salário do ano');
+    expect(callsTo('/api/v1/budget-rules/yearly-summary')).toHaveLength(1);
+
+    await user.click(screen.getByRole('tab', { name: /Visão Mensal/i }));
+    await screen.findByText('Total de Receitas');
+    const yearInput = screen.getByLabelText('Ano');
+    await user.clear(yearInput);
+    await user.type(yearInput, '2025');
+    await user.click(screen.getByRole('button', { name: /Filtrar/i }));
+
+    await waitFor(() => expect(mockApi.get.mock.calls.some((c) => c[0] === '/api/v1/budget-rules/monthly-summary' && c[1]?.params?.year === 2025)).toBe(true));
+    expect(callsTo('/api/v1/budget-rules/yearly-summary')).toHaveLength(1);
+
+    await user.click(screen.getByRole('tab', { name: /Visão Anual/i }));
+    await waitFor(() => expect(callsTo('/api/v1/budget-rules/yearly-summary')).toHaveLength(2));
+    expect(callsTo('/api/v1/budget-rules/yearly-summary')[1][1].params).toEqual({ year: 2025 });
+  });
+
+  it('never downloads the raw revenue/spending lists', async () => {
+    renderPage();
+    await screen.findByText('Total de Receitas');
+
+    expect(urlsCalled().some((u) => u === '/api/v1/revenues' || u === '/api/v1/spendings')).toBe(false);
   });
 
   it('tells the user when loading fails instead of failing silently', async () => {
@@ -76,14 +153,28 @@ describe('Finanças · Metas e Orçamentos', () => {
     expect(await screen.findByText(/Não foi possível carregar os dados de orçamento/i)).toBeInTheDocument();
   });
 
-  it('does not report an error for a request aborted by leaving the page', async () => {
+  it('retries a failed tab the next time it is opened', async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await screen.findByText('Total de Receitas');
+    mockApi.get.mockRejectedValueOnce(new Error('500'));
+    await user.click(screen.getByRole('tab', { name: /Visão Anual/i }));
+    await screen.findByText(/Não foi possível carregar os dados de orçamento/i);
+
+    await user.click(screen.getByRole('tab', { name: /Visão Mensal/i }));
+    mockApi.get.mockImplementation((url: string, config?: { params?: Record<string, unknown> }) => Promise.resolve({ data: respond(url, config?.params) }));
+    await user.click(screen.getByRole('tab', { name: /Visão Anual/i }));
+
+    expect(await screen.findByText('Salário do ano')).toBeInTheDocument();
+  });
+
+  it('aborts in-flight requests when leaving the page', async () => {
     mockApi.get.mockImplementation(() => new Promise(() => undefined));
 
     const { unmount } = renderPage();
     unmount();
 
     await waitFor(() => expect(mockApi.get).toHaveBeenCalled());
-    const signals = mockApi.get.mock.calls.map((c) => c[1]?.signal as AbortSignal);
-    expect(signals.every((s) => s?.aborted)).toBe(true);
+    expect(mockApi.get.mock.calls.every((c) => (c[1]?.signal as AbortSignal)?.aborted)).toBe(true);
   });
 });

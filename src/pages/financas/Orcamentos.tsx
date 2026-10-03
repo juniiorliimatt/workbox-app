@@ -1,9 +1,9 @@
-import { FC, useState, useEffect, useCallback } from 'react';
+import { FC, useState, useCallback } from 'react';
 import { Box, Container, Button, Paper, Typography, Grid, CircularProgress, TextField, MenuItem, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Tabs, Tab } from '@mui/material';
 import { Tooltip as RechartsTooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid } from 'recharts';
-import axios from 'axios';
 import { useAxiosWithAuth } from '@/services/useAxiosWithAuth';
-import { loadOrcamentos, OrcamentosData } from '@/services/budgetApi';
+import { loadChartView, loadMonthlyView, loadYearlyView } from '@/services/budgetApi';
+import { useLazyTabData } from '@/hooks/useLazyTabData';
 import { useSnackbar } from '@/hooks/useSnackbar';
 import AppNavbar from '@/components/AppNavbar';
 import { formatCurrency } from '@/utils/format';
@@ -12,6 +12,10 @@ const COLORS = ['#0088FE', '#00C49F', '#FFBB28'];
 
 /** Gráficos de pizza da visão mensal ocultos a pedido (commit "oculta gráficos de pizza"); mude para reexibir. */
 const SHOW_MONTHLY_PIE_CHARTS = false;
+
+const TabSpinner: FC = () => (
+  <Box sx={{ display: 'flex', justifyContent: 'center', p: 5 }}><CircularProgress /></Box>
+);
 
 const Orcamentos: FC = () => {
   const api = useAxiosWithAuth();
@@ -23,40 +27,23 @@ const Orcamentos: FC = () => {
   const [appliedYear, setAppliedYear] = useState(today.getFullYear());
   const [tabValue, setTabValue] = useState(0);
 
-  const [loading, setLoading] = useState(false);
-  const [data, setData] = useState<OrcamentosData | null>(null);
+  const notifyError = useCallback(() => showSnackbar('Não foi possível carregar os dados de orçamento.', 'error'), [showSnackbar]);
 
-  const loadData = useCallback(
-    async (signal: AbortSignal) => {
-      setLoading(true);
-      try {
-        setData(await loadOrcamentos(api, { month: appliedMonth, year: appliedYear }, signal));
-      } catch (e) {
-        if (axios.isCancel(e)) return;
-        showSnackbar('Não foi possível carregar os dados de orçamento.', 'error');
-      } finally {
-        if (!signal.aborted) setLoading(false);
-      }
-    },
-    [api, appliedMonth, appliedYear, showSnackbar],
-  );
+  // Cada aba só busca os próprios dados quando é exibida (e de novo só se o filtro mudar).
+  const monthly = useLazyTabData(tabValue === 0, `${appliedMonth}-${appliedYear}`, (signal) => loadMonthlyView(api, { month: appliedMonth, year: appliedYear }, signal), notifyError);
+  const yearly = useLazyTabData(tabValue === 1, `${appliedYear}`, (signal) => loadYearlyView(api, appliedYear, signal), notifyError);
+  const chart = useLazyTabData(tabValue === 2, `${appliedYear}`, (signal) => loadChartView(api, appliedYear, signal), notifyError);
 
-  useEffect(() => {
-    const controller = new AbortController();
-    loadData(controller.signal);
-    return () => controller.abort();
-  }, [loadData]);
-
-  const revTotal = data?.revTotal ?? 0;
-  const spendTotal = data?.spendTotal ?? 0;
-  const ruleData = data?.rule ?? null;
-  const summary = data?.summary ?? null;
-  const yearlySummary = data?.yearly ?? null;
-  const revenuesByType = data?.revenuesByType ?? [];
-  const spendingsByType = data?.spendingsByType ?? [];
-  const yearlyChartData = data?.yearlyChart ?? [];
-  const monthlyRevsByType = data?.monthlyRevenuesByType ?? [];
-  const monthlySpendsByType = data?.monthlySpendingsByType ?? [];
+  const revTotal = monthly.data?.summary.totalRevenue ?? 0;
+  const spendTotal = monthly.data?.summary.totalSpending ?? 0;
+  const ruleData = monthly.data?.rule ?? null;
+  const summary = monthly.data?.summary ?? null;
+  const monthlyRevsByType = monthly.data?.revenuesByType ?? [];
+  const monthlySpendsByType = monthly.data?.spendingsByType ?? [];
+  const yearlySummary = yearly.data?.yearly ?? null;
+  const revenuesByType = yearly.data?.revenuesByType ?? [];
+  const spendingsByType = yearly.data?.spendingsByType ?? [];
+  const yearlyChartData = chart.data ?? [];
 
   const revSpendPieData = [
     { name: 'Receitas', value: revTotal, fill: '#4caf50' },
@@ -87,11 +74,8 @@ const Orcamentos: FC = () => {
           </Tabs>
         </Box>
 
-        {loading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', p: 5 }}><CircularProgress /></Box>
-        ) : (
-          <>
-            <Box sx={{ display: tabValue === 0 ? 'block' : 'none' }}>
+            {tabValue === 0 && (
+            <Box>
               <Paper elevation={1} sx={{ p: 2, mb: 3, display: 'flex', gap: 2, alignItems: 'center', justifyContent: 'flex-end' }}>
                 <Typography variant="subtitle2" color="text.secondary">Filtro Mensal:</Typography>
                 <TextField select label="Mês" value={month} onChange={e => setMonth(Number(e.target.value))} size="small" sx={{ minWidth: 100 }}>
@@ -102,6 +86,8 @@ const Orcamentos: FC = () => {
                 <TextField type="number" label="Ano" value={year} onChange={e => setYear(Number(e.target.value))} size="small" sx={{ width: 100 }} />
                 <Button variant="contained" onClick={() => { setAppliedMonth(month); setAppliedYear(year); }}>Filtrar</Button>
               </Paper>
+            {monthly.loading || !monthly.data ? <TabSpinner /> : (
+            <>
               <Grid container spacing={3}>
             <Grid item xs={12}>
               <Paper sx={{ p: 3, mb: 3 }}>
@@ -297,13 +283,19 @@ const Orcamentos: FC = () => {
             </Grid>
 
             </Grid>
+            </>
+            )}
             </Box>
-            <Box sx={{ display: tabValue === 1 ? 'block' : 'none' }}>
+            )}
+            {tabValue === 1 && (
+            <Box>
               <Paper elevation={1} sx={{ p: 2, mb: 3, display: 'flex', gap: 2, alignItems: 'center', justifyContent: 'flex-end' }}>
                 <Typography variant="subtitle2" color="text.secondary">Filtro Anual:</Typography>
                 <TextField type="number" label="Ano" value={year} onChange={e => setYear(Number(e.target.value))} size="small" sx={{ width: 100 }} />
                 <Button variant="contained" onClick={() => { setAppliedYear(year); setAppliedMonth(month); }}>Filtrar</Button>
               </Paper>
+            {yearly.loading || !yearly.data ? <TabSpinner /> : (
+            <>
               <Grid container spacing={3}>
             
 
@@ -386,14 +378,20 @@ const Orcamentos: FC = () => {
               </Paper>
             </Grid>
                         </Grid>
+            </>
+            )}
             </Box>
+            )}
           
-            <Box sx={{ display: tabValue === 2 ? 'block' : 'none' }}>
+            {tabValue === 2 && (
+            <Box>
               <Paper elevation={1} sx={{ p: 2, mb: 3, display: 'flex', gap: 2, alignItems: 'center', justifyContent: 'flex-end' }}>
                 <Typography variant="subtitle2" color="text.secondary">Filtro do Gráfico:</Typography>
                 <TextField type="number" label="Ano" value={year} onChange={e => setYear(Number(e.target.value))} size="small" sx={{ width: 100 }} />
                 <Button variant="contained" onClick={() => { setAppliedYear(year); setAppliedMonth(month); }}>Filtrar</Button>
               </Paper>
+            {chart.loading || !chart.data ? <TabSpinner /> : (
+            <>
               <Grid container spacing={3}>
                 <Grid item xs={12}>
                   <Paper sx={{ p: 3, height: 400, display: 'flex', flexDirection: 'column' }}>
@@ -433,9 +431,10 @@ const Orcamentos: FC = () => {
                   </Paper>
                 </Grid>
               </Grid>
+            </>
+            )}
             </Box>
-          </>
-        )}
+            )}
       </Container>
     </Box>
   );
