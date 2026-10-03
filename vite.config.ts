@@ -32,6 +32,10 @@ export default defineConfig({
         target: process.env.VITE_BUDGET_API_URL || 'http://localhost:7052',
         changeOrigin: true,
       },
+      '^/api/v1/(sessions|live)': {
+        target: process.env.VITE_FORZA_API_URL || 'http://localhost:7057',
+        changeOrigin: true,
+      },
       '/api': {
         target: process.env.VITE_API_URL || 'http://localhost:7051',
         changeOrigin: true,
