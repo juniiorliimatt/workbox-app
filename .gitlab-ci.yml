@@ -1,9 +1,27 @@
 stages:
+  - verify
   - test
 
 variables:
   SONAR_USER_HOME: "${CI_PROJECT_DIR}/.sonar"  # Defines the location of the analysis task cache
   GIT_DEPTH: "0"  # Tells git to fetch all the branches of the project, required by the analysis task
+
+# Lint + testes unitários + build de produção (tsc -b && vite build) em toda branch/MR.
+# Os testes E2E (npm run test:e2e) dependem de Docker + Chrome e ficam de fora do CI.
+lint-test-build:
+  stage: verify
+  image: node:22
+  cache:
+    key:
+      files:
+        - package-lock.json
+    paths:
+      - .npm/
+  script:
+    - npm ci --cache .npm --prefer-offline
+    - npm run lint
+    - npm test
+    - npm run build
 
 sonarcloud-check:
   stage: test
