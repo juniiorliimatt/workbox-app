@@ -15,33 +15,41 @@ server {
     # /api/v1/revenues etc sempre ganham de /api/ quando os dois batem a requisição —
     # sem essas rotas específicas, tudo caía no workbox-api (que não tem esses
     # endpoints) e voltava 500 em vez de ir pro budget-service de verdade.
+    # budget-service e forza-telemetry-service entram por variável + resolver: o nginx
+    # resolve o nome só na requisição, então o front sobe mesmo se um desses serviços não
+    # existir no ambiente (ex.: compose de produção) — a rota só devolve 502. Com variável
+    # no proxy_pass a URI original é repassada como está (mesmos paths nos dois lados).
+    resolver 127.0.0.11 valid=10s ipv6=off;
+    set $budget_upstream ${BUDGET_SERVICE_UPSTREAM};
+    set $forza_upstream ${FORZA_SERVICE_UPSTREAM};
+
     location /api/v1/revenues {
-        proxy_pass ${BUDGET_SERVICE_UPSTREAM}/api/v1/revenues;
+        proxy_pass $budget_upstream;
     }
 
     location /api/v1/spendings {
-        proxy_pass ${BUDGET_SERVICE_UPSTREAM}/api/v1/spendings;
+        proxy_pass $budget_upstream;
     }
 
     location /api/v1/revenue-types {
-        proxy_pass ${BUDGET_SERVICE_UPSTREAM}/api/v1/revenue-types;
+        proxy_pass $budget_upstream;
     }
 
     location /api/v1/spending-types {
-        proxy_pass ${BUDGET_SERVICE_UPSTREAM}/api/v1/spending-types;
+        proxy_pass $budget_upstream;
     }
 
     location /api/v1/budget-rules {
-        proxy_pass ${BUDGET_SERVICE_UPSTREAM}/api/v1/budget-rules;
+        proxy_pass $budget_upstream;
     }
 
     # forza-telemetry-service: sessões (/api/v1/sessions) e leitura ao vivo (/api/v1/live).
     location /api/v1/sessions {
-        proxy_pass ${FORZA_SERVICE_UPSTREAM}/api/v1/sessions;
+        proxy_pass $forza_upstream;
     }
 
     location /api/v1/live {
-        proxy_pass ${FORZA_SERVICE_UPSTREAM}/api/v1/live;
+        proxy_pass $forza_upstream;
     }
 
     location /api/ {
