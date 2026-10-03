@@ -10,12 +10,12 @@ import { useSnackbar } from '@/hooks/useSnackbar';
 import { TuningRecommendationDTO } from '@/interfaces/forza';
 import { getTuningRecommendation, resetTuningCollection } from '@/services/forzaApi';
 import { useAxiosWithAuth } from '@/services/useAxiosWithAuth';
-import { carClassLabel, carLabel, describeDrivetrain } from '@/utils/forza';
+import { carLabel, describeDrivetrain } from '@/utils/forza';
 
 type LoadError = 'not-found' | 'generic' | null;
 
 const TuningCarro: FC = () => {
-  const { carOrdinal = '' } = useParams<{ carOrdinal: string }>();
+  const { carOrdinal = '', performanceClass = '' } = useParams<{ carOrdinal: string; performanceClass: string }>();
   const ordinal = Number(carOrdinal);
   const api = useAxiosWithAuth();
   const { showSnackbar } = useSnackbar();
@@ -30,7 +30,7 @@ const TuningCarro: FC = () => {
       setLoading(true);
       setError(null);
       try {
-        setRecommendation(await getTuningRecommendation(api, ordinal, signal));
+        setRecommendation(await getTuningRecommendation(api, ordinal, performanceClass, signal));
       } catch (e) {
         if (axios.isCancel(e)) return;
         setError(axios.isAxiosError(e) && e.response?.status === 404 ? 'not-found' : 'generic');
@@ -38,7 +38,7 @@ const TuningCarro: FC = () => {
         if (!signal?.aborted) setLoading(false);
       }
     },
-    [api, ordinal],
+    [api, ordinal, performanceClass],
   );
 
   useEffect(() => {
@@ -50,8 +50,8 @@ const TuningCarro: FC = () => {
   const reset = async () => {
     setConfirmReset(false);
     try {
-      await resetTuningCollection(api, ordinal);
-      showSnackbar('Coleta reiniciada: só as próximas sessões deste carro contam.', 'success');
+      await resetTuningCollection(api, ordinal, performanceClass);
+      showSnackbar(`Coleta reiniciada: só as próximas sessões deste carro na classe ${performanceClass} contam.`, 'success');
       await load();
     } catch {
       showSnackbar('Não foi possível reiniciar a coleta.', 'error');
@@ -95,7 +95,7 @@ const TuningCarro: FC = () => {
                     {title}
                   </Typography>
                   <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                    <Chip size="small" label={`${carClassLabel(recommendation.carClass)} · PI ${recommendation.performanceIndex}`} />
+                    <Chip size="small" label={`${recommendation.performanceClass} · PI ${recommendation.performanceIndex}`} />
                     <Chip size="small" label={describeDrivetrain(recommendation.drivetrain)} />
                     <Chip size="small" label={`#${recommendation.carOrdinal}`} variant="outlined" />
                   </Box>

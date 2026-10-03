@@ -26,6 +26,14 @@ describe('Forza · Tuning · histórico', () => {
     expect(mockApi.get.mock.calls[0][0]).toBe('/api/v1/tuning/history');
   });
 
+  it('shows the performance class of the saved build (by PI), not the raw packet class', async () => {
+    mockApi.get.mockResolvedValue({ data: [makeTuningHistoryItem({ carClass: 4, performanceClass: 'C', performanceIndex: 416 })] });
+
+    renderPage();
+
+    expect(await screen.findByText('C · PI 416')).toBeInTheDocument();
+  });
+
   it('says "nenhum ajuste" when the saved tuning had nothing to change', async () => {
     mockApi.get.mockResolvedValue({ data: [makeTuningHistoryItem({ adjustments: 0 })] });
 

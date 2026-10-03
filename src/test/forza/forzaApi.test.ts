@@ -79,9 +79,9 @@ describe('forzaApi', () => {
     const api = makeApi([]);
 
     await listTuningCars(api);
-    await getTuningRecommendation(api, 3667);
+    await getTuningRecommendation(api, 3667, 'S2');
 
-    expect(api.get.mock.calls.map((c) => c[0])).toEqual(['/api/v1/tuning/cars', '/api/v1/tuning/cars/3667']);
+    expect(api.get.mock.calls.map((c) => c[0])).toEqual(['/api/v1/tuning/cars', '/api/v1/tuning/cars/3667/S2']);
   });
 
   it('listTuningHistory and getTuningHistoryEntry hit the history resources', async () => {
@@ -93,12 +93,12 @@ describe('forzaApi', () => {
     expect(api.get.mock.calls.map((c) => c[0])).toEqual(['/api/v1/tuning/history', '/api/v1/tuning/history/abc-123']);
   });
 
-  it('resetTuningCollection posts to the checkpoint of the car', async () => {
+  it('resetTuningCollection posts to the checkpoint of the car in that performance class', async () => {
     const post = vi.fn().mockResolvedValue({ status: 204 });
     const api = { post } as unknown as AxiosInstance;
 
-    await resetTuningCollection(api, 3667);
+    await resetTuningCollection(api, 3667, 'S2');
 
-    expect(post).toHaveBeenCalledWith('/api/v1/tuning/cars/3667/checkpoint');
+    expect(post).toHaveBeenCalledWith('/api/v1/tuning/cars/3667/S2/checkpoint');
   });
 });

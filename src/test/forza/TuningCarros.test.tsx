@@ -19,7 +19,7 @@ describe('Forza · Tuning · carros', () => {
     renderPage();
 
     expect(await screen.findByText('2021 Porsche 911 GT3')).toBeInTheDocument();
-    expect(screen.getByText('S1 · PI 812')).toBeInTheDocument();
+    expect(screen.getByText('S2 · PI 812')).toBeInTheDocument();
     expect(screen.getByText('RWD')).toBeInTheDocument();
     expect(screen.getByText('7 de 10 sessões')).toBeInTheDocument();
     expect(mockApi.get.mock.calls[0][0]).toBe('/api/v1/tuning/cars');
@@ -52,7 +52,26 @@ describe('Forza · Tuning · carros', () => {
     renderPage();
     await user.click(await screen.findByText('2021 Porsche 911 GT3'));
 
-    expect(mockNavigate).toHaveBeenCalledWith('/forza/tuning/3667');
+    expect(mockNavigate).toHaveBeenCalledWith('/forza/tuning/3667/S2');
+  });
+
+  it('lists the same car once per performance class (each class is a different build)', async () => {
+    const user = userEvent.setup();
+    mockApi.get.mockResolvedValue({
+      data: [
+        makeTuningCar({ carOrdinal: 1105, carName: '1964 Aston Martin DB5 Vantage', performanceClass: 'A', performanceIndex: 700, sessions: 3 }),
+        makeTuningCar({ carOrdinal: 1105, carName: '1964 Aston Martin DB5 Vantage', performanceClass: 'C', performanceIndex: 416, sessions: 5 }),
+      ],
+    });
+
+    renderPage();
+    await screen.findByText('A · PI 700');
+
+    expect(screen.getByText('C · PI 416')).toBeInTheDocument();
+    expect(screen.getByText('3 de 10 sessões')).toBeInTheDocument();
+    expect(screen.getByText('5 de 10 sessões')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /Abrir tuning de 1964 Aston Martin DB5 Vantage \(C\)/i }));
+    expect(mockNavigate).toHaveBeenCalledWith('/forza/tuning/1105/C');
   });
 
   it('explains how the recommendation works (minimum sessions, per car, FH6 note)', async () => {

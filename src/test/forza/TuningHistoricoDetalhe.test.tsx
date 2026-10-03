@@ -27,6 +27,14 @@ describe('Forza · Tuning · histórico · detalhe', () => {
     expect(mockApi.get.mock.calls[0][0]).toBe(`/api/v1/tuning/history/${ID}`);
   });
 
+  it('shows the performance class and PI of the saved build', async () => {
+    mockApi.get.mockResolvedValue(saved(makeRecommendation({ carOrdinal: 1105, performanceClass: 'A', performanceIndex: 700 })));
+
+    renderPage();
+
+    expect(await screen.findByText('A · PI 700')).toBeInTheDocument();
+  });
+
   it('says it is a snapshot saved at a given moment, not the current recommendation', async () => {
     renderPage();
 

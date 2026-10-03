@@ -8,7 +8,7 @@ import TuningRecommendation from '@/components/forza/TuningRecommendation';
 import { TuningHistoryDTO } from '@/interfaces/forza';
 import { getTuningHistoryEntry } from '@/services/forzaApi';
 import { useAxiosWithAuth } from '@/services/useAxiosWithAuth';
-import { carClassLabel, carLabel, describeDrivetrain, formatSessionStart } from '@/utils/forza';
+import { carLabel, describeDrivetrain, formatSessionStart } from '@/utils/forza';
 
 type LoadError = 'not-found' | 'generic' | null;
 
@@ -77,7 +77,7 @@ const TuningHistoricoDetalhe: FC = () => {
                 {carLabel(recommendation.carName, recommendation.carOrdinal)}
               </Typography>
               <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 1.5 }}>
-                <Chip size="small" label={`${carClassLabel(recommendation.carClass)} · PI ${recommendation.performanceIndex}`} />
+                <Chip size="small" label={`${recommendation.performanceClass} · PI ${recommendation.performanceIndex}`} />
                 <Chip size="small" label={describeDrivetrain(recommendation.drivetrain)} />
                 <Chip size="small" label={`#${recommendation.carOrdinal}`} variant="outlined" />
               </Box>

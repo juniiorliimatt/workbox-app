@@ -7,7 +7,7 @@ import AppNavbar from '@/components/AppNavbar';
 import { TuningHistoryItemDTO } from '@/interfaces/forza';
 import { listTuningHistory } from '@/services/forzaApi';
 import { useAxiosWithAuth } from '@/services/useAxiosWithAuth';
-import { carClassLabel, carLabel, formatSessionStart } from '@/utils/forza';
+import { carLabel, formatSessionStart } from '@/utils/forza';
 
 const adjustmentsLabel = (count: number) => (count === 0 ? 'Nenhum ajuste' : `${count} ${count === 1 ? 'ajuste' : 'ajustes'}`);
 
@@ -115,7 +115,7 @@ const TuningHistorico: FC = () => {
                           {label}
                         </Button>
                       </TableCell>
-                      <TableCell>{`${carClassLabel(item.carClass)} · PI ${item.performanceIndex}`}</TableCell>
+                      <TableCell>{`${item.performanceClass} · PI ${item.performanceIndex}`}</TableCell>
                       <TableCell>{item.drivetrain}</TableCell>
                       <TableCell>{formatSessionStart(item.savedAt)}</TableCell>
                       <TableCell>{`${item.sessions} sessões`}</TableCell>

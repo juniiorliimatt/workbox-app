@@ -23,7 +23,7 @@ import AppNavbar from '@/components/AppNavbar';
 import { TuningCarDTO } from '@/interfaces/forza';
 import { listTuningCars } from '@/services/forzaApi';
 import { useAxiosWithAuth } from '@/services/useAxiosWithAuth';
-import { carClassLabel, carLabel } from '@/utils/forza';
+import { carLabel } from '@/utils/forza';
 
 const TuningCarros: FC = () => {
   const api = useAxiosWithAuth();
@@ -55,7 +55,7 @@ const TuningCarros: FC = () => {
   }, [load]);
 
   const required = cars[0]?.requiredSessions ?? 10;
-  const open = (car: TuningCarDTO) => navigate(`/forza/tuning/${car.carOrdinal}`);
+  const open = (car: TuningCarDTO) => navigate(`/forza/tuning/${car.carOrdinal}/${car.performanceClass}`);
 
   return (
     <Box sx={{ width: '100%', minHeight: '100vh', bgcolor: 'grey.50', display: 'flex', flexDirection: 'column' }}>
@@ -130,11 +130,11 @@ const TuningCarros: FC = () => {
                   const label = carLabel(car.carName, car.carOrdinal);
                   const percent = Math.min(100, Math.round((car.sessions / car.requiredSessions) * 100));
                   return (
-                    <TableRow key={car.carOrdinal} hover onClick={() => open(car)} sx={{ cursor: 'pointer' }}>
+                    <TableRow key={`${car.carOrdinal}-${car.performanceClass}`} hover onClick={() => open(car)} sx={{ cursor: 'pointer' }}>
                       <TableCell>
                         <Button
                           size="small"
-                          aria-label={`Abrir tuning de ${label}`}
+                          aria-label={`Abrir tuning de ${label} (${car.performanceClass})`}
                           sx={{ textTransform: 'none', fontWeight: 600, fontSize: '0.875rem', minWidth: 0, px: 1 }}
                           onClick={(event) => {
                             event.stopPropagation();
@@ -144,7 +144,7 @@ const TuningCarros: FC = () => {
                           {label}
                         </Button>
                       </TableCell>
-                      <TableCell>{`${carClassLabel(car.carClass)} · PI ${car.performanceIndex}`}</TableCell>
+                      <TableCell>{`${car.performanceClass} · PI ${car.performanceIndex}`}</TableCell>
                       <TableCell>{car.drivetrain}</TableCell>
                       <TableCell>
                         <Typography variant="body2" component="p">{`${car.sessions} de ${car.requiredSessions} sessões`}</Typography>

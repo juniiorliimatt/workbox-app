@@ -64,8 +64,12 @@ export const getLiveInfo = async (api: AxiosInstance, signal?: AbortSignal): Pro
 export const listTuningCars = async (api: AxiosInstance, signal?: AbortSignal): Promise<TuningCarDTO[]> =>
   (await api.get<TuningCarDTO[]>('/api/v1/tuning/cars', { signal })).data;
 
-export const getTuningRecommendation = async (api: AxiosInstance, carOrdinal: number, signal?: AbortSignal): Promise<TuningRecommendationDTO> =>
-  (await api.get<TuningRecommendationDTO>(`/api/v1/tuning/cars/${carOrdinal}`, { signal })).data;
+export const getTuningRecommendation = async (
+  api: AxiosInstance,
+  carOrdinal: number,
+  performanceClass: string,
+  signal?: AbortSignal,
+): Promise<TuningRecommendationDTO> => (await api.get<TuningRecommendationDTO>(`/api/v1/tuning/cars/${carOrdinal}/${performanceClass}`, { signal })).data;
 
 /** Tunings já feitos, do mais recente para o mais antigo. */
 export const listTuningHistory = async (api: AxiosInstance, signal?: AbortSignal): Promise<TuningHistoryItemDTO[]> =>
@@ -74,7 +78,7 @@ export const listTuningHistory = async (api: AxiosInstance, signal?: AbortSignal
 export const getTuningHistoryEntry = async (api: AxiosInstance, id: string, signal?: AbortSignal): Promise<TuningHistoryDTO> =>
   (await api.get<TuningHistoryDTO>(`/api/v1/tuning/history/${id}`, { signal })).data;
 
-/** Reinicia a coleta do carro (só sessões novas passam a contar). Com recomendação pronta, o backend a salva no histórico. */
-export const resetTuningCollection = async (api: AxiosInstance, carOrdinal: number): Promise<void> => {
-  await api.post(`/api/v1/tuning/cars/${carOrdinal}/checkpoint`);
+/** Reinicia a coleta do carro nessa classe de PI (só sessões novas passam a contar). Com recomendação pronta, o backend a salva no histórico. */
+export const resetTuningCollection = async (api: AxiosInstance, carOrdinal: number, performanceClass: string): Promise<void> => {
+  await api.post(`/api/v1/tuning/cars/${carOrdinal}/${performanceClass}/checkpoint`);
 };

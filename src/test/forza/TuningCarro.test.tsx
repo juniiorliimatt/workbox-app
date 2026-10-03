@@ -7,7 +7,7 @@ import { makeGuides, makeRecommendation, renderAt } from './helpers';
 const { mockApi } = vi.hoisted(() => ({ mockApi: { get: vi.fn(), post: vi.fn() } }));
 vi.mock('@/services/useAxiosWithAuth', () => ({ useAxiosWithAuth: () => mockApi, default: () => mockApi }));
 
-const renderPage = () => renderAt(<TuningCarro />, { path: '/forza/tuning/:carOrdinal', route: '/forza/tuning/3667' });
+const renderPage = () => renderAt(<TuningCarro />, { path: '/forza/tuning/:carOrdinal/:performanceClass', route: '/forza/tuning/3667/S2' });
 
 describe('Forza · Tuning · recomendação do carro', () => {
   beforeEach(() => {
@@ -20,9 +20,9 @@ describe('Forza · Tuning · recomendação do carro', () => {
     renderPage();
 
     expect(await screen.findByRole('heading', { name: /2021 Porsche 911 GT3/i })).toBeInTheDocument();
-    expect(screen.getByText(/S1 · PI 812/)).toBeInTheDocument();
+    expect(screen.getByText(/S2 · PI 812/)).toBeInTheDocument();
     expect(screen.getByText(/Traseira \(RWD\)/)).toBeInTheDocument();
-    expect(mockApi.get.mock.calls[0][0]).toBe('/api/v1/tuning/cars/3667');
+    expect(mockApi.get.mock.calls[0][0]).toBe('/api/v1/tuning/cars/3667/S2');
   });
 
   it('lists the cycle adjustments in order, with direction in words, axle, rationale and evidence', async () => {
@@ -139,7 +139,7 @@ describe('Forza · Tuning · recomendação do carro', () => {
     expect(mockApi.post).not.toHaveBeenCalled();
     await user.click(screen.getByRole('button', { name: 'Confirmar' }));
 
-    await waitFor(() => expect(mockApi.post).toHaveBeenCalledWith('/api/v1/tuning/cars/3667/checkpoint'));
+    await waitFor(() => expect(mockApi.post).toHaveBeenCalledWith('/api/v1/tuning/cars/3667/S2/checkpoint'));
     await waitFor(() => expect(mockApi.get).toHaveBeenCalledTimes(2));
   });
 

@@ -149,12 +149,16 @@ export interface LiveInfoDTO {
   udpPort: number;
 }
 
-/** `GET /api/v1/tuning/cars` — carros com sessões coletadas e o progresso até poder recomendar. */
+/** Classe de PI do FH6 (D 100–400, C 401–500, B 501–600, A 601–700, S1 701–800, S2 801–900, R 901–998): cada classe é uma build. */
+export type PerformanceClass = 'D' | 'C' | 'B' | 'A' | 'S1' | 'S2' | 'R';
+
+/** `GET /api/v1/tuning/cars` — um carro numa classe de PI, com sessões coletadas e o progresso até poder recomendar. */
 export interface TuningCarDTO {
   carOrdinal: number;
   carName?: string | null;
   carClass: number;
   performanceIndex: number;
+  performanceClass: PerformanceClass;
   drivetrain: string;
   sessions: number;
   samples: number;
@@ -203,6 +207,7 @@ export interface TuningHistoryItemDTO {
   carName?: string | null;
   carClass: number;
   performanceIndex: number;
+  performanceClass: PerformanceClass;
   drivetrain: string;
   savedAt: string;
   windowFrom: string;
@@ -219,12 +224,13 @@ export interface TuningHistoryDTO {
   recommendation: TuningRecommendationDTO;
 }
 
-/** `GET /api/v1/tuning/cars/{carOrdinal}`. `guides` vem vazio enquanto `readiness.ready` for falso. */
+/** `GET /api/v1/tuning/cars/{carOrdinal}/{performanceClass}`. `guides` vem vazio enquanto `readiness.ready` for falso. */
 export interface TuningRecommendationDTO {
   carOrdinal: number;
   carName?: string | null;
   carClass: number;
   performanceIndex: number;
+  performanceClass: PerformanceClass;
   drivetrain: string;
   readiness: TuningReadinessDTO;
   windowFrom?: string | null;
