@@ -163,8 +163,17 @@ export interface TuningCarDTO {
   sessions: number;
   samples: number;
   requiredSessions: number;
+  requiredSamples: number;
   ready: boolean;
   lastSessionAt: string;
+  /** Sessão sendo gravada agora nessa build (ainda não conta no progresso), ou nula. */
+  activeSession?: TuningActiveSessionDTO | null;
+}
+
+export interface TuningActiveSessionDTO {
+  samples: number;
+  targetSamples: number;
+  startedAt: string;
 }
 
 export interface TuningReadinessDTO {

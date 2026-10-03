@@ -108,8 +108,10 @@ export const makeTuningCar = (overrides?: Partial<TuningCarDTO>): TuningCarDTO =
   sessions: 12,
   samples: 14000,
   requiredSessions: 10,
+  requiredSamples: 50000,
   ready: true,
   lastSessionAt: '2026-10-10T12:00:00Z',
+  activeSession: null,
   ...overrides,
 });
 

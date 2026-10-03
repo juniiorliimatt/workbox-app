@@ -55,6 +55,53 @@ describe('Forza · Tuning · carros', () => {
     expect(mockNavigate).toHaveBeenCalledWith('/forza/tuning/3667/S2');
   });
 
+  it('shows the sample progress toward the required volume, next to the sessions', async () => {
+    mockApi.get.mockResolvedValue({ data: [makeTuningCar({ sessions: 3, samples: 12400, ready: false })] });
+
+    renderPage();
+
+    expect(await screen.findByText(/12\.400 de 50\.000 amostras/)).toBeInTheDocument();
+  });
+
+  it('shows the session in progress with its samples and the target, as not counted yet', async () => {
+    mockApi.get.mockResolvedValue({
+      data: [makeTuningCar({ ready: false, sessions: 3, activeSession: { samples: 2340, targetSamples: 5000, startedAt: '2026-10-10T12:30:00Z' } })],
+    });
+
+    renderPage();
+
+    expect(await screen.findByText(/Gravando agora: 2\.340 de 5\.000 amostras/)).toBeInTheDocument();
+    expect(screen.getByLabelText('Sessão em andamento')).toBeInTheDocument();
+    expect(screen.getByText(/entra na contagem ao fechar/i)).toBeInTheDocument();
+  });
+
+  it('shows no recording line when no session is open', async () => {
+    mockApi.get.mockResolvedValue({ data: [makeTuningCar()] });
+
+    renderPage();
+    await screen.findByText('2021 Porsche 911 GT3');
+
+    expect(screen.queryByText(/Gravando agora/)).not.toBeInTheDocument();
+  });
+
+  it('refreshes the list periodically, without a loading spinner, so the recording progress moves', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      mockApi.get.mockResolvedValueOnce({ data: [makeTuningCar({ activeSession: { samples: 1000, targetSamples: 5000, startedAt: '2026-10-10T12:30:00Z' } })] });
+      mockApi.get.mockResolvedValueOnce({ data: [makeTuningCar({ activeSession: { samples: 1600, targetSamples: 5000, startedAt: '2026-10-10T12:30:00Z' } })] });
+
+      renderPage();
+      expect(await screen.findByText(/Gravando agora: 1\.000 de 5\.000/)).toBeInTheDocument();
+      await vi.advanceTimersByTimeAsync(10_000);
+
+      expect(await screen.findByText(/Gravando agora: 1\.600 de 5\.000/)).toBeInTheDocument();
+      expect(screen.queryByRole('progressbar', { name: '' })).not.toBeInTheDocument();
+      expect(mockApi.get).toHaveBeenCalledTimes(2);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('lists the same car once per performance class (each class is a different build)', async () => {
     const user = userEvent.setup();
     mockApi.get.mockResolvedValue({

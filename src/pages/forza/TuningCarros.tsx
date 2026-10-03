@@ -23,7 +23,10 @@ import AppNavbar from '@/components/AppNavbar';
 import { TuningCarDTO } from '@/interfaces/forza';
 import { listTuningCars } from '@/services/forzaApi';
 import { useAxiosWithAuth } from '@/services/useAxiosWithAuth';
-import { carLabel } from '@/utils/forza';
+import { carLabel, formatNumber } from '@/utils/forza';
+
+/** Atualiza o progresso da sessão em andamento (e as que fecharam) sem o usuário recarregar a página. */
+const REFRESH_MS = 10_000;
 
 const TuningCarros: FC = () => {
   const api = useAxiosWithAuth();
@@ -53,6 +56,23 @@ const TuningCarros: FC = () => {
     load(controller.signal);
     return () => controller.abort();
   }, [load]);
+
+  // Atualização silenciosa (sem spinner, erro ignorado: mantém a lista atual); pausa com a aba oculta.
+  useEffect(() => {
+    const controller = new AbortController();
+    const timer = setInterval(async () => {
+      if (document.hidden) return;
+      try {
+        setCars(await listTuningCars(api, controller.signal));
+      } catch {
+        /* mantém a lista atual */
+      }
+    }, REFRESH_MS);
+    return () => {
+      clearInterval(timer);
+      controller.abort();
+    };
+  }, [api]);
 
   const required = cars[0]?.requiredSessions ?? 10;
   const open = (car: TuningCarDTO) => navigate(`/forza/tuning/${car.carOrdinal}/${car.performanceClass}`);
@@ -149,6 +169,26 @@ const TuningCarros: FC = () => {
                       <TableCell>
                         <Typography variant="body2" component="p">{`${car.sessions} de ${car.requiredSessions} sessões`}</Typography>
                         <LinearProgress variant="determinate" value={percent} aria-label={`Progresso de ${label}`} sx={{ height: 6, borderRadius: 3, mt: 0.5 }} />
+                        <Typography variant="caption" color="text.secondary" component="p" sx={{ mt: 0.5 }}>
+                          {`${formatNumber(car.samples, 0)} de ${formatNumber(car.requiredSamples, 0)} amostras`}
+                        </Typography>
+                        {car.activeSession && (
+                          <Box sx={{ mt: 1 }}>
+                            <Typography variant="caption" component="p" sx={{ fontWeight: 600 }}>
+                              {`Gravando agora: ${formatNumber(car.activeSession.samples, 0)} de ${formatNumber(car.activeSession.targetSamples, 0)} amostras`}
+                            </Typography>
+                            <LinearProgress
+                              variant="determinate"
+                              color="secondary"
+                              value={Math.min(100, Math.round((car.activeSession.samples / car.activeSession.targetSamples) * 100))}
+                              aria-label="Sessão em andamento"
+                              sx={{ height: 4, borderRadius: 2, mt: 0.5 }}
+                            />
+                            <Typography variant="caption" color="text.secondary" component="p">
+                              Entra na contagem ao fechar (ao chegar no alvo, trocar de carro ou pausar).
+                            </Typography>
+                          </Box>
+                        )}
                       </TableCell>
                       <TableCell>
                         <Chip size="small" label={car.ready ? 'Pronto' : 'Coletando'} color={car.ready ? 'success' : 'default'} variant={car.ready ? 'filled' : 'outlined'} />
