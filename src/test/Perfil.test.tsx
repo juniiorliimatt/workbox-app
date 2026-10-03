@@ -67,11 +67,17 @@ describe('Perfil Component', () => {
     renderPerfil();
 
     expect(screen.getByRole('heading', { name: /Meu Perfil & Segurança/i })).toBeInTheDocument();
-    expect(screen.getByDisplayValue('user-uuid-1234')).toBeInTheDocument();
+    expect(screen.queryByDisplayValue('user-uuid-1234')).not.toBeInTheDocument();
     expect(screen.getByDisplayValue('Maria Silva')).toBeInTheDocument();
     expect(screen.getByDisplayValue('maria@workbox.local')).toBeInTheDocument();
     expect(screen.getByText('Conta Ativa')).toBeInTheDocument();
     expect(screen.getByText('Carregar Imagem')).toBeInTheDocument();
+  });
+
+  it('shows the unique ID field only to administrators', () => {
+    renderPerfil({ isAdmin: true });
+
+    expect(screen.getByDisplayValue('user-uuid-1234')).toBeInTheDocument();
   });
 
   it('submits updated profile data successfully', async () => {

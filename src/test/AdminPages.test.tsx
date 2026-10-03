@@ -72,8 +72,8 @@ describe('Admin Module Pages', () => {
       ];
 
       vi.mocked(api.get).mockImplementation((url) => {
-        if (url.includes('/api/v1/user/find-all')) {
-          return Promise.resolve({ data: { _embedded: { userApiDTOList: mockUsers } } });
+        if (url.includes('/api/v1/user/pageable')) {
+          return Promise.resolve({ data: { content: mockUsers, totalElements: mockUsers.length } });
         }
         if (url.includes('/api/v1/role')) {
           return Promise.resolve({ data: mockRoles });
@@ -153,8 +153,8 @@ describe('Admin Module Pages', () => {
       ];
 
       vi.mocked(api.get).mockImplementation((url) => {
-        if (url.includes('/api/v1/user/find-all')) {
-          return Promise.resolve({ data: { _embedded: { userApiDTOList: mockUsers } } });
+        if (url.includes('/api/v1/user/pageable')) {
+          return Promise.resolve({ data: { content: mockUsers, totalElements: mockUsers.length } });
         }
         if (url.includes('/api/v1/audit/users/user-uuid-1/history')) {
           return Promise.resolve({ data: mockUserHistory });
