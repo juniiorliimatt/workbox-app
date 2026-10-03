@@ -1,5 +1,15 @@
 import axios, { AxiosInstance } from 'axios';
-import { LapDTO, LiveInfoDTO, LiveSnapshotDTO, SampleDTO, SessionDTO, SessionPageDTO, TuningSummary } from '@/interfaces/forza';
+import {
+  LapDTO,
+  LiveInfoDTO,
+  LiveSnapshotDTO,
+  SampleDTO,
+  SessionDTO,
+  SessionPageDTO,
+  TuningCarDTO,
+  TuningRecommendationDTO,
+  TuningSummary,
+} from '@/interfaces/forza';
 
 /**
  * Cliente do forza-telemetry-service. Contrato: forza-telemetry-service/openapi/openapi.yaml.
@@ -48,3 +58,14 @@ export const getLiveSnapshot = async (api: AxiosInstance, signal?: AbortSignal):
 
 export const getLiveInfo = async (api: AxiosInstance, signal?: AbortSignal): Promise<LiveInfoDTO> =>
   (await api.get<LiveInfoDTO>('/api/v1/live/info', { signal })).data;
+
+export const listTuningCars = async (api: AxiosInstance, signal?: AbortSignal): Promise<TuningCarDTO[]> =>
+  (await api.get<TuningCarDTO[]>('/api/v1/tuning/cars', { signal })).data;
+
+export const getTuningRecommendation = async (api: AxiosInstance, carOrdinal: number, signal?: AbortSignal): Promise<TuningRecommendationDTO> =>
+  (await api.get<TuningRecommendationDTO>(`/api/v1/tuning/cars/${carOrdinal}`, { signal })).data;
+
+/** Reinicia a coleta do carro (só sessões novas passam a contar). */
+export const resetTuningCollection = async (api: AxiosInstance, carOrdinal: number): Promise<void> => {
+  await api.post(`/api/v1/tuning/cars/${carOrdinal}/checkpoint`);
+};

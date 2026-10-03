@@ -84,6 +84,10 @@ ao mexer, prefira extrair componente/hook em vez de crescer o arquivo.
   de apresentação em `components/forza/`.
 - `components/forza/DataOutHint`: mostra o IP da máquina + porta do Data Out (de `/live/info`; senão o
   host do navegador; senão texto genérico) em "Ao vivo" e na lista vazia de sessões.
+- **Tuning (FH6)** (`/forza/tuning`, `/forza/tuning/:carOrdinal`): lista de carros com progresso até 10 sessões e
+  detalhe com "Aplicar neste ciclo" (≤ 3 ajustes, sentido em texto + ícone, evidência) e **todas** as 9 guias em
+  acordeões com status em texto (Ajustar / OK / Sem sinal). Enquanto coleta, só progresso e o que falta. "Reiniciar
+  coleta" (com confirmação) chama `POST .../checkpoint`. Rotas `/api/v1/tuning` roteadas no Vite e no nginx.
 - **Ao vivo**: poll de 200 ms (`LIVE_POLL_MS`, 5 Hz — 1 Hz perderia o ponto de troca; ideal seria
   push/SSE do serviço). `ShiftLights` (12 LEDs verde→vermelho→azul, 70%–95% do `engineMaxRpm` **do carro
   atual**; a 95% todos acendem piscando + texto "Troque de marcha", respeitando `prefers-reduced-motion`;

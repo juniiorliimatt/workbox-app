@@ -29,6 +29,7 @@ describe('Forza · hub do módulo', () => {
     expect(screen.getByText(/Workbox Forza/i)).toBeInTheDocument();
     expect(screen.getByText('Sessões')).toBeInTheDocument();
     expect(screen.getByText('Ao vivo')).toBeInTheDocument();
+    expect(screen.getByText('Tuning (FH6)')).toBeInTheDocument();
     expect(screen.getByText(/forza-telemetry-service/)).toBeInTheDocument();
   });
 
@@ -48,6 +49,15 @@ describe('Forza · hub do módulo', () => {
     await user.click(screen.getByText('Ao vivo'));
 
     expect(mockNavigate).toHaveBeenCalledWith('/forza/ao-vivo');
+  });
+
+  it('navigates to the tuning recommendations', async () => {
+    const user = userEvent.setup();
+    renderHub();
+
+    await user.click(screen.getByText('Tuning (FH6)'));
+
+    expect(mockNavigate).toHaveBeenCalledWith('/forza/tuning');
   });
 
   it('offers a way back to the modules hub', () => {

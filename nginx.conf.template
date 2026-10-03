@@ -52,6 +52,10 @@ server {
         proxy_pass $forza_upstream;
     }
 
+    location /api/v1/tuning {
+        proxy_pass $forza_upstream;
+    }
+
     location /api/ {
         proxy_pass ${WORKBOX_API_UPSTREAM}/api/;
     }

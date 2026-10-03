@@ -63,6 +63,14 @@ export const router = createBrowserRouter([
         lazy: async () => ({ Component: (await import('@/pages/forza/AoVivo')).default }),
       },
       {
+        path: '/forza/tuning',
+        lazy: async () => ({ Component: (await import('@/pages/forza/TuningCarros')).default }),
+      },
+      {
+        path: '/forza/tuning/:carOrdinal',
+        lazy: async () => ({ Component: (await import('@/pages/forza/TuningCarro')).default }),
+      },
+      {
         path: '/admin',
         lazy: async () => ({ Component: (await import('@/pages/Admin')).default }),
       },

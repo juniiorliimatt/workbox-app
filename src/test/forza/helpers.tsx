@@ -5,7 +5,7 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { AuthContext } from '@/contexts/AuthContextValue';
 import { SnackbarProvider } from '@/contexts/SnackbarContext';
 import { IAuthContext } from '@/interfaces/IAuthContext';
-import { SessionDTO, TuningSummary } from '@/interfaces/forza';
+import { SessionDTO, TuningCarDTO, TuningGuideDTO, TuningRecommendationDTO, TuningSummary } from '@/interfaces/forza';
 
 export const createAuthValue = (overrides?: Partial<IAuthContext>): IAuthContext => ({
   accessToken: 'mock-access-token',
@@ -97,3 +97,71 @@ export const makeSummary = (overrides?: Partial<TuningSummary>): TuningSummary =
   onRumbleStripPct: 3.2,
   ...overrides,
 });
+
+export const makeTuningCar = (overrides?: Partial<TuningCarDTO>): TuningCarDTO => ({
+  carOrdinal: 3667,
+  carName: '2021 Porsche 911 GT3',
+  carClass: 4,
+  performanceIndex: 812,
+  drivetrain: 'RWD',
+  sessions: 12,
+  samples: 14000,
+  requiredSessions: 10,
+  ready: true,
+  lastSessionAt: '2026-10-10T12:00:00Z',
+  ...overrides,
+});
+
+const GUIDE_TITLES: [string, string][] = [
+  ['pneus', 'Pneus'],
+  ['cambio', 'Câmbio'],
+  ['alinhamento', 'Alinhamento'],
+  ['barras', 'Barras anti-rolagem'],
+  ['molas', 'Molas'],
+  ['amortecimento', 'Amortecimento'],
+  ['aerodinamica', 'Aerodinâmica'],
+  ['freios', 'Freios'],
+  ['diferencial', 'Diferencial'],
+];
+
+export const makeGuides = (overrides?: Record<string, Partial<TuningGuideDTO>>): TuningGuideDTO[] =>
+  GUIDE_TITLES.map(([id, title]) => ({
+    id,
+    title,
+    status: id === 'aerodinamica' ? 'NO_SIGNAL' : 'OK',
+    summary: id === 'aerodinamica' ? 'A telemetria não separa comportamento em alta velocidade.' : `${title} dentro do esperado.`,
+    notes: [],
+    suggestions: [],
+    ...overrides?.[id],
+  }));
+
+export const makeRecommendation = (overrides?: Partial<TuningRecommendationDTO>): TuningRecommendationDTO => {
+  const suggestion = {
+    priority: 1,
+    thisCycle: true,
+    guide: 'molas',
+    parameter: 'Altura do solo traseira',
+    axle: 'REAR' as const,
+    direction: 'INCREASE' as const,
+    rationale: 'A suspensão está batendo no limite de curso.',
+    evidence: 'Suspensão traseira no fundo de curso em 7% das amostras (roda RL; limite 3%)',
+  };
+  const second = { ...suggestion, priority: 2, guide: 'pneus', parameter: 'Pressão dos pneus traseiros', direction: 'DECREASE' as const, rationale: 'Pneu superaquecido perde aderência.', evidence: 'Temperatura média do eixo traseiro: 225 °F (máximo aceitável 210 °F)' };
+  return {
+    carOrdinal: 3667,
+    carName: '2021 Porsche 911 GT3',
+    carClass: 4,
+    performanceIndex: 812,
+    drivetrain: 'RWD',
+    readiness: { ready: true, sessions: 12, requiredSessions: 10, samples: 14000, requiredSamples: 6000, missing: [] },
+    windowFrom: '2026-10-01T10:00:00Z',
+    windowTo: '2026-10-10T12:00:00Z',
+    checkpointAt: null,
+    guides: makeGuides({
+      molas: { status: 'ADJUST', summary: '1 ajuste sugerido', suggestions: [suggestion] },
+      pneus: { status: 'ADJUST', summary: '1 ajuste sugerido', suggestions: [second] },
+    }),
+    thisCycle: [suggestion, second],
+    ...overrides,
+  };
+};

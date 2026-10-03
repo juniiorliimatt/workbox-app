@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import type { AxiosInstance } from 'axios';
-import { getLiveInfo, getLiveSnapshot, getSession, getSessionLaps, getSessionSamples, getSessionSummary, listSessions } from '@/services/forzaApi';
+import { getLiveInfo, getTuningRecommendation, listTuningCars, resetTuningCollection, getLiveSnapshot, getSession, getSessionLaps, getSessionSamples, getSessionSummary, listSessions } from '@/services/forzaApi';
 
 const makeApi = (data: unknown = {}) => ({ get: vi.fn().mockResolvedValue({ data }) }) as unknown as AxiosInstance & { get: ReturnType<typeof vi.fn> };
 
@@ -73,5 +73,23 @@ describe('forzaApi', () => {
 
     await expect(getLiveInfo(api)).resolves.toEqual({ hostAddresses: ['192.168.0.10'], udpPort: 5310 });
     expect(api.get).toHaveBeenCalledWith('/api/v1/live/info', { signal: undefined });
+  });
+
+  it('listTuningCars and getTuningRecommendation hit the tuning resources', async () => {
+    const api = makeApi([]);
+
+    await listTuningCars(api);
+    await getTuningRecommendation(api, 3667);
+
+    expect(api.get.mock.calls.map((c) => c[0])).toEqual(['/api/v1/tuning/cars', '/api/v1/tuning/cars/3667']);
+  });
+
+  it('resetTuningCollection posts to the checkpoint of the car', async () => {
+    const post = vi.fn().mockResolvedValue({ status: 204 });
+    const api = { post } as unknown as AxiosInstance;
+
+    await resetTuningCollection(api, 3667);
+
+    expect(post).toHaveBeenCalledWith('/api/v1/tuning/cars/3667/checkpoint');
   });
 });

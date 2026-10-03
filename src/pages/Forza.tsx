@@ -1,6 +1,6 @@
 import { FC } from 'react';
 import { Box, Container, Grid, Paper, Typography } from '@mui/material';
-import { Sensors as LiveIcon, SportsMotorsports as ForzaIcon, History as SessionsIcon } from '@mui/icons-material';
+import { Sensors as LiveIcon, SportsMotorsports as ForzaIcon, History as SessionsIcon, Tune as TuneIcon } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import AppNavbar from '@/components/AppNavbar';
 import SectionCard from '@/components/SectionCard';
@@ -44,6 +44,14 @@ const Forza: FC = () => {
               description="Velocidade, marcha, pedais, pneus e voltas em tempo real enquanto você pilota."
               icon={<LiveIcon color="success" />}
               onClick={() => navigate('/forza/ao-vivo')}
+            />
+          </Grid>
+          <Grid item xs={12} md={6}>
+            <SectionCard
+              title="Tuning (FH6)"
+              description="Recomendação de ajustes por carro, com todas as guias de tuning, a partir das sessões coletadas (mínimo de 10 por carro)."
+              icon={<TuneIcon color="secondary" />}
+              onClick={() => navigate('/forza/tuning')}
             />
           </Grid>
         </Grid>

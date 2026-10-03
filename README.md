@@ -120,6 +120,9 @@ Consome só `forza-telemetry-service/openapi/openapi.yaml` (tipos em `src/interf
 - **Sessões** (`/forza/sessoes`): lista com paginação por cursor ("Carregar mais"), estados de carregamento/vazio/erro com retentativa; a linha abre o detalhe.
 - **Detalhe** (`/forza/sessoes/:id`): cabeçalho (carro, classe/PI, tração, formato) e três abas — **Resumo de tuning** (suspensão, equilíbrio em curva, frenagem/tração, câmbio, pneus; botão para copiar o JSON e colar na skill `forza-tuning-engineer`), **Voltas** (tempos, diferença e melhor volta) e **Telemetria** (gráficos de velocidade/rotação e pedais, carregados só ao abrir a aba, série decimada a 1000 pontos).
 - **Ao vivo** (`/forza/ao-vivo`): *shift light* estilo F1 (LEDs acendem até o limite de rotação do carro atual e piscam com "Troque de marcha"), nome exato do carro (catálogo do serviço), barras de 1 cm; sem pacote, mostra o **IP da máquina e a porta** pra configurar o Data Out (`/live/info`, `FORZA_HOST_IP`); polling de 1 s em `/api/v1/live/snapshot` (não empilha requisições, pausa com a aba oculta, aborta ao sair); 404 do serviço vira "Aguardando telemetria", não erro. Temperaturas de pneu convertidas de °F para °C.
+- **Tuning (FH6)** (`/forza/tuning`): recomendação de ajustes por carro a partir das sessões coletadas (mínimo de 10
+  sessões e volume de amostras por carro). Mostra o que aplicar neste ciclo (até 3, só o **sentido** — o jogo não envia
+  os valores do setup) e todas as 9 guias de tuning, mesmo as sem ajuste; "Reiniciar coleta" após aplicar mudanças.
 - Páginas carregadas sob demanda (`lazy` do React Router).
 
 ### 3. Meu Perfil & Segurança (`/perfil`)

@@ -148,3 +148,65 @@ export interface LiveInfoDTO {
   hostAddresses: string[];
   udpPort: number;
 }
+
+/** `GET /api/v1/tuning/cars` — carros com sessões coletadas e o progresso até poder recomendar. */
+export interface TuningCarDTO {
+  carOrdinal: number;
+  carName?: string | null;
+  carClass: number;
+  performanceIndex: number;
+  drivetrain: string;
+  sessions: number;
+  samples: number;
+  requiredSessions: number;
+  ready: boolean;
+  lastSessionAt: string;
+}
+
+export interface TuningReadinessDTO {
+  ready: boolean;
+  sessions: number;
+  requiredSessions: number;
+  samples: number;
+  requiredSamples: number;
+  missing: string[];
+}
+
+export type TuningAxle = 'FRONT' | 'REAR' | 'BOTH' | 'NONE';
+export type TuningDirection = 'INCREASE' | 'DECREASE';
+export type TuningGuideStatus = 'ADJUST' | 'OK' | 'NO_SIGNAL';
+
+export interface TuningSuggestionDTO {
+  priority: number;
+  thisCycle: boolean;
+  guide: string;
+  parameter: string;
+  axle: TuningAxle;
+  direction: TuningDirection;
+  rationale: string;
+  evidence: string;
+}
+
+export interface TuningGuideDTO {
+  id: string;
+  title: string;
+  status: TuningGuideStatus;
+  summary: string;
+  notes: string[];
+  suggestions: TuningSuggestionDTO[];
+}
+
+/** `GET /api/v1/tuning/cars/{carOrdinal}`. `guides` vem vazio enquanto `readiness.ready` for falso. */
+export interface TuningRecommendationDTO {
+  carOrdinal: number;
+  carName?: string | null;
+  carClass: number;
+  performanceIndex: number;
+  drivetrain: string;
+  readiness: TuningReadinessDTO;
+  windowFrom?: string | null;
+  windowTo?: string | null;
+  checkpointAt?: string | null;
+  guides: TuningGuideDTO[];
+  thisCycle: TuningSuggestionDTO[];
+}
