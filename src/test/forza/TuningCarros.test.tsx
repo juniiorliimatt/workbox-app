@@ -75,6 +75,29 @@ describe('Forza · Tuning · carros', () => {
     expect(screen.getByText(/entra na contagem ao fechar/i)).toBeInTheDocument();
   });
 
+  it('shows the samples of the session in progress next to the counted total, so the number visibly moves', async () => {
+    mockApi.get.mockResolvedValue({
+      data: [makeTuningCar({ ready: false, sessions: 5, samples: 7980, activeSession: { samples: 3466, targetSamples: 5000, startedAt: '2026-10-10T12:30:00Z' } })],
+    });
+
+    renderPage();
+
+    expect(await screen.findByText(/7\.980 de 50\.000 amostras \(\+3\.466 em andamento\)/)).toBeInTheDocument();
+  });
+
+  it('explains a race that runs past the session size: it keeps recording and only closes when the race ends', async () => {
+    mockApi.get.mockResolvedValue({
+      data: [makeTuningCar({ ready: false, activeSession: { samples: 6500, targetSamples: 5000, startedAt: '2026-10-10T12:30:00Z' } })],
+    });
+
+    renderPage();
+
+    expect(await screen.findByText(/Gravando agora: 6\.500 amostras/)).toBeInTheDocument();
+    expect(screen.queryByText(/6\.500 de 5\.000/)).not.toBeInTheDocument();
+    expect(screen.getByText(/corrida ou evento em andamento: só fecha e passa a contar quando terminar/i)).toBeInTheDocument();
+    expect(screen.getByLabelText('Sessão em andamento')).toHaveAttribute('aria-valuenow', '100');
+  });
+
   it('shows no recording line when no session is open', async () => {
     mockApi.get.mockResolvedValue({ data: [makeTuningCar()] });
 

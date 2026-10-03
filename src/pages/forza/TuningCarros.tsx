@@ -171,11 +171,14 @@ const TuningCarros: FC = () => {
                         <LinearProgress variant="determinate" value={percent} aria-label={`Progresso de ${label}`} sx={{ height: 6, borderRadius: 3, mt: 0.5 }} />
                         <Typography variant="caption" color="text.secondary" component="p" sx={{ mt: 0.5 }}>
                           {`${formatNumber(car.samples, 0)} de ${formatNumber(car.requiredSamples, 0)} amostras`}
+                          {car.activeSession ? ` (+${formatNumber(car.activeSession.samples, 0)} em andamento)` : ''}
                         </Typography>
                         {car.activeSession && (
                           <Box sx={{ mt: 1 }}>
                             <Typography variant="caption" component="p" sx={{ fontWeight: 600 }}>
-                              {`Gravando agora: ${formatNumber(car.activeSession.samples, 0)} de ${formatNumber(car.activeSession.targetSamples, 0)} amostras`}
+                              {car.activeSession.samples > car.activeSession.targetSamples
+                                ? `Gravando agora: ${formatNumber(car.activeSession.samples, 0)} amostras`
+                                : `Gravando agora: ${formatNumber(car.activeSession.samples, 0)} de ${formatNumber(car.activeSession.targetSamples, 0)} amostras`}
                             </Typography>
                             <LinearProgress
                               variant="determinate"
@@ -185,7 +188,9 @@ const TuningCarros: FC = () => {
                               sx={{ height: 4, borderRadius: 2, mt: 0.5 }}
                             />
                             <Typography variant="caption" color="text.secondary" component="p">
-                              Entra na contagem ao fechar (ao chegar no alvo, trocar de carro ou pausar).
+                              {car.activeSession.samples > car.activeSession.targetSamples
+                                ? 'Corrida ou evento em andamento: só fecha e passa a contar quando terminar.'
+                                : 'Entra na contagem ao fechar (ao chegar no alvo ou ao trocar de carro ou classe).'}
                             </Typography>
                           </Box>
                         )}
