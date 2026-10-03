@@ -82,7 +82,29 @@ describe('Forza · Tuning · carros', () => {
 
     renderPage();
 
-    expect(await screen.findByText(/7\.980 de 50\.000 amostras \(\+3\.466 em andamento\)/)).toBeInTheDocument();
+    // o total conta ao vivo: 7.980 (sessões fechadas) + 3.466 (em andamento) = 11.446
+    expect(await screen.findByText(/11\.446 de 50\.000 amostras/)).toBeInTheDocument();
+    expect(screen.getByText(/7\.980 em sessões fechadas \+ 3\.466 em andamento/)).toBeInTheDocument();
+  });
+
+  it('keeps the plain total when there is no session in progress', async () => {
+    mockApi.get.mockResolvedValue({ data: [makeTuningCar({ ready: false, sessions: 5, samples: 7980 })] });
+
+    renderPage();
+
+    expect(await screen.findByText('7.980 de 50.000 amostras')).toBeInTheDocument();
+    expect(screen.queryByText(/em sessões fechadas/)).not.toBeInTheDocument();
+  });
+
+  it('says the recommendation only uses closed sessions, even when the live total already reaches the volume', async () => {
+    mockApi.get.mockResolvedValue({
+      data: [makeTuningCar({ ready: false, sessions: 9, samples: 48000, activeSession: { samples: 4000, targetSamples: 5000, startedAt: '2026-10-10T12:30:00Z' } })],
+    });
+
+    renderPage();
+
+    expect(await screen.findByText(/52\.000 de 50\.000 amostras/)).toBeInTheDocument();
+    expect(screen.getByText(/A recomendação usa só sessões fechadas/i)).toBeInTheDocument();
   });
 
   it('explains a race that runs past the session size: it keeps recording and only closes when the race ends', async () => {

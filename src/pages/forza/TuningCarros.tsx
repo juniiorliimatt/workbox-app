@@ -170,9 +170,15 @@ const TuningCarros: FC = () => {
                         <Typography variant="body2" component="p">{`${car.sessions} de ${car.requiredSessions} sessões`}</Typography>
                         <LinearProgress variant="determinate" value={percent} aria-label={`Progresso de ${label}`} sx={{ height: 6, borderRadius: 3, mt: 0.5 }} />
                         <Typography variant="caption" color="text.secondary" component="p" sx={{ mt: 0.5 }}>
-                          {`${formatNumber(car.samples, 0)} de ${formatNumber(car.requiredSamples, 0)} amostras`}
-                          {car.activeSession ? ` (+${formatNumber(car.activeSession.samples, 0)} em andamento)` : ''}
+                          {/* Total ao vivo: sessões fechadas + a em andamento (a recomendação, porém, só usa as fechadas). */}
+                          {`${formatNumber(car.samples + (car.activeSession?.samples ?? 0), 0)} de ${formatNumber(car.requiredSamples, 0)} amostras`}
                         </Typography>
+                        {car.activeSession && (
+                          <Typography variant="caption" color="text.secondary" component="p">
+                            {`(${formatNumber(car.samples, 0)} em sessões fechadas + ${formatNumber(car.activeSession.samples, 0)} em andamento)`}
+                            {car.ready ? '' : ' A recomendação usa só sessões fechadas.'}
+                          </Typography>
+                        )}
                         {car.activeSession && (
                           <Box sx={{ mt: 1 }}>
                             <Typography variant="caption" component="p" sx={{ fontWeight: 600 }}>
