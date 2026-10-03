@@ -15,21 +15,34 @@ const STATUS: Record<TuningGuideStatus, { label: string; color: 'warning' | 'suc
 /** O equilíbrio de freio é um deslocamento entre eixos, não um "aumentar/reduzir": o eixo da sugestão diz para onde. */
 const isBrakeBalance = (suggestion: TuningSuggestionDTO) => suggestion.parameter.startsWith('Equilíbrio de freio');
 
-/** Sentido em texto + ícone (a informação nunca fica só na cor). */
+const MAGNITUDE_LABEL = { SMALL: 'Passo pequeno', MEDIUM: 'Passo médio', LARGE: 'Passo grande' } as const;
+
+/** Quantidade do passo na unidade do jogo ("0,5 cm", "0,2°", "5% do curso do slider"); vazio quando o serviço não sabe o passo. */
+const stepText = (suggestion: TuningSuggestionDTO): string => {
+  if (suggestion.amount == null || !suggestion.unit) return '';
+  const amount = suggestion.amount.toLocaleString('pt-BR', { maximumFractionDigits: 2 });
+  const glued = suggestion.unit === '°' || suggestion.unit.startsWith('%');
+  return glued ? `${amount}${suggestion.unit}` : `${amount} ${suggestion.unit}`;
+};
+
+/** Sentido (e quanto) em texto + ícone (a informação nunca fica só na cor). */
 const Direction: FC<{ suggestion: TuningSuggestionDTO }> = ({ suggestion }) => {
+  const step = stepText(suggestion);
   if (isBrakeBalance(suggestion)) {
     const toFront = suggestion.axle === 'FRONT';
+    const target = toFront ? 'para a dianteira' : 'para a traseira';
     return (
       <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', fontWeight: 700 }}>
         {toFront ? <UpIcon fontSize="small" aria-hidden /> : <DownIcon fontSize="small" aria-hidden />}
-        {toFront ? 'Mover para a dianteira' : 'Mover para a traseira'}
+        {step ? `Mover ${step} ${target}` : `Mover ${target}`}
       </Box>
     );
   }
+  const verb = suggestion.direction === 'INCREASE' ? 'Aumentar' : 'Reduzir';
   return (
     <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', fontWeight: 700 }}>
       {suggestion.direction === 'INCREASE' ? <UpIcon fontSize="small" aria-hidden /> : <DownIcon fontSize="small" aria-hidden />}
-      {suggestion.direction === 'INCREASE' ? 'Aumentar' : 'Reduzir'}
+      {step ? `${verb} ${step}` : verb}
     </Box>
   );
 };
@@ -44,6 +57,7 @@ const Suggestion: FC<{ suggestion: TuningSuggestionDTO }> = ({ suggestion }) => 
           {suggestion.parameter}
         </Typography>
         <Direction suggestion={suggestion} />
+        {suggestion.magnitude && <Chip size="small" color="primary" variant="outlined" label={MAGNITUDE_LABEL[suggestion.magnitude]} />}
         {axle && !brake && <Chip size="small" variant="outlined" label={axle} />}
       </Box>
       <Typography variant="body2" sx={{ mt: 0.5 }}>
@@ -157,8 +171,12 @@ const TuningRecommendation: FC<Props> = ({ recommendation, snapshot = false }) =
           </Alert>
 
           <Box component="section" aria-labelledby="ciclo-titulo" sx={{ mb: 4 }}>
-            <Typography id="ciclo-titulo" variant="h6" component="h3" sx={{ fontWeight: 600, mb: 1.5 }}>
+            <Typography id="ciclo-titulo" variant="h6" component="h3" sx={{ fontWeight: 600, mb: 0.5 }}>
               Aplicar neste ciclo
+            </Typography>
+            <Typography variant="caption" color="text.secondary" component="p" sx={{ mb: 1.5 }}>
+              O passo é o tamanho da mudança deste ciclo, não o valor final: o jogo não envia o seu setup atual nem o curso dos sliders.
+              {snapshot ? '' : ' Mude, teste 2–3 voltas e use “Reiniciar coleta”.'}
             </Typography>
             {recommendation.thisCycle.length === 0 ? (
               <Paper variant="outlined" sx={{ p: 3, borderRadius: 2 }}>

@@ -165,8 +165,11 @@ export const makeRecommendation = (overrides?: Partial<TuningRecommendationDTO>)
     direction: 'INCREASE' as const,
     rationale: 'A suspensão está batendo no limite de curso.',
     evidence: 'Suspensão traseira no fundo de curso em 7% das amostras (roda RL; limite 3%)',
+    amount: 0.5,
+    unit: 'cm',
+    magnitude: 'SMALL' as const,
   };
-  const second = { ...suggestion, priority: 2, guide: 'pneus', parameter: 'Pressão dos pneus traseiros', direction: 'DECREASE' as const, rationale: 'Pneu superaquecido perde aderência.', evidence: 'Temperatura média do eixo traseiro: 225 °F (máximo aceitável 210 °F)' };
+  const second = { ...suggestion, priority: 2, guide: 'pneus', parameter: 'Pressão dos pneus traseiros', direction: 'DECREASE' as const, rationale: 'Pneu superaquecido perde aderência.', evidence: 'Temperatura média do eixo traseiro: 225 °F (máximo aceitável 210 °F)', amount: 0.3, unit: 'bar', magnitude: 'LARGE' as const };
   return {
     carOrdinal: 3667,
     carName: '2021 Porsche 911 GT3',

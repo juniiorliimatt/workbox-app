@@ -198,6 +198,10 @@ export interface TuningSuggestionDTO {
   direction: TuningDirection;
   rationale: string;
   evidence: string;
+  /** Tamanho do passo deste ciclo (não o valor final: o Data Out não traz o setup), na unidade `unit`. Nulo em fotos antigas. */
+  amount?: number | null;
+  unit?: string | null;
+  magnitude?: 'SMALL' | 'MEDIUM' | 'LARGE' | null;
 }
 
 export interface TuningGuideDTO {

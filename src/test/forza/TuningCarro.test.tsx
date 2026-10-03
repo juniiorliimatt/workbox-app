@@ -57,6 +57,71 @@ describe('Forza · Tuning · recomendação do carro', () => {
     expect(within(items[0]).getByText(/no FH5 o slider de equilíbrio é invertido/i)).toBeInTheDocument();
   });
 
+  it('shows HOW MUCH to change, in the unit the game shows, with the size of the step', async () => {
+    renderPage();
+
+    const cycle = await screen.findByRole('region', { name: /Aplicar neste ciclo/i });
+    const items = within(cycle).getAllByRole('listitem');
+    expect(within(items[0]).getByText(/Aumentar 0,5 cm/)).toBeInTheDocument();
+    expect(within(items[0]).getByText('Passo pequeno')).toBeInTheDocument();
+    expect(within(items[1]).getByText(/Reduzir 0,3 bar/)).toBeInTheDocument();
+    expect(within(items[1]).getByText('Passo grande')).toBeInTheDocument();
+  });
+
+  it('words the brake balance step as a move of N points toward the front or the rear', async () => {
+    const toFront = { priority: 1, thisCycle: true, guide: 'freios', parameter: 'Equilíbrio de freio', axle: 'FRONT' as const, direction: 'INCREASE' as const, rationale: 'r', evidence: 'e', amount: 2, unit: 'pontos percentuais', magnitude: 'MEDIUM' as const };
+    mockApi.get.mockResolvedValue({ data: makeRecommendation({ thisCycle: [toFront] }) });
+
+    renderPage();
+
+    const cycle = await screen.findByRole('region', { name: /Aplicar neste ciclo/i });
+    expect(within(cycle).getByText(/Mover 2 pontos percentuais para a dianteira/)).toBeInTheDocument();
+    expect(within(cycle).getByText('Passo médio')).toBeInTheDocument();
+  });
+
+  it('shows only the direction when the step is unknown (never an invented number)', async () => {
+    const noStep = { priority: 1, thisCycle: true, guide: 'cambio', parameter: 'Relação da 4ª marcha', axle: 'NONE' as const, direction: 'DECREASE' as const, rationale: 'r', evidence: 'e', amount: null, unit: null, magnitude: null };
+    mockApi.get.mockResolvedValue({ data: makeRecommendation({ thisCycle: [noStep] }) });
+
+    renderPage();
+
+    const cycle = await screen.findByRole('region', { name: /Aplicar neste ciclo/i });
+    expect(within(cycle).getByText('Reduzir')).toBeInTheDocument();
+    expect(within(cycle).queryByText(/Passo /)).not.toBeInTheDocument();
+    expect(within(cycle).queryByText(/null|undefined|NaN/)).not.toBeInTheDocument();
+  });
+
+  it('glues degrees and percent to the number, and spaces the other units', async () => {
+    const base = { priority: 1, thisCycle: true, guide: 'alinhamento', axle: 'FRONT' as const, direction: 'DECREASE' as const, rationale: 'r', evidence: 'e', magnitude: 'SMALL' as const };
+    const camber = { ...base, parameter: 'Cambagem dianteira (mais negativa)', amount: 0.2, unit: '°' };
+    const spring = { ...base, priority: 2, guide: 'molas', parameter: 'Mola dianteira', amount: 5, unit: '% do curso do slider' };
+    const ratio = { ...base, priority: 3, guide: 'cambio', parameter: 'Relação final (transmissão final)', axle: 'NONE' as const, amount: 0.1, unit: 'na relação' };
+    mockApi.get.mockResolvedValue({ data: makeRecommendation({ thisCycle: [camber, spring, ratio] }) });
+
+    renderPage();
+
+    const cycle = await screen.findByRole('region', { name: /Aplicar neste ciclo/i });
+    expect(within(cycle).getByText('Reduzir 0,2°')).toBeInTheDocument();
+    expect(within(cycle).getByText('Reduzir 5% do curso do slider')).toBeInTheDocument();
+    expect(within(cycle).getByText('Reduzir 0,1 na relação')).toBeInTheDocument();
+  });
+
+  it('shows only the direction when there is a unit but no amount', async () => {
+    const odd = { priority: 1, thisCycle: true, guide: 'pneus', parameter: 'Pressão dos pneus dianteiros', axle: 'FRONT' as const, direction: 'DECREASE' as const, rationale: 'r', evidence: 'e', amount: null, unit: 'bar', magnitude: null };
+    mockApi.get.mockResolvedValue({ data: makeRecommendation({ thisCycle: [odd] }) });
+
+    renderPage();
+
+    const cycle = await screen.findByRole('region', { name: /Aplicar neste ciclo/i });
+    expect(within(cycle).getByText('Reduzir')).toBeInTheDocument();
+  });
+
+  it('explains that the step is the size of this cycle\'s change, not the final value', async () => {
+    renderPage();
+
+    expect(await screen.findByText(/tamanho da mudança deste ciclo, não o valor final/i)).toBeInTheDocument();
+  });
+
   it('keeps increase/decrease for every other parameter', async () => {
     renderPage();
 
