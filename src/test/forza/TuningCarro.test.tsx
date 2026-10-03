@@ -39,6 +39,33 @@ describe('Forza · Tuning · recomendação do carro', () => {
     expect(within(items[1]).getByText(/225 °F/)).toBeInTheDocument();
   });
 
+  it('words the brake balance as a move toward the front or the rear (never increase/decrease)', async () => {
+    const toFront = { priority: 1, thisCycle: true, guide: 'freios', parameter: 'Equilíbrio de freio', axle: 'FRONT' as const, direction: 'INCREASE' as const, rationale: 'Sobresterço na entrada.', evidence: '60% das amostras de entrada de curva em sobresterço (n=700)' };
+    const toRear = { ...toFront, priority: 2, axle: 'REAR' as const, rationale: 'Subesterço na entrada.', evidence: '58% das amostras de entrada de curva em subesterço (n=700)' };
+    mockApi.get.mockResolvedValue({
+      data: makeRecommendation({ thisCycle: [toFront, toRear], guides: makeGuides({ freios: { status: 'ADJUST', summary: '2 ajustes sugeridos', suggestions: [toFront, toRear] } }) }),
+    });
+
+    renderPage();
+
+    const cycle = await screen.findByRole('region', { name: /Aplicar neste ciclo/i });
+    const items = within(cycle).getAllByRole('listitem');
+    expect(within(items[0]).getByText(/Mover para a dianteira/)).toBeInTheDocument();
+    expect(within(items[1]).getByText(/Mover para a traseira/)).toBeInTheDocument();
+    expect(within(cycle).queryByText(/Aumentar/)).not.toBeInTheDocument();
+    expect(within(cycle).queryByText(/Reduzir/)).not.toBeInTheDocument();
+    expect(within(items[0]).getByText(/no FH5 o slider de equilíbrio é invertido/i)).toBeInTheDocument();
+  });
+
+  it('keeps increase/decrease for every other parameter', async () => {
+    renderPage();
+
+    const cycle = await screen.findByRole('region', { name: /Aplicar neste ciclo/i });
+    expect(within(cycle).getByText(/Aumentar/)).toBeInTheDocument();
+    expect(within(cycle).queryByText(/Mover para a/)).not.toBeInTheDocument();
+    expect(within(cycle).queryByText(/slider de equilíbrio/i)).not.toBeInTheDocument();
+  });
+
   it('shows EVERY tuning guide of the game, even the ones with nothing to change', async () => {
     renderPage();
 

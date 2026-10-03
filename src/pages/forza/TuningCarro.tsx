@@ -42,24 +42,39 @@ const STATUS: Record<TuningGuideStatus, { label: string; color: 'warning' | 'suc
   NO_SIGNAL: { label: 'Sem sinal na telemetria', color: 'default' },
 };
 
+/** O equilíbrio de freio é um deslocamento entre eixos, não um "aumentar/reduzir": o eixo da sugestão diz para onde. */
+const isBrakeBalance = (suggestion: TuningSuggestionDTO) => suggestion.parameter.startsWith('Equilíbrio de freio');
+
 /** Sentido em texto + ícone (a informação nunca fica só na cor). */
-const Direction: FC<{ direction: TuningSuggestionDTO['direction'] }> = ({ direction }) => (
-  <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', fontWeight: 700 }}>
-    {direction === 'INCREASE' ? <UpIcon fontSize="small" aria-hidden /> : <DownIcon fontSize="small" aria-hidden />}
-    {direction === 'INCREASE' ? 'Aumentar' : 'Reduzir'}
-  </Box>
-);
+const Direction: FC<{ suggestion: TuningSuggestionDTO }> = ({ suggestion }) => {
+  if (isBrakeBalance(suggestion)) {
+    const toFront = suggestion.axle === 'FRONT';
+    return (
+      <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', fontWeight: 700 }}>
+        {toFront ? <UpIcon fontSize="small" aria-hidden /> : <DownIcon fontSize="small" aria-hidden />}
+        {toFront ? 'Mover para a dianteira' : 'Mover para a traseira'}
+      </Box>
+    );
+  }
+  return (
+    <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', fontWeight: 700 }}>
+      {suggestion.direction === 'INCREASE' ? <UpIcon fontSize="small" aria-hidden /> : <DownIcon fontSize="small" aria-hidden />}
+      {suggestion.direction === 'INCREASE' ? 'Aumentar' : 'Reduzir'}
+    </Box>
+  );
+};
 
 const Suggestion: FC<{ suggestion: TuningSuggestionDTO }> = ({ suggestion }) => {
   const axle = AXLE_LABEL[suggestion.axle];
+  const brake = isBrakeBalance(suggestion);
   return (
     <Box>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
         <Typography component="span" sx={{ fontWeight: 600 }}>
           {suggestion.parameter}
         </Typography>
-        <Direction direction={suggestion.direction} />
-        {axle && <Chip size="small" variant="outlined" label={axle} />}
+        <Direction suggestion={suggestion} />
+        {axle && !brake && <Chip size="small" variant="outlined" label={axle} />}
       </Box>
       <Typography variant="body2" sx={{ mt: 0.5 }}>
         {suggestion.rationale}
@@ -67,6 +82,11 @@ const Suggestion: FC<{ suggestion: TuningSuggestionDTO }> = ({ suggestion }) => 
       <Typography variant="caption" color="text.secondary" component="p" sx={{ mt: 0.5 }}>
         Evidência: {suggestion.evidence}
       </Typography>
+      {brake && (
+        <Typography variant="caption" color="text.secondary" component="p" sx={{ mt: 0.5 }}>
+          Siga o sentido em palavras: no FH5 o slider de equilíbrio é invertido; no FH6 a direita é mais freio na dianteira.
+        </Typography>
+      )}
     </Box>
   );
 };
