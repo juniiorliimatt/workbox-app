@@ -11,6 +11,11 @@ variables:
 lint-test-build:
   stage: verify
   image: node:22
+  # Roda em toda branch E nos pipelines de merge request: o sonarcloud-check (só MR/main) depende deste job
+  # (`needs`) para receber o coverage/lcov.info — sem o job no pipeline de MR o GitLab nem cria o pipeline.
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH
   cache:
     key:
       files:
