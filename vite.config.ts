@@ -51,5 +51,14 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: './src/test/setupTests.ts',
     css: false,
+    // `npm run test:coverage`: o lcov alimenta o Sonar (sonar.javascript.lcov.reportPaths); sem ele a cobertura do
+    // código novo é 0% e o Quality Gate reprova.
+    coverage: {
+      provider: 'v8',
+      reporter: ['text-summary', 'lcov'],
+      reportsDirectory: 'coverage',
+      include: ['src/**/*.{ts,tsx}'],
+      exclude: ['src/test/**', 'src/**/*.d.ts', 'src/main.tsx', 'src/vite-env.d.ts', 'src/interfaces/**'],
+    },
   },
 });

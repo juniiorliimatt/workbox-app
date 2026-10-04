@@ -181,8 +181,10 @@ textos exatos). Achado preservado: o "Novo Tipo de Receita" tem checkboxes de co
   (`admin@`/`user@workbox.local`) não têm senha estável.
 - **Validação visual**: após alterar UI, validar render/interação/console no browser
   (skills `webapp-testing` / Chrome) e relatar em 1 linha o que foi verificado.
-- CI (`.gitlab-ci.yml`): `lint-test-build` (node:22: `npm ci`, `npm run lint`, `npm test`,
-  `npm run build`) em **toda** branch/MR, e `sonarcloud-check` só em MR e `main`. O E2E
+- CI (`.gitlab-ci.yml`): `lint-test-build` (node:22: `npm ci`, `npm run lint`, `npm run test:coverage`,
+  `npm run build`) em **toda** branch/MR — publica `coverage/lcov.info` como artefato —, e `sonarcloud-check` só em
+  MR e `main`, que consome esse artefato (`needs` + `sonar.javascript.lcov.reportPaths`; sem ele a cobertura do código
+  novo seria 0% e o Quality Gate reprova). `sonar-project.properties` separa `src` (código) de `src/test` (testes). O E2E
   (`test:e2e`, Docker + Chrome) não roda no CI. Lint está zerado de erros — mantenha assim.
 
 ## Manutenção do README
