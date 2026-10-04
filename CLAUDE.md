@@ -76,6 +76,11 @@ ao mexer, prefira extrair componente/hook em vez de crescer o arquivo.
   sozinho **não** libera módulo — é a role inicial, o ADMIN concede a role do módulo em `/admin/modulos`
   (`PUT /api/v1/role/{id}/module`). A trava de verdade é o 403 dos backends; o front só esconde o card.
   Módulo novo = migration no `workbox-api` + `moduleCode` no card do Dashboard.
+- **Backups** (`/admin/backups`, `pages/AdminBackups.tsx`): consome o `backup-service` (`/api/v1/backups`, roteado no Vite
+  — `VITE_BACKUP_API_URL`, default `:7058` — e no nginx via `BACKUP_SERVICE_UPSTREAM`, com `proxy_read_timeout 300s` porque a
+  geração roda o `pg_dump` na hora). Só ADMIN. **Sem restore na tela, de propósito** (decisão do desenvolvedor): só script.
+  A senha de cifra existe só no estado do formulário e é limpa após o envio; download é `responseType: 'blob'` autenticado
+  (`createObjectURL` + âncora), nunca um link direto (o endpoint exige Bearer).
 - Só `VITE_PUBLIC_URL_API` é lida pelo código; as demais chaves de `.env`/
   `.env.development` são resíduo de scaffold (não documentar como comportamento real).
 

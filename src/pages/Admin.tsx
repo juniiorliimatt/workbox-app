@@ -16,6 +16,7 @@ import {
   PeopleAlt as UsersIcon,
   Security as SecurityIcon,
   AccountTree as ModulesIcon,
+  Backup as BackupIcon,
   History as HistoryIcon,
 } from '@mui/icons-material';
 import AppNavbar from '@/components/AppNavbar';
@@ -139,6 +140,39 @@ const Admin: FC = () => {
                 <Divider sx={{ width: '100%', mb: 1.5 }} />
                 <Typography variant="body2" color="text.secondary">
                   Vínculo entre papéis e módulos do sistema: o usuário só acessa os módulos liberados pelos seus papéis.
+                </Typography>
+              </CardActionArea>
+            </Card>
+          </Grid>
+
+          {/* Card 5: Backup do banco */}
+          <Grid item xs={12} md={6} lg={3}>
+            <Card
+              elevation={2}
+              sx={{
+                height: '100%',
+                borderRadius: 2,
+                transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
+                '&:hover': {
+                  transform: 'translateY(-4px)',
+                  boxShadow: 6,
+                },
+              }}
+            >
+              <CardActionArea
+                onClick={() => navigate('/admin/backups')}
+                sx={{ height: '100%', p: 2, display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}
+              >
+                <Box sx={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                  <BackupIcon color="primary" sx={{ fontSize: 36 }} />
+                  <Chip label="Gerenciar" size="small" color="primary" />
+                </Box>
+                <Typography variant="h6" component="h3" sx={{ fontWeight: 600, mb: 1 }}>
+                  Backup do banco
+                </Typography>
+                <Divider sx={{ width: '100%', mb: 1.5 }} />
+                <Typography variant="body2" color="text.secondary">
+                  Gera, baixa e apaga backups completos do banco de dados, com cifra opcional por senha.
                 </Typography>
               </CardActionArea>
             </Card>

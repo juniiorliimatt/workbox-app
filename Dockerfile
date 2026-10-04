@@ -15,5 +15,6 @@ COPY nginx.conf.template /etc/nginx/templates/default.conf.template
 # resolução tardia no nginx, um serviço ausente do ambiente só gera 502 na rota dele.
 ENV WORKBOX_API_UPSTREAM=http://workbox-api:8080 \
     BUDGET_SERVICE_UPSTREAM=http://budget-service:8081 \
-    FORZA_SERVICE_UPSTREAM=http://forza-telemetry-service:8083
+    FORZA_SERVICE_UPSTREAM=http://forza-telemetry-service:8083 \
+    BACKUP_SERVICE_UPSTREAM=http://backup-service:8084
 EXPOSE 8080

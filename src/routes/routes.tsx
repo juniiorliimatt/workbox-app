@@ -95,6 +95,10 @@ export const router = createBrowserRouter([
         lazy: async () => ({ Component: (await import('@/pages/AdminModulos')).default }),
       },
       {
+        path: '/admin/backups',
+        lazy: async () => ({ Component: (await import('@/pages/AdminBackups')).default }),
+      },
+      {
         path: '/admin/auditoria',
         lazy: async () => ({ Component: (await import('@/pages/AdminAuditoria')).default }),
       },

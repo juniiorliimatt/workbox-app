@@ -36,6 +36,10 @@ export default defineConfig({
         target: process.env.VITE_FORZA_API_URL || 'http://localhost:7057',
         changeOrigin: true,
       },
+      '^/api/v1/backups': {
+        target: process.env.VITE_BACKUP_API_URL || 'http://localhost:7058',
+        changeOrigin: true,
+      },
       '/api': {
         target: process.env.VITE_API_URL || 'http://localhost:7051',
         changeOrigin: true,

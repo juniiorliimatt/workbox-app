@@ -62,6 +62,7 @@ src/
 │   ├── AdminUsuarios.tsx  # Gestão completa de usuários (CRUD + fotos + papéis)
 │   ├── AdminPapeis.tsx    # Gestão de papéis e permissões
 │   ├── AdminModulos.tsx   # Vínculo papel → módulo (acesso aos módulos)
+│   ├── AdminBackups.tsx   # Backup do banco (gerar, cifrar, baixar, excluir)
 │   ├── AdminAuditoria.tsx # Trilha de auditoria e segurança de logins
 │   ├── Financas.tsx       # Módulo de Finanças Pessoais (budget)
 │   ├── Forza.tsx          # Hub do módulo Forza (telemetria)
@@ -164,6 +165,10 @@ Exclusivo para contas com permissão de administrador (papel `ADMIN`):
   - Lista os papéis (menos `ADMIN` e `USER`) com um seletor do módulo que cada um libera (`Sem módulo`, Finanças, Forza), via `PUT /api/v1/role/{id}/module`.
   - Regra: `USER` é só a role inicial de quem se cadastra e **não libera módulo nenhum**; o ADMIN concede ao usuário o papel do módulo em Gestão de Usuários. `ADMIN` acessa todos.
   - O backend valida: `budget-service` e `forza-telemetry-service` respondem **403** a quem não tem o módulo.
+- **Backup do banco** (`/admin/backups`, consome o `backup-service`, só ADMIN):
+  - "Gerar backup agora" (síncrono; trava o botão enquanto roda), com opção **Cifrar com senha** (mín. 12 caracteres + confirmação; a senha limpa da tela depois de usada e nunca é guardada pelo servidor).
+  - Lista com arquivo, **caminho no host** do arquivo, data, tamanho, quem gerou, SHA-256 e se está cifrado; ações **Baixar** (blob autenticado) e **Excluir** (com confirmação).
+  - Não há restore na tela — o aviso aponta para `scripts/restore-db.sh` (e `scripts/decrypt-backup.sh` para arquivos cifrados).
 - **Auditoria de Logins** (`/admin/auditoria`):
   - Visualização de trilha de acessos: data/hora, e-mail do usuário, endereço IP de origem e status de sucesso ou falha (ex.: `mfa_invalid_code`, `bad_credentials`).
   - Filtro em tempo real por termo de busca.
@@ -241,7 +246,7 @@ produção usa os mesmos defaults do `.env`, servido pelo Nginx do container).
 |---|---|---|
 | `VITE_PUBLIC_URL_API` | Única variável efetivamente lida pelo código (`src/services/api.ts`) — base URL da API (`workbox-api`). Em dev, vazio utiliza o proxy do Vite `/api`. | `""` |
 
-O proxy de desenvolvimento (`vite.config.ts`, só `npm run dev`) lê, via `process.env`, `VITE_API_URL` (default `http://localhost:7051`), `VITE_BUDGET_API_URL` (`http://localhost:7052`) e `VITE_FORZA_API_URL` (`http://localhost:7057`). No container, o nginx usa `WORKBOX_API_UPSTREAM`, `BUDGET_SERVICE_UPSTREAM` e `FORZA_SERVICE_UPSTREAM` (definidas no `docker-compose.yml` da raiz).
+O proxy de desenvolvimento (`vite.config.ts`, só `npm run dev`) lê, via `process.env`, `VITE_API_URL` (default `http://localhost:7051`), `VITE_BUDGET_API_URL` (`http://localhost:7052`) e `VITE_FORZA_API_URL` (`http://localhost:7057`) e `VITE_BACKUP_API_URL` (`http://localhost:7058`). No container, o nginx usa `WORKBOX_API_UPSTREAM`, `BUDGET_SERVICE_UPSTREAM`, `FORZA_SERVICE_UPSTREAM` e `BACKUP_SERVICE_UPSTREAM` (definidas no `docker-compose.yml` da raiz).
 
 As demais chaves em `.env`/`.env.development` (`VITE_PUBLIC_URL_API_ORIGIN`,
 `VITE_INITIAL_PATH`, `VITE_PUBLIC_SSO_LOGIN_URL`, `VITE_PUBLIC_SSO_LOGOUT_URL`,
