@@ -22,6 +22,8 @@ export interface SessionDTO {
   endedAt?: string | null;
   sampleCount: number;
   active: boolean;
+  /** As amostras brutas foram apagadas ao reiniciar a coleta do carro (resumo e voltas continuam). */
+  samplesPurged?: boolean;
 }
 
 export interface SessionPageDTO {

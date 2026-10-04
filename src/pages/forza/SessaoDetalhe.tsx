@@ -19,12 +19,14 @@ export const SAMPLES_LIMIT = 10000;
 type LoadError = 'not-found' | 'generic' | null;
 type TabKey = 'resumo' | 'voltas' | 'telemetria';
 
-const TelemetryTab: FC<{ sessionId: string }> = ({ sessionId }) => {
+const TelemetryTab: FC<{ sessionId: string; purged: boolean }> = ({ sessionId, purged }) => {
   const api = useAxiosWithAuth();
   const [samples, setSamples] = useState<SampleDTO[] | null>(null);
   const [error, setError] = useState(false);
 
   useEffect(() => {
+    // Amostras já apagadas (coleta reiniciada): não há o que buscar.
+    if (purged) return undefined;
     const controller = new AbortController();
     setSamples(null);
     setError(false);
@@ -34,8 +36,16 @@ const TelemetryTab: FC<{ sessionId: string }> = ({ sessionId }) => {
         if (!axios.isCancel(e)) setError(true);
       });
     return () => controller.abort();
-  }, [api, sessionId]);
+  }, [api, sessionId, purged]);
 
+  if (purged) {
+    return (
+      <Alert severity="info">
+        Amostras removidas ao reiniciar a coleta deste carro. O resumo e as voltas continuam disponíveis; só a telemetria
+        detalhada desta sessão foi apagada.
+      </Alert>
+    );
+  }
   if (error) return <Alert severity="error">Não foi possível carregar a telemetria da sessão.</Alert>;
   if (!samples) {
     return (
@@ -193,7 +203,7 @@ const SessaoDetalhe: FC = () => {
 
             {tab === 'resumo' && <TuningSummaryView summary={summary} />}
             {tab === 'voltas' && <LapsTable laps={laps} />}
-            {tab === 'telemetria' && <TelemetryTab sessionId={session.id} />}
+            {tab === 'telemetria' && <TelemetryTab sessionId={session.id} purged={Boolean(session.samplesPurged)} />}
           </>
         )}
       </Container>

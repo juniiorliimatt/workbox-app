@@ -158,6 +158,18 @@ describe('Forza · Detalhe da sessão', () => {
     expect(call?.[1].params).toEqual({ limit: 10000 });
   });
 
+  it('explains that the raw samples were removed and does not fetch them', async () => {
+    const user = userEvent.setup();
+    stub({ session: makeSession({ id: ID, samplesPurged: true }) });
+
+    renderPage();
+    await user.click(await screen.findByRole('tab', { name: /Telemetria/i }));
+
+    expect(await screen.findByText(/Amostras removidas ao reiniciar a coleta/i)).toBeInTheDocument();
+    expect(screen.getByText(/resumo e as voltas continuam/i)).toBeInTheDocument();
+    expect(mockApi.get.mock.calls.some((c) => String(c[0]).endsWith('/samples'))).toBe(false);
+  });
+
   it('says so when the telemetry window was truncated by the limit', async () => {
     const user = userEvent.setup();
     const samples = Array.from({ length: 10000 }, (_, i) => ({ tMs: i * 50, speed: 20, rpm: 4000, accel: 0, brake: 0, gear: 3 }));
