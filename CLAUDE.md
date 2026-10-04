@@ -41,8 +41,16 @@ Despesas, Orcamentos, GerenciarTipos}`) · `routes/` (`routes.tsx`, `ProtectedRo
 Aliases (`@`, `@components`, `@pages`, `@services`, `@contexts`, `@hooks`, `@interfaces`,
 `@routes`, `@utils`, ...) em `vite.config.ts` e `tsconfig.json` — vários (`@i18n`,
 `@models`, `@themes`, `@config`, `@img`) apontam pra diretórios que **não existem**.
-Páginas grandes (Perfil 921, AdminUsuarios 754, Despesas 703, Receitas 670 linhas):
-ao mexer, prefira extrair componente/hook em vez de crescer o arquivo.
+Páginas grandes (Perfil 921, AdminUsuarios 754 linhas): ao mexer, prefira extrair
+componente/hook em vez de crescer o arquivo.
+**Receitas e Despesas** (`pages/financas/`) são finas (~90–110 linhas) e compartilham `pages/financas/lancamentos/`:
+`useLancamentos` (carga, filtros mensal/anual, ordenação, paginação, CRUD, auditoria, novo tipo — o que muda entre as
+duas entra por `LancamentoConfig`: URLs, payloads e as mensagens exatas), `LancamentosPage` (layout, com slots pro que
+é só de uma: descrição/"Pago" da despesa, categoria 50/30/20 do tipo de despesa, flags do tipo de receita),
+`BatchLaunchModal` (lote mensal/anual por `kind`), `AuditHistoryDialog`, `NewTypeDialog`, `LancamentoFilterBar`.
+Mudança que vale pras duas vai no compartilhado; o que é de uma só vai na config/slot dela. A suíte
+`test/budget/Lancamentos.test.tsx` roda os mesmos comportamentos nas duas telas — é a rede de segurança (payloads e
+textos exatos). Achado preservado: o "Novo Tipo de Receita" tem checkboxes de contagem que a API ainda não recebe.
 
 ## Integração com backends
 - Consome `workbox-api`, `budget-service` e `forza-telemetry-service`, e **apenas** a partir do

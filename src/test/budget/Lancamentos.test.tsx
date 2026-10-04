@@ -20,6 +20,10 @@ import { createAuthValue } from '../forza/helpers';
 const { mockApi } = vi.hoisted(() => ({ mockApi: { get: vi.fn(), post: vi.fn(), put: vi.fn(), delete: vi.fn() } }));
 vi.mock('@/services/useAxiosWithAuth', () => ({ useAxiosWithAuth: () => mockApi, default: () => mockApi }));
 
+// Os fluxos de diálogo digitam em vários campos (MUI + DatePicker); com a suíte inteira rodando em paralelo passam do
+// limite padrão de 5 s sem que haja nada errado.
+vi.setConfig({ testTimeout: 20_000 });
+
 const TODAY = dayjs().format('YYYY-MM-DD');
 const NOW = new Date();
 
