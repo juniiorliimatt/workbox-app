@@ -71,6 +71,11 @@ ao mexer, prefira extrair componente/hook em vez de crescer o arquivo.
   `isAdmin`, `includes('ROLE_ADMIN')`). Não criar/exibir/comparar authority com `ROLE_`
   nos CRUDs — já causou a role `ADMIN` virar `ROLE_ADMIN` no banco. Fixtures de teste que
   simulam o **JWT decodificado** usam `ROLE_*`; as que simulam resposta de CRUD, não.
+- **Módulos**: `/auth/me` devolve `modules` (códigos `FINANCAS`, `FORZA`; ADMIN recebe todos) e o
+  `Dashboard` só mostra o card do módulo a quem o tem (`moduleCode` no card; ADMIN sempre vê). `USER`
+  sozinho **não** libera módulo — é a role inicial, o ADMIN concede a role do módulo em `/admin/modulos`
+  (`PUT /api/v1/role/{id}/module`). A trava de verdade é o 403 dos backends; o front só esconde o card.
+  Módulo novo = migration no `workbox-api` + `moduleCode` no card do Dashboard.
 - Só `VITE_PUBLIC_URL_API` é lida pelo código; as demais chaves de `.env`/
   `.env.development` são resíduo de scaffold (não documentar como comportamento real).
 

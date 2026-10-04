@@ -15,6 +15,7 @@ import {
   AdminPanelSettings as AdminIcon,
   PeopleAlt as UsersIcon,
   Security as SecurityIcon,
+  AccountTree as ModulesIcon,
   History as HistoryIcon,
 } from '@mui/icons-material';
 import AppNavbar from '@/components/AppNavbar';
@@ -45,7 +46,7 @@ const Admin: FC = () => {
 
         <Grid container spacing={3}>
           {/* Card 1: Gestão de Usuários */}
-          <Grid item xs={12} md={4}>
+          <Grid item xs={12} md={6} lg={3}>
             <Card
               elevation={2}
               sx={{
@@ -78,7 +79,7 @@ const Admin: FC = () => {
           </Grid>
 
           {/* Card 2: Papéis & Permissões */}
-          <Grid item xs={12} md={4}>
+          <Grid item xs={12} md={6} lg={3}>
             <Card
               elevation={2}
               sx={{
@@ -110,8 +111,41 @@ const Admin: FC = () => {
             </Card>
           </Grid>
 
-          {/* Card 3: Auditoria de Logins */}
-          <Grid item xs={12} md={4}>
+          {/* Card 3: Papéis × Módulos */}
+          <Grid item xs={12} md={6} lg={3}>
+            <Card
+              elevation={2}
+              sx={{
+                height: '100%',
+                borderRadius: 2,
+                transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
+                '&:hover': {
+                  transform: 'translateY(-4px)',
+                  boxShadow: 6,
+                },
+              }}
+            >
+              <CardActionArea
+                onClick={() => navigate('/admin/modulos')}
+                sx={{ height: '100%', p: 2, display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}
+              >
+                <Box sx={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                  <ModulesIcon color="primary" sx={{ fontSize: 36 }} />
+                  <Chip label="Gerenciar" size="small" color="primary" />
+                </Box>
+                <Typography variant="h6" component="h3" sx={{ fontWeight: 600, mb: 1 }}>
+                  Papéis × Módulos
+                </Typography>
+                <Divider sx={{ width: '100%', mb: 1.5 }} />
+                <Typography variant="body2" color="text.secondary">
+                  Vínculo entre papéis e módulos do sistema: o usuário só acessa os módulos liberados pelos seus papéis.
+                </Typography>
+              </CardActionArea>
+            </Card>
+          </Grid>
+
+          {/* Card 4: Auditoria de Logins */}
+          <Grid item xs={12} md={6} lg={3}>
             <Card
               elevation={2}
               sx={{

@@ -38,6 +38,8 @@ interface IModuleCard {
   path?: string;
   enabled: boolean;
   adminOnly?: boolean;
+  /** Código do módulo no workbox-api — o card só aparece pra quem tem a role que o libera (ADMIN vê todos). */
+  moduleCode?: string;
 }
 
 const MODULES_LIST: IModuleCard[] = [
@@ -57,6 +59,7 @@ const MODULES_LIST: IModuleCard[] = [
     icon: <WalletIcon sx={{ fontSize: 40 }} color="primary" />,
     path: '/financas',
     enabled: true,
+    moduleCode: 'FINANCAS',
   },
   {
     id: 'forza',
@@ -65,6 +68,7 @@ const MODULES_LIST: IModuleCard[] = [
     icon: <ForzaIcon sx={{ fontSize: 40 }} color="primary" />,
     path: '/forza',
     enabled: true,
+    moduleCode: 'FORZA',
   },
   {
     id: 'tarefas',
@@ -142,10 +146,14 @@ const Dashboard: FC = () => {
   const { user, isAdmin } = useAuth();
   const navigate = useNavigate();
 
-  // Filtra cards de acordo com privilégios do usuário
-  const visibleModules = MODULES_LIST.filter(
-    (mod) => !mod.adminOnly || isAdmin
-  );
+  // Filtra cards de acordo com privilégios do usuário: Administração só ADMIN; módulos
+  // liberados (Finanças, Forza...) só pra quem tem a role do módulo (ADMIN vê todos).
+  // A validação de verdade é do backend (403) — isto só evita mostrar o que não abre.
+  const visibleModules = MODULES_LIST.filter((mod) => {
+    if (mod.adminOnly) return isAdmin;
+    if (mod.moduleCode) return isAdmin || Boolean(user?.modules?.includes(mod.moduleCode));
+    return true;
+  });
 
   return (
     <Box sx={{ width: '100%', minHeight: '100vh', bgcolor: 'grey.50', display: 'flex', flexDirection: 'column' }}>

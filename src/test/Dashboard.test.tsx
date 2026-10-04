@@ -91,17 +91,20 @@ describe('Dashboard Component', () => {
     expect(emBreveBadges).toHaveLength(10);
   });
 
+  const regularUser = (modules?: string[]) => ({
+    isAdmin: false,
+    user: {
+      id: '456',
+      socialName: 'Usuário Padrão',
+      email: 'user@workbox.local',
+      enabled: true,
+      roles: ['ROLE_USER'],
+      modules,
+    },
+  });
+
   it('hides the Administração card when user is a regular non-admin user (Finanças comes first)', () => {
-    renderDashboard({
-      isAdmin: false,
-      user: {
-        id: '456',
-        socialName: 'Usuário Padrão',
-        email: 'user@workbox.local',
-        enabled: true,
-        roles: ['ROLE_USER'],
-      },
-    });
+    renderDashboard(regularUser(['FINANCAS', 'FORZA']));
 
     expect(screen.getByText(/Olá, Usuário Padrão! Selecione um módulo/i)).toBeInTheDocument();
 
@@ -110,6 +113,28 @@ describe('Dashboard Component', () => {
 
     expect(screen.getByText('Finanças')).toBeInTheDocument();
     expect(screen.queryByText('Administração')).not.toBeInTheDocument();
+  });
+
+  it('shows only the modules granted to the user (Forza without Finanças)', () => {
+    renderDashboard(regularUser(['FORZA']));
+
+    expect(screen.getByText('Forza')).toBeInTheDocument();
+    expect(screen.queryByText('Finanças')).not.toBeInTheDocument();
+  });
+
+  it('shows no module card for a freshly created user (USER only, no module role yet)', () => {
+    renderDashboard(regularUser([]));
+
+    expect(screen.queryByText('Finanças')).not.toBeInTheDocument();
+    expect(screen.queryByText('Forza')).not.toBeInTheDocument();
+    expect(screen.queryByText('Administração')).not.toBeInTheDocument();
+  });
+
+  it('treats a profile without the modules field as having no module', () => {
+    renderDashboard(regularUser(undefined));
+
+    expect(screen.queryByText('Finanças')).not.toBeInTheDocument();
+    expect(screen.queryByText('Forza')).not.toBeInTheDocument();
   });
 
   it('navigates to /admin when clicking the Administração card', async () => {

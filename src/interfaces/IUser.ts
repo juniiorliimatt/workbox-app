@@ -5,4 +5,6 @@ export interface IUser {
   enabled: boolean;
   avatarUrl?: string | null;
   roles?: string[];
+  /** Códigos dos módulos liberados (FINANCAS, FORZA...) — vem de /auth/me; ADMIN recebe todos. */
+  modules?: string[];
 }

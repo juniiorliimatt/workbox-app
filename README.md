@@ -61,6 +61,7 @@ src/
 │   ├── Admin.tsx          # Hub de acesso aos módulos administrativos
 │   ├── AdminUsuarios.tsx  # Gestão completa de usuários (CRUD + fotos + papéis)
 │   ├── AdminPapeis.tsx    # Gestão de papéis e permissões
+│   ├── AdminModulos.tsx   # Vínculo papel → módulo (acesso aos módulos)
 │   ├── AdminAuditoria.tsx # Trilha de auditoria e segurança de logins
 │   ├── Financas.tsx       # Módulo de Finanças Pessoais (budget)
 │   ├── Forza.tsx          # Hub do módulo Forza (telemetria)
@@ -108,7 +109,7 @@ em uso).
 ### 2. Hub de Módulos (`/dashboard`)
 - Tela inicial pós-login contendo **13 cards de módulos**:
   1. **Administração** (`/admin`): Exibido com prioridade para usuários com papel `ADMIN`.
-  2. **Finanças** (`/financas`): Acesso ao módulo de finanças pessoais (*budget-service*).
+  2. **Finanças** (`/financas`): Acesso ao módulo de finanças pessoais (*budget-service*). Visível só a quem tem o módulo `FINANCAS` (campo `modules` de `/auth/me`); o card de Forza segue a mesma regra com `FORZA`. ADMIN vê todos.
    - **Metas e Orçamento:** Resumos formatados em padrão monetário (BRL), gráficos de proporção (Receitas vs Despesas em PieChart), e painéis semânticos de acompanhamento de metas em abas mensais e anuais.
    - **Receitas e Despesas:** Grids completos com filtro de competência, controle de pagamento, autocomplete inteligente e **Lançamentos em Lote** (componentizados para garantir alta performance).
    - **Gerenciamento de Tipos:** Controle de categorias, regras 50/30/20 para despesas, e flags dinâmicas para Receitas (`includeInTotals` e `includeInMonthlyTotals`) ocultando os tipos desejados da contagem e gráficos.
@@ -159,6 +160,10 @@ Exclusivo para contas com permissão de administrador (papel `ADMIN`):
   - Cadastro de novas autoridades — nome puro, **sem** prefixo `ROLE_` (esse prefixo é
     adicionado só pelo backend na emissão do JWT, nunca no valor armazenado/exibido via
     `/api/v1/role`); ex.: `GESTOR`, `FINANCEIRO`.
+- **Papéis × Módulos** (`/admin/modulos`):
+  - Lista os papéis (menos `ADMIN` e `USER`) com um seletor do módulo que cada um libera (`Sem módulo`, Finanças, Forza), via `PUT /api/v1/role/{id}/module`.
+  - Regra: `USER` é só a role inicial de quem se cadastra e **não libera módulo nenhum**; o ADMIN concede ao usuário o papel do módulo em Gestão de Usuários. `ADMIN` acessa todos.
+  - O backend valida: `budget-service` e `forza-telemetry-service` respondem **403** a quem não tem o módulo.
 - **Auditoria de Logins** (`/admin/auditoria`):
   - Visualização de trilha de acessos: data/hora, e-mail do usuário, endereço IP de origem e status de sucesso ou falha (ex.: `mfa_invalid_code`, `bad_credentials`).
   - Filtro em tempo real por termo de busca.
