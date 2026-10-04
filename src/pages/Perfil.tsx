@@ -327,9 +327,14 @@ const Perfil: FC = () => {
 
   const handleCopySecret = () => {
     if (enrollData?.secret) {
-      navigator.clipboard.writeText(enrollData.secret);
-      setCopiedSecret(true);
-      setTimeout(() => setCopiedSecret(false), 2000);
+      // O navegador pode recusar (permissão, contexto inseguro): só confirma se a cópia funcionou.
+      navigator.clipboard
+        .writeText(enrollData.secret)
+        .then(() => {
+          setCopiedSecret(true);
+          setTimeout(() => setCopiedSecret(false), 2000);
+        })
+        .catch(() => setCopiedSecret(false));
     }
   };
 

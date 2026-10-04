@@ -15,7 +15,7 @@ export const IdleMonitor = () => {
     }
     if (isAuthenticated) {
       timerRef.current = setTimeout(() => {
-        logout();
+        void logout(); // o logout já trata a falha do backend e limpa o estado local
       }, IDLE_TIMEOUT_MS);
     }
   }, [isAuthenticated, logout]);

@@ -338,7 +338,7 @@ export const AuthProvider: FC<IAuthProviderProps> = ({ children }) => {
         }
       }
     };
-    initAuth();
+    void initAuth(); // o try/finally interno sempre encerra o carregamento
     return () => {
       isMounted = false;
     };

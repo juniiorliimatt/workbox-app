@@ -420,7 +420,8 @@ const GerenciarTipos: FC = () => {
         onCancel={() => setConfirmTarget(null)}
         onConfirm={() => {
           if (!confirmTarget) return;
-          if (confirmTarget.origin === 'rev') { executeDeleteRev(confirmTarget.id); } else { executeDeleteSpend(confirmTarget.id); }
+          // Os dois tratam o próprio erro (snackbar) e sempre fecham o diálogo no finally.
+          if (confirmTarget.origin === 'rev') { void executeDeleteRev(confirmTarget.id); } else { void executeDeleteSpend(confirmTarget.id); }
         }}
       />
     </Box>

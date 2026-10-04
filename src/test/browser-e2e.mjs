@@ -318,4 +318,4 @@ async function runBrowserValidation() {
   }
 }
 
-runBrowserValidation();
+await runBrowserValidation();

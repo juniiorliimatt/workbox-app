@@ -45,7 +45,7 @@ export const useLiveSnapshot = (api: AxiosInstance, intervalMs: number = LIVE_PO
       }
     };
 
-    poll();
+    void poll(); // erros são tratados dentro do próprio poll
     const timer = setInterval(poll, intervalMs);
 
     return () => {

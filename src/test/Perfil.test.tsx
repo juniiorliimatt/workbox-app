@@ -160,6 +160,32 @@ describe('Perfil Component', () => {
     });
   });
 
+  it('copies the MFA secret and confirms only when the clipboard accepts it', async () => {
+    const user = userEvent.setup();
+    const writeText = vi.spyOn(navigator.clipboard, 'writeText').mockResolvedValue(undefined);
+    renderPerfil();
+    await user.click(screen.getByRole('button', { name: /Configurar \/ Habilitar MFA/i }));
+    await screen.findByText('JBSWY3DPEHPK3PXP');
+
+    await user.click(screen.getByTitle('Copiar Chave'));
+
+    expect(writeText).toHaveBeenCalledWith('JBSWY3DPEHPK3PXP');
+    expect(await screen.findByText(/Chave copiada para a área de transferência/i)).toBeInTheDocument();
+  });
+
+  it('does not claim the MFA secret was copied when the clipboard refuses', async () => {
+    const user = userEvent.setup();
+    vi.spyOn(navigator.clipboard, 'writeText').mockRejectedValue(new Error('negado'));
+    renderPerfil();
+    await user.click(screen.getByRole('button', { name: /Configurar \/ Habilitar MFA/i }));
+    await screen.findByText('JBSWY3DPEHPK3PXP');
+
+    await user.click(screen.getByTitle('Copiar Chave'));
+
+    await waitFor(() => expect(navigator.clipboard.writeText).toHaveBeenCalled());
+    expect(screen.queryByText(/Chave copiada para a área de transferência/i)).not.toBeInTheDocument();
+  });
+
   it('handles MFA disabling flow', async () => {
     const user = userEvent.setup();
     const { authValue } = renderPerfil();
