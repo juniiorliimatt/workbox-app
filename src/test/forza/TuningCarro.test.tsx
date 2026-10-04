@@ -91,10 +91,33 @@ describe('Forza · Tuning · recomendação do carro', () => {
     expect(within(cycle).queryByText(/null|undefined|NaN/)).not.toBeInTheDocument();
   });
 
-  it('glues degrees and percent to the number, and spaces the other units', async () => {
+  it('explains how to compute the spring step: percentage points of the slider range, with a worked example', async () => {
+    const base = { priority: 1, thisCycle: true, guide: 'molas', axle: 'FRONT' as const, direction: 'DECREASE' as const, rationale: 'r', evidence: 'e', magnitude: 'LARGE' as const };
+    const spring = { ...base, parameter: 'Mola dianteira', amount: 15, unit: 'pontos percentuais do curso do slider' };
+    mockApi.get.mockResolvedValue({ data: makeRecommendation({ thisCycle: [spring] }) });
+
+    renderPage();
+
+    const cycle = await screen.findByRole('region', { name: /Aplicar neste ciclo/i });
+    expect(within(cycle).getByText('Reduzir 15 pontos percentuais do curso do slider')).toBeInTheDocument();
+    // 15 pp de um slider de 20 a 150 kgf/mm (curso = 130) = 19,5 kgf/mm
+    expect(within(cycle).getByText(/curso é o máximo menos o mínimo do slider.*15 pontos percentuais = 15% desse curso.*20 a 150.*19,5 kgf\/mm/i)).toBeInTheDocument();
+  });
+
+  it('does not show the spring explanation when no spring is in the cycle', async () => {
+    const camber = { priority: 1, thisCycle: true, guide: 'alinhamento', parameter: 'Cambagem dianteira (mais negativa)', axle: 'FRONT' as const, direction: 'DECREASE' as const, rationale: 'r', evidence: 'e', amount: 0.2, unit: '°', magnitude: 'SMALL' as const };
+    mockApi.get.mockResolvedValue({ data: makeRecommendation({ thisCycle: [camber] }) });
+
+    renderPage();
+
+    const cycle = await screen.findByRole('region', { name: /Aplicar neste ciclo/i });
+    expect(within(cycle).queryByText(/curso é o máximo menos o mínimo/i)).not.toBeInTheDocument();
+  });
+
+  it('glues degrees to the number, and spaces the other units', async () => {
     const base = { priority: 1, thisCycle: true, guide: 'alinhamento', axle: 'FRONT' as const, direction: 'DECREASE' as const, rationale: 'r', evidence: 'e', magnitude: 'SMALL' as const };
     const camber = { ...base, parameter: 'Cambagem dianteira (mais negativa)', amount: 0.2, unit: '°' };
-    const spring = { ...base, priority: 2, guide: 'molas', parameter: 'Mola dianteira', amount: 5, unit: '% do curso do slider' };
+    const spring = { ...base, priority: 2, guide: 'molas', parameter: 'Mola dianteira', amount: 5, unit: 'pontos percentuais do curso do slider' };
     const ratio = { ...base, priority: 3, guide: 'cambio', parameter: 'Relação final (transmissão final)', axle: 'NONE' as const, amount: 0.1, unit: 'na relação' };
     mockApi.get.mockResolvedValue({ data: makeRecommendation({ thisCycle: [camber, spring, ratio] }) });
 
@@ -102,7 +125,7 @@ describe('Forza · Tuning · recomendação do carro', () => {
 
     const cycle = await screen.findByRole('region', { name: /Aplicar neste ciclo/i });
     expect(within(cycle).getByText('Reduzir 0,2°')).toBeInTheDocument();
-    expect(within(cycle).getByText('Reduzir 5% do curso do slider')).toBeInTheDocument();
+    expect(within(cycle).getByText('Reduzir 5 pontos percentuais do curso do slider')).toBeInTheDocument();
     expect(within(cycle).getByText('Reduzir 0,1 na relação')).toBeInTheDocument();
   });
 

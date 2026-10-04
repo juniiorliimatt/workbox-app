@@ -17,15 +17,34 @@ const isBrakeBalance = (suggestion: TuningSuggestionDTO) => suggestion.parameter
 
 const MAGNITUDE_LABEL = { SMALL: 'Passo pequeno', MEDIUM: 'Passo médio', LARGE: 'Passo grande' } as const;
 
-/** Quantidade do passo na unidade do jogo ("0,5 cm", "0,2°", "5% do curso do slider"); vazio quando o serviço não sabe o passo. */
+/** Quantidade do passo na unidade do jogo ("0,5 cm", "0,2°", "5 pontos percentuais do curso do slider"); vazio quando o serviço não sabe o passo. */
 const stepText = (suggestion: TuningSuggestionDTO): string => {
   if (suggestion.amount == null || !suggestion.unit) return '';
   const amount = suggestion.amount.toLocaleString('pt-BR', { maximumFractionDigits: 2 });
-  const glued = suggestion.unit === '°' || suggestion.unit.startsWith('%');
+  const glued = suggestion.unit === '°';
   return glued ? `${amount}${suggestion.unit}` : `${amount} ${suggestion.unit}`;
 };
 
 /** Sentido (e quanto) em texto + ícone (a informação nunca fica só na cor). */
+// Exemplo didático do cálculo da mola: um slider de 20 a 150 kgf/mm (curso = 130). Não é o valor do carro — o jogo não envia.
+const EXAMPLE_SPRING_MIN = 20;
+const EXAMPLE_SPRING_MAX = 150;
+
+/** Como transformar "N pontos percentuais do curso" em kgf/mm, usando o primeiro passo de mola do ciclo; vazio sem mola. */
+const SpringHowTo: FC<{ suggestions: TuningSuggestionDTO[] }> = ({ suggestions }) => {
+  const spring = suggestions.find((s) => s.parameter.toLowerCase().startsWith('mola') && s.amount != null);
+  if (!spring || spring.amount == null) return null;
+  const points = spring.amount.toLocaleString('pt-BR', { maximumFractionDigits: 2 });
+  const kgf = ((spring.amount / 100) * (EXAMPLE_SPRING_MAX - EXAMPLE_SPRING_MIN)).toLocaleString('pt-BR', { maximumFractionDigits: 1 });
+  return (
+    <Typography variant="caption" color="text.secondary" component="p" sx={{ mb: 1.5 }}>
+      Molas: o curso é o máximo menos o mínimo do slider (em kgf/mm, na tela de ajuste do carro). {points} pontos percentuais = {points}% desse
+      curso, nunca {points}% do valor atual. Exemplo: slider de {EXAMPLE_SPRING_MIN} a {EXAMPLE_SPRING_MAX} → curso de {EXAMPLE_SPRING_MAX - EXAMPLE_SPRING_MIN}{' '}
+      → {points}% = {kgf} kgf/mm.
+    </Typography>
+  );
+};
+
 const Direction: FC<{ suggestion: TuningSuggestionDTO }> = ({ suggestion }) => {
   const step = stepText(suggestion);
   if (isBrakeBalance(suggestion)) {
@@ -178,6 +197,7 @@ const TuningRecommendation: FC<Props> = ({ recommendation, snapshot = false }) =
               O passo é o tamanho da mudança deste ciclo, não o valor final: o jogo não envia o seu setup atual nem o curso dos sliders.
               {snapshot ? '' : ' Mude, teste 2–3 voltas e use “Reiniciar coleta”.'}
             </Typography>
+            <SpringHowTo suggestions={recommendation.thisCycle} />
             {recommendation.thisCycle.length === 0 ? (
               <Paper variant="outlined" sx={{ p: 3, borderRadius: 2 }}>
                 <Typography color="text.secondary">Nenhum ajuste necessário neste ciclo: as métricas coletadas estão dentro do esperado.</Typography>
