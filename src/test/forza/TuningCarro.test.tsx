@@ -2,7 +2,7 @@ import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import TuningCarro from '@/pages/forza/TuningCarro';
-import { makeGuides, makeRecommendation, renderAt } from './helpers';
+import { makeGuides, makeInitialSetup, makeRecommendation, renderAt } from './helpers';
 
 const { mockApi } = vi.hoisted(() => ({ mockApi: { get: vi.fn(), post: vi.fn() } }));
 vi.mock('@/services/useAxiosWithAuth', () => ({ useAxiosWithAuth: () => mockApi, default: () => mockApi }));
@@ -89,6 +89,76 @@ describe('Forza · Tuning · recomendação do carro', () => {
     expect(within(cycle).getByText('Reduzir')).toBeInTheDocument();
     expect(within(cycle).queryByText(/Passo /)).not.toBeInTheDocument();
     expect(within(cycle).queryByText(/null|undefined|NaN/)).not.toBeInTheDocument();
+  });
+
+  describe('configuração inicial', () => {
+    const collecting = (overrides = {}) =>
+      makeRecommendation({
+        readiness: { ready: false, sessions: 3, requiredSessions: 10, samples: 9000, requiredSamples: 50000, missing: ['Faltam 7 sessões.'] },
+        guides: [],
+        thisCycle: [],
+        initialSetup: makeInitialSetup(),
+        ...overrides,
+      });
+
+    it('destaca como "Recomendação inicial" enquanto o carro coleta pela primeira vez, com os valores por eixo e as observações', async () => {
+      mockApi.get.mockResolvedValue({ data: collecting() });
+
+      renderPage();
+
+      const section = await screen.findByRole('region', { name: /Recomendação inicial/i });
+      expect(within(section).getByText(/ponto de partida/i)).toBeInTheDocument();
+      const tires = within(section).getByText('Pressão dos pneus').closest('tr') as HTMLElement;
+      expect(within(tires).getAllByText('1,5 a 2,0 bar')).toHaveLength(2); // dianteiro e traseiro
+      expect(within(tires).getByText(/1,5 em carro pequeno/)).toBeInTheDocument();
+      const springs = within(section).getByText('Molas', { selector: 'td' }).closest('tr') as HTMLElement;
+      expect(within(springs).getAllByText('80')).toHaveLength(2);
+      const brake = within(section).getByText('Equilíbrio').closest('tr') as HTMLElement;
+      expect(within(brake).getByText('45%')).toBeInTheDocument();
+      expect(within(section).getByText('105%')).toBeInTheDocument();
+      expect(within(section).getAllByText('Pneus').length).toBeGreaterThan(0); // título do grupo
+    });
+
+    it('depois de reiniciar a coleta (já passou do primeiro ciclo) vira só uma referência recolhida', async () => {
+      mockApi.get.mockResolvedValue({ data: collecting({ checkpointAt: '2026-10-05T12:00:00Z' }) });
+
+      renderPage();
+
+      await screen.findByRole('heading', { name: /2021 Porsche 911 GT3/i });
+      expect(screen.queryByRole('region', { name: /Recomendação inicial/i })).not.toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /Configuração inicial de referência/i })).toHaveAttribute('aria-expanded', 'false');
+    });
+
+    it('com a recomendação pronta, a configuração inicial fica recolhida como referência e o ciclo continua em destaque', async () => {
+      mockApi.get.mockResolvedValue({ data: makeRecommendation({ initialSetup: makeInitialSetup() }) });
+
+      renderPage();
+
+      expect(await screen.findByRole('region', { name: /Aplicar neste ciclo/i })).toBeInTheDocument();
+      expect(screen.queryByRole('region', { name: /Recomendação inicial/i })).not.toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /Configuração inicial de referência/i })).toHaveAttribute('aria-expanded', 'false');
+    });
+
+    it('expandir a referência mostra os valores', async () => {
+      const user = userEvent.setup();
+      mockApi.get.mockResolvedValue({ data: makeRecommendation({ initialSetup: makeInitialSetup() }) });
+
+      renderPage();
+      await user.click(await screen.findByRole('button', { name: /Configuração inicial de referência/i }));
+
+      expect(screen.getByRole('button', { name: /Configuração inicial de referência/i })).toHaveAttribute('aria-expanded', 'true');
+      expect(screen.getByText('1,5 em carro pequeno; 2,0 em carro grande.')).toBeInTheDocument();
+    });
+
+    it('sem configuração inicial (ausente ou vazia) nada aparece', async () => {
+      mockApi.get.mockResolvedValue({ data: collecting({ initialSetup: [] }) });
+
+      renderPage();
+
+      await screen.findByRole('heading', { name: /2021 Porsche 911 GT3/i });
+      expect(screen.queryByText(/Recomendação inicial/i)).not.toBeInTheDocument();
+      expect(screen.queryByText(/Configuração inicial de referência/i)).not.toBeInTheDocument();
+    });
   });
 
   it('explains how to compute the spring step: percentage points of the slider range, with a worked example', async () => {

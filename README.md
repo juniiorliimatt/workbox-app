@@ -125,7 +125,7 @@ Consome só `forza-telemetry-service/openapi/openapi.yaml` (tipos em `src/interf
 - **Tuning (FH6)** (`/forza/tuning`, `/forza/tuning/:carOrdinal/:performanceClass`): recomendação de ajustes por carro **e
   classe de PI** (D, C, B, A, S1, S2, R — cada classe é uma build) a partir das sessões coletadas (mínimo de 10
   sessões e 50.000 amostras por carro/classe). Mostra o que aplicar neste ciclo (até 3, só o **sentido** — o jogo não envia
-  os valores do setup) e todas as 9 guias de tuning, mesmo as sem ajuste; "Reiniciar coleta" após aplicar mudanças. Cada ajuste mostra
+  os valores do setup) e todas as 9 guias de tuning, mesmo as sem ajuste; "Reiniciar coleta" após aplicar mudanças. Antes do primeiro ciclo (carro ainda coletando pela primeira vez) a tela abre com a **Recomendação inicial**: a configuração de partida do desenvolvedor (pneus, câmbio, alinhamento, barras, molas, amortecimento, aerodinâmica, freios, diferencial); depois vira uma referência recolhida. Cada ajuste mostra
   **quanto mexer** neste ciclo na unidade do jogo (ex.: "Reduzir 0,2 bar", "Mover 2 pontos percentuais para a dianteira") e o
   tamanho do passo (pequeno/médio/grande, conforme a severidade) — é o passo do ciclo, não o valor final. Na lista, a sessão em
   andamento aparece como "Gravando agora: X de Y amostras" e o total de amostras **conta ao vivo** (sessões fechadas + a em andamento, com o detalhamento ao lado; a

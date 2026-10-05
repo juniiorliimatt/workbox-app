@@ -2,7 +2,7 @@ import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import TuningHistoricoDetalhe from '@/pages/forza/TuningHistoricoDetalhe';
-import { makeRecommendation, renderAt } from './helpers';
+import { makeInitialSetup, makeRecommendation, renderAt } from './helpers';
 
 const { mockApi } = vi.hoisted(() => ({ mockApi: { get: vi.fn(), post: vi.fn() } }));
 vi.mock('@/services/useAxiosWithAuth', () => ({ useAxiosWithAuth: () => mockApi, default: () => mockApi }));
@@ -33,6 +33,16 @@ describe('Forza · Tuning · histórico · detalhe', () => {
     renderPage();
 
     expect(await screen.findByText('A · PI 700')).toBeInTheDocument();
+  });
+
+  it('não mostra a configuração inicial: a foto guarda só o que foi medido e recomendado', async () => {
+    mockApi.get.mockResolvedValue(saved(makeRecommendation({ initialSetup: makeInitialSetup() })));
+
+    renderPage();
+
+    await screen.findByRole('region', { name: /Aplicar neste ciclo/i });
+    expect(screen.queryByText(/Recomendação inicial/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Configuração inicial de referência/i)).not.toBeInTheDocument();
   });
 
   it('says it is a snapshot saved at a given moment, not the current recommendation', async () => {

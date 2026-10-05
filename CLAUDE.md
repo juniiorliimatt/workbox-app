@@ -115,6 +115,11 @@ textos exatos). Achado preservado: o "Novo Tipo de Receita" tem checkboxes de co
   detalhe com "Aplicar neste ciclo" (≤ 3 ajustes, sentido em texto + ícone, evidência) e **todas** as 9 guias em
   acordeões com status em texto (Ajustar / OK / Sem sinal). Enquanto coleta, só progresso e o que falta. "Reiniciar
   coleta" (com confirmação) chama `POST .../checkpoint`. Rotas `/api/v1/tuning` roteadas no Vite e no nginx.
+- **Configuração inicial** (`components/forza/InitialSetup`, campo `initialSetup` da recomendação): a receita base do
+  desenvolvedor (valores absolutos por eixo, em texto) vinda do serviço. Em destaque como **"Recomendação inicial"** no
+  topo enquanto o carro coleta pela primeira vez (`!readiness.ready` e sem `checkpointAt`); depois (pronto ou coleta
+  reiniciada) vira o acordeão recolhido "Configuração inicial de referência". **Nunca** na foto do histórico (`snapshot`).
+  Sem o campo (ou vazio), nada aparece.
 - **Tunings feitos** (`/forza/tuning/historico`, `.../:id`): botão "Tunings feitos" na lista de carros. O backend grava a foto
   da recomendação ao reiniciar a coleta (só se estava pronta); o detalhe reaproveita `components/forza/TuningRecommendation`
   (mesma renderização da tela ao vivo) com `snapshot`: só leitura, sem barras de progresso nem instrução de reiniciar.

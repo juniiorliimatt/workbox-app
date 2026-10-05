@@ -5,7 +5,7 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { AuthContext } from '@/contexts/AuthContextValue';
 import { SnackbarProvider } from '@/contexts/SnackbarContext';
 import { IAuthContext } from '@/interfaces/IAuthContext';
-import { SessionDTO, TuningCarDTO, TuningGuideDTO, TuningHistoryItemDTO, TuningRecommendationDTO, TuningSummary } from '@/interfaces/forza';
+import { SessionDTO, TuningCarDTO, TuningGuideDTO, TuningHistoryItemDTO, TuningRecommendationDTO, TuningSetupGroupDTO, TuningSummary } from '@/interfaces/forza';
 
 export const createAuthValue = (overrides?: Partial<IAuthContext>): IAuthContext => ({
   accessToken: 'mock-access-token',
@@ -189,3 +189,10 @@ export const makeRecommendation = (overrides?: Partial<TuningRecommendationDTO>)
     ...overrides,
   };
 };
+
+/** Um recorte da configuração inicial, no formato do serviço (um grupo por eixo, um com valor único e um com observação). */
+export const makeInitialSetup = (): TuningSetupGroupDTO[] => [
+  { id: 'pneus', title: 'Pneus', items: [{ parameter: 'Pressão dos pneus', front: '1,5 a 2,0 bar', rear: '1,5 a 2,0 bar', note: '1,5 em carro pequeno; 2,0 em carro grande.' }] },
+  { id: 'molas', title: 'Molas', items: [{ parameter: 'Molas', front: '80', rear: '80', note: 'No valor que o slider do jogo mostra.' }] },
+  { id: 'freios', title: 'Freios', items: [{ parameter: 'Equilíbrio', value: '45%' }, { parameter: 'Pressão', value: '105%' }] },
+];

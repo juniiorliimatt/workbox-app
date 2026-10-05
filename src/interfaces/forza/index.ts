@@ -239,6 +239,22 @@ export interface TuningHistoryDTO {
   recommendation: TuningRecommendationDTO;
 }
 
+/** Um parâmetro da configuração inicial: `front`/`rear` quando há um valor por eixo; `value` para valor único ou receita em texto. */
+export interface TuningSetupItemDTO {
+  parameter: string;
+  front?: string | null;
+  rear?: string | null;
+  value?: string | null;
+  note?: string | null;
+}
+
+/** Grupo da configuração inicial; o `id` é o da guia de tuning (pneus, cambio, molas...). */
+export interface TuningSetupGroupDTO {
+  id: string;
+  title: string;
+  items: TuningSetupItemDTO[];
+}
+
 /** `GET /api/v1/tuning/cars/{carOrdinal}/{performanceClass}`. `guides` vem vazio enquanto `readiness.ready` for falso. */
 export interface TuningRecommendationDTO {
   carOrdinal: number;
@@ -253,4 +269,6 @@ export interface TuningRecommendationDTO {
   checkpointAt?: string | null;
   guides: TuningGuideDTO[];
   thisCycle: TuningSuggestionDTO[];
+  /** Configuração inicial (ponto de partida do desenvolvedor); ausente/vazia em fotos do histórico. */
+  initialSetup?: TuningSetupGroupDTO[] | null;
 }

@@ -3,6 +3,7 @@ import { Accordion, AccordionDetails, AccordionSummary, Alert, Box, Chip, Linear
 import { ArrowDownward as DownIcon, ArrowUpward as UpIcon, ExpandMore as ExpandIcon } from '@mui/icons-material';
 import { TuningAxle, TuningGuideDTO, TuningGuideStatus, TuningRecommendationDTO, TuningSuggestionDTO } from '@/interfaces/forza';
 import { formatNumber, formatSessionStart } from '@/utils/forza';
+import InitialSetup from './InitialSetup';
 
 const AXLE_LABEL: Record<TuningAxle, string | null> = { FRONT: 'Dianteira', REAR: 'Traseira', BOTH: 'Ambos os eixos', NONE: null };
 
@@ -167,8 +168,13 @@ interface Props {
 /** Progresso da coleta, ajustes do ciclo e todas as guias de tuning de uma recomendação (ao vivo ou salva). */
 const TuningRecommendation: FC<Props> = ({ recommendation, snapshot = false }) => {
   const basedOn = windowText(recommendation);
+  // Só na tela ao vivo (a foto do histórico não a guarda). Em destaque antes do primeiro ciclo: ainda coletando e sem reinício.
+  const initialSetup = !snapshot && recommendation.initialSetup?.length ? recommendation.initialSetup : null;
+  const firstCycle = !recommendation.readiness.ready && !recommendation.checkpointAt;
   return (
     <>
+      {initialSetup && firstCycle && <InitialSetup groups={initialSetup} emphasized />}
+
       {snapshot ? (
         basedOn && (
           <Typography variant="body2" color="text.secondary" component="p" sx={{ mb: 3 }}>
@@ -226,6 +232,8 @@ const TuningRecommendation: FC<Props> = ({ recommendation, snapshot = false }) =
           </Box>
         </>
       )}
+
+      {initialSetup && !firstCycle && <InitialSetup groups={initialSetup} emphasized={false} />}
     </>
   );
 };
