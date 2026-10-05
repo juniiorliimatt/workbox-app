@@ -119,6 +119,22 @@ describe('Forza · Tuning · recomendação do carro', () => {
       expect(within(section).getAllByText('Pneus').length).toBeGreaterThan(0); // título do grupo
     });
 
+    it('carro só com a sessão em andamento (0 sessões fechadas, sem janela de datas) já mostra a recomendação inicial e o progresso zerado', async () => {
+      mockApi.get.mockResolvedValue({
+        data: collecting({
+          readiness: { ready: false, sessions: 0, requiredSessions: 10, samples: 0, requiredSamples: 50000, missing: ['Faltam 10 sessões com este carro (0 de 10).'] },
+          windowFrom: null,
+          windowTo: null,
+        }),
+      });
+
+      renderPage();
+
+      expect(await screen.findByRole('region', { name: /Recomendação inicial/i })).toBeInTheDocument();
+      expect(screen.getByText('0 de 10 sessões')).toBeInTheDocument();
+      expect(screen.queryByText(/Nenhuma sessão coletada/i)).not.toBeInTheDocument();
+    });
+
     it('depois de reiniciar a coleta (já passou do primeiro ciclo) vira só uma referência recolhida', async () => {
       mockApi.get.mockResolvedValue({ data: collecting({ checkpointAt: '2026-10-05T12:00:00Z' }) });
 
