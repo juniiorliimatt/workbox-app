@@ -11,9 +11,9 @@
 
 ## Papel e autoria
 - SPA do ecossistema Workbox: login/MFA/perfil, administração (usuários, papéis,
-  auditoria), o módulo **Finanças** (`budget-service`) e o módulo **Forza**
-  (`forza-telemetry-service`). Hub com 13 cards, só 3 ativos
-  (Administração, Finanças, Forza); os demais são "Em breve".
+  auditoria), o módulo **Finanças** (`budget-service`), o módulo **Forza**
+  (`forza-telemetry-service`) e o módulo **Moto** (`moto-service`). Hub com 14 cards, só 4 ativos
+  (Administração, Finanças, Forza, Moto); os demais são "Em breve".
 - Desenvolvido pelo **Claude Code** (full-stack): mudança de contrato observável de um
   backend entra **na mesma tarefa** que o ajuste aqui (ver raiz).
 
@@ -53,7 +53,7 @@ Mudança que vale pras duas vai no compartilhado; o que é de uma só vai na con
 textos exatos). Achado preservado: o "Novo Tipo de Receita" tem checkboxes de contagem que a API ainda não recebe.
 
 ## Integração com backends
-- Consome `workbox-api`, `budget-service` e `forza-telemetry-service`, e **apenas** a partir do
+- Consome `workbox-api`, `budget-service`, `forza-telemetry-service` e `moto-service`, e **apenas** a partir do
   `openapi/openapi.yaml` de cada um. Não inferir endpoint; contrato ausente/desatualizado
   → apontar, não assumir. Tipos hoje são escritos à mão em `interfaces/` (não há
   `openapi-typescript`); se for introduzir geração, é dependência nova (confirmar).
@@ -63,7 +63,9 @@ textos exatos). Achado preservado: o "Novo Tipo de Receita" tem checkboxes de co
   `nginx.conf.template` (prod/container: mesmas rotas via `BUDGET_SERVICE_UPSTREAM`,
   `FORZA_SERVICE_UPSTREAM` e `WORKBOX_API_UPSTREAM`; nginx escolhe o prefixo mais
   específico). Forza: `/api/v1/sessions` e `/api/v1/live` → `forza-telemetry-service`
-  (`VITE_FORZA_API_URL`, default `:7057`). Hoje **não** há rota pra `notes-service`
+  (`VITE_FORZA_API_URL`, default `:7057`). Moto: `/api/v1/motorcycles` e `/api/v1/oil-intervals` →
+  `moto-service` (`VITE_MOTO_API_URL`, default `:7059`; nginx: `MOTO_SERVICE_UPSTREAM`, default no `Dockerfile`).
+  Hoje **não** há rota pra `notes-service`
   (`/api/v1/documents`) — qualquer integração futura precisa dos dois arquivos e do
   upstream no `docker-compose.yml` da raiz.
 - **Acesso pela LAN (celular)**: o nginx repassa `Host: $http_host` (**com a porta**), não `$host`. Sem a porta o Spring
@@ -79,7 +81,7 @@ textos exatos). Achado preservado: o "Novo Tipo de Receita" tem checkboxes de co
   `isAdmin`, `includes('ROLE_ADMIN')`). Não criar/exibir/comparar authority com `ROLE_`
   nos CRUDs — já causou a role `ADMIN` virar `ROLE_ADMIN` no banco. Fixtures de teste que
   simulam o **JWT decodificado** usam `ROLE_*`; as que simulam resposta de CRUD, não.
-- **Módulos**: `/auth/me` devolve `modules` (códigos `FINANCAS`, `FORZA`; ADMIN recebe todos) e o
+- **Módulos**: `/auth/me` devolve `modules` (códigos `FINANCAS`, `FORZA`, `MOTO`; ADMIN recebe todos) e o
   `Dashboard` só mostra o card do módulo a quem o tem (`moduleCode` no card; ADMIN sempre vê). `USER`
   sozinho **não** libera módulo — é a role inicial, o ADMIN concede a role do módulo em `/admin/modulos`
   (`PUT /api/v1/role/{id}/module`). A trava de verdade é o 403 dos backends; o front só esconde o card.
@@ -132,6 +134,28 @@ textos exatos). Achado preservado: o "Novo Tipo de Receita" tem checkboxes de co
   o último LED só acende junto com o aviso). Barras de rotação/pedais com 1 cm e **sem transição** CSS
   (senão o preenchimento atrasa em relação às leituras). Nome do carro: `carLabel(carName, ordinal)`.
 - Temperatura de pneu chega em °F do jogo: converter pra °C só na exibição.
+
+## Padrão do módulo Moto (`pages/Moto.tsx` + `pages/moto/`)
+- Uma página (`/moto`) com seletor de moto e 4 abas em `?aba=` (`resumo|abastecimentos|oleo|motos`; valor
+  desconhecido cai no Resumo, sem moto só `motos` é liberada). Os **painéis ficam todos montados** (só um visível,
+  `hidden`), então o estado de cada aba sobrevive à troca; cada uma só busca dados quando `active`
+  (`useLazyTabData`, chave = moto + filtros + `refreshKey` + um contador local de recarga).
+- **Recarga entre abas**: a página guarda um `refreshKey`; gravar abastecimento, troca de óleo ou km avulso chama
+  `onChanged()` e o `refreshKey` sobe — Resumo e Óleo recarregam. Quem grava recarrega a **própria** lista com um
+  contador local (Abastecimentos, Óleo); o Resumo **não** (depende só do `refreshKey`, senão busca duas vezes).
+- `useMotos` guarda a moto escolhida em `localStorage` (`workbox.moto.selecionada`, sempre em `try/catch`); se o id
+  guardado não existir mais, cai na primeira moto ativa.
+- **Formulários**: `react-hook-form` + `yup`, com os campos numéricos como **texto** (aceitam vírgula, sem setas do
+  browser) convertidos no envio; `noValidate` no `<form>` (a validação é do yup). A data fica **fora** do RHF
+  (`useState<Dayjs>`, padrão = hoje, `disableFuture`). Testes não digitam no `DatePicker`: usam o padrão de hoje.
+- **Erros**: o motivo vem de `detail` do `problem+json` — use `errors.ts` (`errorMessage(e, fallback)`), porque o
+  `getErrorMessage` compartilhado só lê `message` e devolveria "Request failed with status code 400". É isso que
+  mostra ao usuário por que um hodômetro foi recusado.
+- **Gráficos** (`recharts`, só no Resumo): o desenho é `aria-hidden` e **toda** série tem uma tabela visualmente
+  oculta equivalente (é onde os testes asseguram os números — o recharts não desenha no jsdom). Cores só de
+  `theme.palette`. Estado de óleo (Em dia / Troca próxima / Troca vencida) **sempre em texto**, nunca só cor.
+- Valores com `format.ts` (`formatKm`, `formatKmPerLiter`, `formatRemainingKm/Days`, `pluralize`, ...): ausência vira
+  "—", nunca "NaN"/"null". `formatCurrency` com NBSP: nos testes use `plain()` (`test/moto/helpers.tsx`).
 
 ## Tela de Metas e Orçamentos (referência de carregamento de dados)
 - `services/budgetApi.ts#loadOrcamentos` carrega tudo em paralelo com `AbortSignal`; totais

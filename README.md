@@ -56,7 +56,7 @@ src/
 │   └── ...
 ├── pages/           # Telas da aplicação
 │   ├── Login.tsx          # Login, auto-cadastro e desafio MFA TOTP
-│   ├── Dashboard.tsx      # Hub central de módulos (13 cards temáticos)
+│   ├── Dashboard.tsx      # Hub central de módulos (14 cards temáticos)
 │   ├── Perfil.tsx         # Edição cadastral, foto de perfil, troca de senha e MFA
 │   ├── Admin.tsx          # Hub de acesso aos módulos administrativos
 │   ├── AdminUsuarios.tsx  # Gestão completa de usuários (CRUD + fotos + papéis)
@@ -66,7 +66,9 @@ src/
 │   ├── AdminAuditoria.tsx # Trilha de auditoria e segurança de logins
 │   ├── Financas.tsx       # Módulo de Finanças Pessoais (budget)
 │   ├── Forza.tsx          # Hub do módulo Forza (telemetria)
-│   └── forza/             # Sessoes (lista), SessaoDetalhe (resumo/voltas/telemetria), AoVivo
+│   ├── forza/             # Sessoes (lista), SessaoDetalhe (resumo/voltas/telemetria), AoVivo
+│   ├── Moto.tsx           # Módulo Moto (abas Resumo, Abastecimentos, Óleo, Motos)
+│   └── moto/              # Uma tela por aba (ResumoTab, AbastecimentosTab, OleoTab, MotosTab) + useMotos, format, errors
 ├── routes/          # Definição e configuração das rotas
 │   ├── routes.tsx         # Rotas (catch-all "*" redireciona pra "/")
 │   ├── ProtectedRoute.tsx # Guarda de rota autenticada
@@ -74,7 +76,8 @@ src/
 ├── services/        # Configuração de clientes HTTP
 │   ├── api.ts             # Instância configurada do Axios
 │   ├── useAxiosWithAuth.ts # Interceptors de requisição e renovação de token (401 retry)
-│   └── forzaApi.ts        # Cliente tipado do forza-telemetry-service (funções puras sobre o Axios)
+│   ├── forzaApi.ts        # Cliente tipado do forza-telemetry-service (funções puras sobre o Axios)
+│   └── motoApi.ts         # Cliente tipado do moto-service (funções puras sobre o Axios)
 └── test/            # Suíte de testes automatizados e E2E
     ├── AdminPages.test.tsx
     ├── AuthContext.test.tsx
@@ -83,6 +86,7 @@ src/
     ├── Perfil.test.tsx
     ├── UserAvatar.test.tsx
     ├── forza/              # testes do módulo Forza (utils, cliente, páginas) + helpers
+    ├── moto/               # testes do módulo Moto (formatação, cliente, casca e cada aba) + helpers
     ├── setupTests.ts
     └── browser-e2e.mjs     # Teste ponta a ponta no Google Chrome headless
 ```
@@ -108,14 +112,15 @@ em uso).
   - Renovação automática transparente via interceptors do Axios em respostas 401.
 
 ### 2. Hub de Módulos (`/dashboard`)
-- Tela inicial pós-login contendo **13 cards de módulos**:
+- Tela inicial pós-login contendo **14 cards de módulos**:
   1. **Administração** (`/admin`): Exibido com prioridade para usuários com papel `ADMIN`.
   2. **Finanças** (`/financas`): Acesso ao módulo de finanças pessoais (*budget-service*). Visível só a quem tem o módulo `FINANCAS` (campo `modules` de `/auth/me`); o card de Forza segue a mesma regra com `FORZA`. ADMIN vê todos.
    - **Metas e Orçamento:** Resumos formatados em padrão monetário (BRL), gráficos de proporção (Receitas vs Despesas em PieChart), e painéis semânticos de acompanhamento de metas em abas mensais e anuais.
    - **Receitas e Despesas:** Grids completos com filtro de competência, controle de pagamento, autocomplete inteligente e **Lançamentos em Lote** (componentizados para garantir alta performance).
    - **Gerenciamento de Tipos:** Controle de categorias, regras 50/30/20 para despesas, e flags dinâmicas para Receitas (`includeInTotals` e `includeInMonthlyTotals`) ocultando os tipos desejados da contagem e gráficos.
   3. **Forza** (`/forza`): telemetria do Forza (*forza-telemetry-service*, porta 7057) — ver seção abaixo.
-  4. Demais 10 módulos com badge *"Em breve"* e estado desabilitado (RH, Vendas, Relatórios, CRM, Estoque, etc.).
+  4. **Moto** (`/moto`): abastecimentos, consumo, km rodados e troca de óleo (*moto-service*, porta 7059). Visível só a quem tem o módulo `MOTO`.
+  5. Demais 10 módulos com badge *"Em breve"* e estado desabilitado (RH, Vendas, Relatórios, CRM, Estoque, etc.).
 
 #### Módulo Forza (`/forza`)
 Consome só `forza-telemetry-service/openapi/openapi.yaml` (tipos em `src/interfaces/forza`; o `summary` é objeto livre no contrato, então `TuningSummary` espelha o `SummaryCalculator` do serviço).
@@ -135,6 +140,14 @@ Consome só `forza-telemetry-service/openapi/openapi.yaml` (tipos em `src/interf
   recomendação pronta, o serviço guarda uma foto dela; a lista mostra carro, classe/PI, data, sessões usadas e quantos
   ajustes indicava, e o detalhe reabre a recomendação completa (ciclo + 9 guias) como era na época, só leitura.
 - Páginas carregadas sob demanda (`lazy` do React Router).
+
+#### Módulo Moto (`/moto`)
+Consome só `moto-service/openapi/openapi.yaml` (tipos em `src/interfaces/moto`). Uma página com seletor de moto (a escolha fica em `localStorage`) e quatro abas, que ficam em `?aba=resumo|abastecimentos|oleo|motos` (link compartilhável); sem nenhuma moto só a aba **Motos** está liberada. Cada aba só busca dados quando fica visível.
+- **Resumo**: indicadores — consumo médio (km/l ponderado, com selo **Baixa confiança** quando há menos de 3 trechos), km rodados e km/dia, km e gasto do mês (com a variação contra o mês anterior), gasto no ano, custo por km e a próxima troca de óleo — e gráficos mês a mês (km/l, gasto, km) com seletor de ano, mais a visão por ano quando há mais de um. Todo gráfico tem uma tabela equivalente para leitores de tela. O botão **Atualizar km** grava uma leitura avulsa de hodômetro (sem abastecer).
+- **Abastecimentos**: lista paginada (mais recentes primeiro) com filtro Todos / Mensal / Anual e formulário (data, hodômetro **total**, litros, valor, combustível, posto, "Completei o tanque" — opcional, só melhora a precisão do km/l). Mostra o preço por litro enquanto digita.
+- **Óleo**: card da próxima troca por **km e por tempo, o que vencer primeiro** (barras de progresso e estado sempre em texto: Em dia / Troca próxima / Troca vencida), histórico e formulário que pré-preenche o intervalo padrão do tipo de óleo (`GET /oil-intervals`), mantendo-o editável.
+- **Motos**: cadastro (apelido, marca, modelo, ano, placa, hodômetro inicial, tanque, ativa); excluir apaga também abastecimentos, trocas e leituras da moto (com confirmação).
+- O hodômetro precisa respeitar a ordem cronológica da moto: se a API recusar (400), o motivo do `problem+json` aparece no snackbar e o diálogo continua aberto.
 
 ### 3. Meu Perfil & Segurança (`/perfil`)
 - **Dados Cadastrais**: Visualização e edição de Nome Social e E-mail.
@@ -162,9 +175,9 @@ Exclusivo para contas com permissão de administrador (papel `ADMIN`):
     adicionado só pelo backend na emissão do JWT, nunca no valor armazenado/exibido via
     `/api/v1/role`); ex.: `GESTOR`, `FINANCEIRO`.
 - **Papéis × Módulos** (`/admin/modulos`):
-  - Lista os papéis (menos `ADMIN` e `USER`) com um seletor do módulo que cada um libera (`Sem módulo`, Finanças, Forza), via `PUT /api/v1/role/{id}/module`.
+  - Lista os papéis (menos `ADMIN` e `USER`) com um seletor do módulo que cada um libera (`Sem módulo`, Finanças, Forza, Moto — a lista vem de `GET /api/v1/module`), via `PUT /api/v1/role/{id}/module`.
   - Regra: `USER` é só a role inicial de quem se cadastra e **não libera módulo nenhum**; o ADMIN concede ao usuário o papel do módulo em Gestão de Usuários. `ADMIN` acessa todos.
-  - O backend valida: `budget-service` e `forza-telemetry-service` respondem **403** a quem não tem o módulo.
+  - O backend valida: `budget-service`, `forza-telemetry-service` e `moto-service` respondem **403** a quem não tem o módulo.
 - **Backup do banco** (`/admin/backups`, consome o `backup-service`, só ADMIN):
   - "Gerar backup agora" (síncrono; trava o botão enquanto roda), com opção **Cifrar com senha** (mín. 12 caracteres + confirmação; a senha limpa da tela depois de usada e nunca é guardada pelo servidor).
   - Lista com arquivo, **caminho no host** do arquivo, data, tamanho, quem gerou, SHA-256 e se está cifrado; ações **Baixar** (blob autenticado) e **Excluir** (com confirmação).
@@ -194,7 +207,8 @@ npm install
 
 # Servidor de desenvolvimento (com proxy reverso /api -> http://localhost:7051,
 # rotas de budget-service -> http://localhost:7052, forza (/api/v1/sessions e /live)
-# -> http://localhost:7057, ver vite.config.ts)
+# -> http://localhost:7057, moto (/api/v1/motorcycles e /oil-intervals)
+# -> http://localhost:7059, ver vite.config.ts)
 npm run dev       # http://localhost:7053
 
 # Verificação estática de código (ESLint)
@@ -249,7 +263,7 @@ produção usa os mesmos defaults do `.env`, servido pelo Nginx do container).
 |---|---|---|
 | `VITE_PUBLIC_URL_API` | Única variável efetivamente lida pelo código (`src/services/api.ts`) — base URL da API (`workbox-api`). Em dev, vazio utiliza o proxy do Vite `/api`. | `""` |
 
-O proxy de desenvolvimento (`vite.config.ts`, só `npm run dev`) lê, via `process.env`, `VITE_API_URL` (default `http://localhost:7051`), `VITE_BUDGET_API_URL` (`http://localhost:7052`) e `VITE_FORZA_API_URL` (`http://localhost:7057`) e `VITE_BACKUP_API_URL` (`http://localhost:7058`). No container, o nginx usa `WORKBOX_API_UPSTREAM`, `BUDGET_SERVICE_UPSTREAM`, `FORZA_SERVICE_UPSTREAM` e `BACKUP_SERVICE_UPSTREAM` (definidas no `docker-compose.yml` da raiz).
+O proxy de desenvolvimento (`vite.config.ts`, só `npm run dev`) lê, via `process.env`, `VITE_API_URL` (default `http://localhost:7051`), `VITE_BUDGET_API_URL` (`http://localhost:7052`) e `VITE_FORZA_API_URL` (`http://localhost:7057`), `VITE_BACKUP_API_URL` (`http://localhost:7058`) e `VITE_MOTO_API_URL` (`http://localhost:7059`). No container, o nginx usa `WORKBOX_API_UPSTREAM`, `BUDGET_SERVICE_UPSTREAM`, `FORZA_SERVICE_UPSTREAM`, `BACKUP_SERVICE_UPSTREAM` e `MOTO_SERVICE_UPSTREAM` (definidas no `docker-compose.yml` da raiz).
 
 As demais chaves em `.env`/`.env.development` (`VITE_PUBLIC_URL_API_ORIGIN`,
 `VITE_INITIAL_PATH`, `VITE_PUBLIC_SSO_LOGIN_URL`, `VITE_PUBLIC_SSO_LOGOUT_URL`,
