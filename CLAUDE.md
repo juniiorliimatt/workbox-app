@@ -148,9 +148,10 @@ textos exatos). Achado preservado: o "Novo Tipo de Receita" tem checkboxes de co
 - **Formulários**: `react-hook-form` + `yup`, com os campos numéricos como **texto** (aceitam vírgula, sem setas do
   browser) convertidos no envio; `noValidate` no `<form>` (a validação é do yup). A data fica **fora** do RHF
   (`useState<Dayjs>`, padrão = hoje, `disableFuture`). Testes não digitam no `DatePicker`: usam o padrão de hoje.
-- **Erros**: o motivo vem de `detail` do `problem+json` — use `errors.ts` (`errorMessage(e, fallback)`), porque o
-  `getErrorMessage` compartilhado só lê `message` e devolveria "Request failed with status code 400". É isso que
-  mostra ao usuário por que um hodômetro foi recusado.
+- **Erros**: o motivo vem de `detail` do `problem+json`, lido por `getProblemDetail` (`utils/errors.ts`). O snackbar usa
+  `errorMessage(e, fallback)` de `pages/moto/errors.ts` ("Erro: <detail>" ou a mensagem padrão da tela): sem `detail`
+  (rede, 500) o `getErrorMessage` devolveria o texto técnico do axios, que não serve ao usuário. É isso que mostra por
+  que um hodômetro foi recusado.
 - **Gráficos** (`recharts`, só no Resumo): o desenho é `aria-hidden` e **toda** série tem uma tabela visualmente
   oculta equivalente (é onde os testes asseguram os números — o recharts não desenha no jsdom). Cores só de
   `theme.palette`. Estado de óleo (Em dia / Troca próxima / Troca vencida) **sempre em texto**, nunca só cor.
@@ -171,7 +172,8 @@ textos exatos). Achado preservado: o "Novo Tipo de Receita" tem checkboxes de co
 
 ## Regras de código e armadilhas
 - **`catch (e: unknown)` + axios**: nunca acessar `e.response`/`e.message` direto — use
-  `getErrorMessage(e)` de `src/utils/errors.ts`. Trocar `any` por tipo que não bate com o
+  `getErrorMessage(e)` de `src/utils/errors.ts` (ordem: `detail` do problem+json — RFC 9457, o padrão de erro de todos
+  os serviços — → `message` do corpo → mensagem do erro). Trocar `any` por tipo que não bate com o
   shape real é pior que `any` (quebra o build). Já derrubou o build de produção
   (incidente 2026-09-13).
 - **Props de libs externas** tipadas como opcionais (ex.: `name` do `label` do `<Pie>` do
