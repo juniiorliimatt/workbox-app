@@ -223,7 +223,9 @@ npm run test:coverage
 # Execução de testes unitários em modo watch
 npm run test:watch
 
-# Execução de testes de ponta a ponta (E2E com Chrome headless)
+# Execução de testes de ponta a ponta (E2E com Chrome headless). Sobe um ambiente efêmero
+# (Postgres, Redis, workbox-api, budget-service e moto-service), cria a conta qa.admin nele,
+# roda o fluxo (cadastro, MFA, módulo Moto, administração) e derruba tudo ao final.
 npm run test:e2e
 
 # Build de produção (saída em dist/)

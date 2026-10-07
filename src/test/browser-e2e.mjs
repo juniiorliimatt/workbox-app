@@ -46,7 +46,13 @@ async function runBrowserValidation() {
     await page.click('#btn-signup-submit');
 
     // Aguardar mensagem de sucesso e retorno à aba de login
-    await page.waitForSelector('.MuiAlert-standardSuccess', { timeout: 5000 });
+    try {
+      await page.waitForSelector('.MuiAlert-standardSuccess', { timeout: 5000 });
+    } catch (e) {
+      const alertText = await page.evaluate(() => document.querySelector('.MuiAlert-message')?.textContent || document.body.innerText);
+      console.log('   🔍 Conteúdo/erro na tela após o cadastro:', alertText);
+      throw e;
+    }
     console.log(`   ✅ Usuário cadastrado com sucesso.`);
 
     // 3. Login com o usuário cadastrado
@@ -83,15 +89,17 @@ async function runBrowserValidation() {
       throw e;
     }
 
-    // 4. Testar persistência do botão Perfil no módulo Finanças
-    console.log('4️⃣ Testando permanência do botão de Perfil e Sair no módulo Finanças (/financas)...');
-    const financasCard = await page.waitForSelector('.MuiCard-root ::-p-text(Finanças)', { timeout: 3000 });
-    await financasCard.click();
-
-    await page.waitForFunction(() => window.location.pathname === '/financas', { timeout: 5000 });
+    // 4. Usuário recém-cadastrado só tem a role USER, que NÃO libera módulo: o hub não pode mostrar nenhum card de módulo
+    console.log('4️⃣ Testando que um usuário sem papel de módulo não vê cards de módulo (e mantém Perfil e Sair)...');
     await page.waitForSelector('#btn-perfil', { timeout: 3000 });
     await page.waitForSelector('#btn-logout', { timeout: 3000 });
-    console.log(`   ✅ Botões de Perfil e Sair presentes e funcionais na AppBar do módulo Finanças.`);
+    const visibleModuleTitles = await page.$$eval('.MuiCard-root h3', (els) => els.map((e) => e.textContent));
+    for (const forbidden of ['Finanças', 'Forza', 'Moto', 'Administração']) {
+      if (visibleModuleTitles.includes(forbidden)) {
+        throw new Error(`Usuário sem módulo vê o card "${forbidden}" (cards: ${visibleModuleTitles.join(', ')})`);
+      }
+    }
+    console.log(`   ✅ Sem cards de módulo para quem só tem USER; botões de Perfil e Sair presentes na AppBar.`);
 
     // 5. Testar tela de Perfil com upload de foto e MFA
     console.log('5️⃣ Testando navegação para /perfil e controles de foto de perfil...');
@@ -143,6 +151,121 @@ async function runBrowserValidation() {
     await page.click('#btn-login-submit');
 
     await page.waitForFunction(() => window.location.pathname === '/dashboard', { timeout: 6000 });
+
+    // 8.1 O admin recebe todos os módulos: Finanças mantém Perfil e Sair na AppBar
+    console.log('8️⃣.1 Testando permanência do botão de Perfil e Sair no módulo Finanças (/financas)...');
+    await (await page.waitForSelector('.MuiCard-root ::-p-text(Finanças)', { timeout: 4000 })).click();
+    await page.waitForFunction(() => window.location.pathname === '/financas', { timeout: 5000 });
+    await page.waitForSelector('#btn-perfil', { timeout: 3000 });
+    await page.waitForSelector('#btn-logout', { timeout: 3000 });
+    console.log(`   ✅ Botões de Perfil e Sair presentes e funcionais na AppBar do módulo Finanças.`);
+    await (await page.waitForSelector('#btn-voltar-dashboard', { timeout: 3000 })).click();
+    await page.waitForFunction(() => window.location.pathname === '/dashboard', { timeout: 5000 });
+
+    // 8.2 Módulo Moto: cadastro da moto → abastecimento (com hodômetro recusado) → troca de óleo → resumo → exclusão
+    console.log('8️⃣.2 Testando o módulo Moto (/moto): moto, abastecimento, troca de óleo e resumo...');
+    const snackbar = async (expected) => {
+      await page.waitForFunction(
+        (text) => Array.from(document.querySelectorAll('.MuiSnackbar-root .MuiAlert-message')).some((el) => el.textContent === text),
+        { timeout: 8000 },
+        expected,
+      );
+    };
+    // Clica no elemento com esse texto exato, esperando ele aparecer (as abas buscam dados ao ficarem visíveis).
+    const clickText = async (selector, text) => {
+      try {
+        await page.waitForFunction(
+          (sel, wanted) => Array.from(document.querySelectorAll(sel)).some((node) => node.textContent.trim() === wanted),
+          { timeout: 8000 },
+          selector,
+          text,
+        );
+      } catch (e) {
+        const screen = await page.evaluate(() => document.body.innerText.replace(/\n+/g, ' · ').slice(0, 500));
+        console.log(`   🔍 "${text}" não apareceu em "${selector}". Tela: ${screen}`);
+        throw e;
+      }
+      await page.evaluate(
+        (sel, wanted) => Array.from(document.querySelectorAll(sel)).find((node) => node.textContent.trim() === wanted).click(),
+        selector,
+        text,
+      );
+    };
+    const submitDialog = () => page.click('[role=dialog] button[type=submit]');
+
+    await (await page.waitForSelector('.MuiCard-root ::-p-text(Moto)', { timeout: 4000 })).click();
+    await page.waitForFunction(() => window.location.pathname === '/moto', { timeout: 5000 });
+    await page.waitForSelector('#moto-tab-motos', { timeout: 5000 });
+    await page.waitForSelector('.MuiAlert-standardInfo', { timeout: 5000 }); // "Cadastre sua primeira moto"
+    console.log('   ✅ Sem motos: a tela convida a cadastrar a primeira.');
+
+    await clickText('button', 'Nova moto');
+    await page.waitForSelector('[role=dialog] input[name=nickname]', { timeout: 3000 });
+    await page.type('input[name=nickname]', 'Moto E2E');
+    await page.type('input[name=model]', 'Fazer 250');
+    await page.type('input[name=initialOdometerKm]', '1000');
+    await submitDialog();
+    await snackbar('Moto cadastrada com sucesso!');
+    await page.waitForSelector('#moto-tab-abastecimentos:not([disabled])', { timeout: 5000 });
+    console.log('   ✅ Moto cadastrada; as demais abas foram liberadas.');
+
+    await page.click('#moto-tab-abastecimentos');
+    await clickText('button', 'Registrar abastecimento');
+    await page.waitForSelector('[role=dialog] input[name=odometerKm]', { timeout: 3000 });
+    await page.type('input[name=odometerKm]', '1500');
+    await page.type('input[name=liters]', '5');
+    await page.type('input[name=totalValue]', '32');
+    await submitDialog();
+    await snackbar('Abastecimento registrado!');
+    await page.waitForFunction(
+      () => Array.from(document.querySelectorAll('table[aria-label="Abastecimentos"] tbody tr')).some((row) => row.textContent.includes('1.500 km')),
+      { timeout: 8000 },
+    );
+    console.log('   ✅ Abastecimento registrado e listado (hodômetro total 1.500 km).');
+
+    await clickText('button', 'Registrar abastecimento');
+    await page.waitForSelector('[role=dialog] input[name=odometerKm]', { timeout: 3000 });
+    await page.type('input[name=odometerKm]', '900'); // abaixo do hodômetro inicial da moto (1.000 km)
+    await page.type('input[name=liters]', '5');
+    await page.type('input[name=totalValue]', '30');
+    await submitDialog();
+    await page.waitForFunction(
+      () => Array.from(document.querySelectorAll('.MuiSnackbar-root .MuiAlert-message')).some((el) => /^Erro: Hodômetro \(900 km\)/.test(el.textContent)),
+      { timeout: 8000 },
+    );
+    await page.waitForSelector('[role=dialog]', { timeout: 2000 }); // o diálogo continua aberto
+    await clickText('[role=dialog] button', 'Cancelar');
+    // A animação de saída do diálogo cobre a tela e engole cliques: só segue quando ele sumiu de vez.
+    await page.waitForSelector('[role=dialog]', { hidden: true, timeout: 5000 });
+    console.log('   ✅ Hodômetro abaixo do inicial recusado pela API, com o motivo na tela.');
+
+    await page.click('#moto-tab-oleo');
+    await clickText('button', 'Registrar primeira troca');
+    await page.waitForSelector('[role=dialog] input[name=intervalKm]', { timeout: 3000 });
+    const prefilled = await page.$eval('input[name=intervalKm]', (el) => el.value);
+    if (prefilled !== '4000') throw new Error(`Intervalo padrão esperado 4000, veio "${prefilled}"`);
+    await submitDialog();
+    await snackbar('Troca de óleo registrada!');
+    await page.waitForFunction(() => document.body.innerText.includes('Em dia'), { timeout: 8000 });
+    console.log('   ✅ Troca de óleo registrada com o intervalo padrão do tipo; próxima troca "Em dia".');
+
+    await page.click('#moto-tab-resumo');
+    await page.waitForSelector('section[role=group]', { timeout: 8000 });
+    await page.waitForFunction(
+      () => Array.from(document.querySelectorAll('section[role=group]')).some((el) => el.textContent.includes('Km rodados') && el.textContent.includes('500 km')),
+      { timeout: 8000 },
+    );
+    console.log('   ✅ Resumo calculou 500 km rodados (1.000 → 1.500).');
+
+    await page.click('#moto-tab-motos');
+    await page.waitForSelector('button[aria-label="Excluir moto Moto E2E"]', { timeout: 5000 });
+    await page.click('button[aria-label="Excluir moto Moto E2E"]');
+    await clickText('[role=dialog] button', 'Confirmar');
+    await snackbar('Moto excluída com sucesso!');
+    console.log('   ✅ Moto de teste excluída (cascata nos abastecimentos e trocas).');
+
+    await (await page.waitForSelector('#btn-voltar-dashboard', { timeout: 3000 })).click();
+    await page.waitForFunction(() => window.location.pathname === '/dashboard', { timeout: 5000 });
 
     const adminCard = await page.waitForSelector('.MuiCard-root ::-p-text(Administração)', { timeout: 4000 });
     await adminCard.click();
@@ -309,7 +432,7 @@ async function runBrowserValidation() {
     await page.waitForFunction(() => window.location.pathname === '/', { timeout: 5000 });
     console.log(`   ✅ Logout final concluído.`);
 
-    console.log('\n🎉 TODAS AS VALIDAÇÕES DE AVATAR, QR CODE MFA, GESTÃO DE USUÁRIOS, PAPÉIS E AUDITORIA PASSARAM COM SUCESSO!');
+    console.log('\n🎉 TODAS AS VALIDAÇÕES DE AVATAR, QR CODE MFA, MÓDULO MOTO, GESTÃO DE USUÁRIOS, PAPÉIS E AUDITORIA PASSARAM COM SUCESSO!');
   } catch (error) {
     console.error('❌ Erro durante a validação no navegador:', error);
     process.exitCode = 1;

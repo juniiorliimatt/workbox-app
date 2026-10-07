@@ -15,6 +15,16 @@ services:
       timeout: 3s
       retries: 10
 
+  # O workbox-api guarda os refresh tokens no Redis: sem ele o login falha e o healthcheck nunca fica verde.
+  redis-e2e:
+    image: redis:7-alpine
+    command: ["redis-server", "--requirepass", "e2e-redis-password"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "e2e-redis-password", "--no-auth-warning", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
   workbox-api-e2e:
     build: ../workbox-api
     environment:
@@ -26,10 +36,17 @@ services:
       - JWT_SECRET=VerySecretJwtForE2ETestsOnlyDoNotUseInProd12345
       - MAIL_HOST=localhost
       - MAIL_PORT=25
+      - REDIS_HOST=redis-e2e
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=e2e-redis-password
+      # O browser do E2E abre o front no Vite (5174), não no nginx (7053): sem isto o CORS recusa o cadastro.
+      - CORS_ALLOWED_ORIGINS=http://localhost:5174
     ports:
       - "8082:8080"
     depends_on:
       postgres-e2e:
+        condition: service_healthy
+      redis-e2e:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:8080/actuator/health"]
@@ -49,6 +66,7 @@ services:
       - INTROSPECTION_URI=http://workbox-api-e2e:8080/api/v1/auth/introspect
       - INTROSPECTION_CLIENT_ID=budget-service
       - INTROSPECTION_CLIENT_SECRET=MyS3cur3Cli3ntS3cr3t!Budg3t!
+      - CORS_ALLOWED_ORIGINS=http://localhost:5174
     ports:
       - "8083:8081"
     depends_on:
@@ -56,6 +74,30 @@ services:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:8081/actuator/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 40s
+
+  moto-service-e2e:
+    build: ../moto-service
+    environment:
+      - PROFILE_ACTIVE=dev
+      - PORT=8085
+      - DATABASE_URL=jdbc:postgresql://postgres-e2e:5432/workbox
+      - POSTGRES_USER=moto_service
+      - POSTGRES_PASSWORD=moto_service
+      - INTROSPECTION_URI=http://workbox-api-e2e:8080/api/v1/auth/introspect
+      - INTROSPECTION_CLIENT_ID=moto-service
+      - INTROSPECTION_CLIENT_SECRET=MyS3cur3Cli3ntS3cr3t!M0t0!
+      - CORS_ALLOWED_ORIGINS=http://localhost:5174
+    ports:
+      - "8084:8085"
+    depends_on:
+      postgres-e2e:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8085/actuator/health"]
       interval: 10s
       timeout: 3s
       retries: 5

@@ -205,7 +205,14 @@ textos exatos). Achado preservado: o "Novo Tipo de Receita" tem checkboxes de co
   não implementação; cobrir caminho feliz, erro, loading e acessibilidade. Mocks de HTTP
   só na fronteira (Axios), a partir do contrato.
 - E2E em `src/test/browser-e2e.mjs` (Puppeteer + Chrome headless) via `npm run test:e2e`;
-  precisa de Docker e do Chrome instalado.
+  precisa de Docker e do Chrome instalado. O ambiente efêmero (`docker-compose.e2e.yml`) tem Postgres, **Redis**
+  (o `workbox-api` guarda os refresh tokens lá), `workbox-api`, `budget-service` e `moto-service`; o banco nasce
+  limpo, então o `run-e2e.sh` **cria a conta `qa.admin`** (registro pela API + promoção a ADMIN no Postgres efêmero)
+  e faz teardown por `trap`, mesmo se a subida falhar. O browser abre o Vite em `localhost:5174`, não o nginx (7053):
+  por isso os serviços sobem com `CORS_ALLOWED_ORIGINS=http://localhost:5174`. **Serviço novo com tela entra em três
+  lugares**: compose efêmero, `VITE_<SERVICO>_API_URL` no `run-e2e.sh` e um cenário no `browser-e2e.mjs`. Em cenário
+  com diálogo MUI, espere o diálogo sumir (`waitForSelector(..., { hidden: true })`) antes de clicar em outra coisa: a
+  animação de saída engole o clique.
 - Contas QA fixas (uso exclusivo do Claude, nunca em demo): `qa.admin@workbox.local` /
   `QaAdmin@123` (ADMIN+USER) e `qa.user@workbox.local` / `QaUser@123` (USER); recriação em
   [`workbox-api/README.md`](../workbox-api/README.md#contas-de-teste-qa). As seed
