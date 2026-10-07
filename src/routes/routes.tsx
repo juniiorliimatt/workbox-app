@@ -51,6 +51,10 @@ export const router = createBrowserRouter([
         lazy: async () => ({ Component: (await import('@/pages/Forza')).default }),
       },
       {
+        path: '/moto',
+        lazy: async () => ({ Component: (await import('@/pages/Moto')).default }),
+      },
+      {
         path: '/forza/sessoes',
         lazy: async () => ({ Component: (await import('@/pages/forza/Sessoes')).default }),
       },

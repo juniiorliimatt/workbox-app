@@ -63,7 +63,7 @@ describe('Dashboard Component', () => {
     vi.clearAllMocks();
   });
 
-  it('renders all 13 cards with Administração as the first card when user is an administrator', () => {
+  it('renders all 14 cards with Administração as the first card when user is an administrator', () => {
     renderDashboard({ isAdmin: true });
 
     expect(screen.getByText(/Olá, Administrador! Selecione um módulo/i)).toBeInTheDocument();
@@ -72,10 +72,12 @@ describe('Dashboard Component', () => {
     expect(titles[0]).toBe('Administração');
     expect(titles[1]).toBe('Finanças');
     expect(titles[2]).toBe('Forza');
-    expect(titles).toHaveLength(13);
+    expect(titles[3]).toBe('Moto');
+    expect(titles).toHaveLength(14);
 
     expect(screen.getByText('Administração')).toBeInTheDocument();
     expect(screen.getByText('Finanças')).toBeInTheDocument();
+    expect(screen.getByText('Moto')).toBeInTheDocument();
     expect(screen.getByText('Tarefas & Projetos')).toBeInTheDocument();
     expect(screen.getByText('Documentos & Wiki')).toBeInTheDocument();
     expect(screen.getByText('Comunicação & Chat')).toBeInTheDocument();
@@ -122,10 +124,22 @@ describe('Dashboard Component', () => {
     expect(screen.queryByText('Finanças')).not.toBeInTheDocument();
   });
 
+  it('shows the Moto card only to users with the MOTO module', () => {
+    const { unmount } = renderDashboard(regularUser(['MOTO']));
+    expect(screen.getByText('Moto')).toBeInTheDocument();
+    expect(screen.queryByText('Finanças')).not.toBeInTheDocument();
+    expect(screen.queryByText('Forza')).not.toBeInTheDocument();
+    unmount();
+
+    renderDashboard(regularUser(['FINANCAS', 'FORZA']));
+    expect(screen.queryByText('Moto')).not.toBeInTheDocument();
+  });
+
   it('shows no module card for a freshly created user (USER only, no module role yet)', () => {
     renderDashboard(regularUser([]));
 
     expect(screen.queryByText('Finanças')).not.toBeInTheDocument();
+    expect(screen.queryByText('Moto')).not.toBeInTheDocument();
     expect(screen.queryByText('Forza')).not.toBeInTheDocument();
     expect(screen.queryByText('Administração')).not.toBeInTheDocument();
   });
@@ -164,6 +178,15 @@ describe('Dashboard Component', () => {
     await user.click(screen.getByText('Forza'));
 
     expect(mockNavigate).toHaveBeenCalledWith('/forza');
+  });
+
+  it('navigates to /moto when clicking the Moto card', async () => {
+    const user = userEvent.setup();
+    renderDashboard();
+
+    await user.click(screen.getByText('Moto'));
+
+    expect(mockNavigate).toHaveBeenCalledWith('/moto');
   });
 
   it('calls logout when clicking the Sair button', async () => {

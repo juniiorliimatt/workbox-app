@@ -25,6 +25,7 @@ import {
   Badge as RhIcon,
   AutoFixHigh as AutomationIcon,
   SportsMotorsports as ForzaIcon,
+  TwoWheeler as MotoIcon,
   Settings as SettingsIcon,
   SupportAgent as SupportIcon,
 } from '@mui/icons-material';
@@ -69,6 +70,15 @@ const MODULES_LIST: IModuleCard[] = [
     path: '/forza',
     enabled: true,
     moduleCode: 'FORZA',
+  },
+  {
+    id: 'moto',
+    title: 'Moto',
+    description: 'Abastecimentos, consumo, km rodados e troca de óleo da sua moto.',
+    icon: <MotoIcon sx={{ fontSize: 40 }} color="primary" />,
+    path: '/moto',
+    enabled: true,
+    moduleCode: 'MOTO',
   },
   {
     id: 'tarefas',

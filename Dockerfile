@@ -16,5 +16,6 @@ COPY nginx.conf.template /etc/nginx/templates/default.conf.template
 ENV WORKBOX_API_UPSTREAM=http://workbox-api:8080 \
     BUDGET_SERVICE_UPSTREAM=http://budget-service:8081 \
     FORZA_SERVICE_UPSTREAM=http://forza-telemetry-service:8083 \
-    BACKUP_SERVICE_UPSTREAM=http://backup-service:8084
+    BACKUP_SERVICE_UPSTREAM=http://backup-service:8084 \
+    MOTO_SERVICE_UPSTREAM=http://moto-service:8085
 EXPOSE 8080

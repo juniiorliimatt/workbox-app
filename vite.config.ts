@@ -36,6 +36,10 @@ export default defineConfig({
         target: process.env.VITE_FORZA_API_URL || 'http://localhost:7057',
         changeOrigin: true,
       },
+      '^/api/v1/(motorcycles|oil-intervals)': {
+        target: process.env.VITE_MOTO_API_URL || 'http://localhost:7059',
+        changeOrigin: true,
+      },
       '^/api/v1/backups': {
         target: process.env.VITE_BACKUP_API_URL || 'http://localhost:7058',
         changeOrigin: true,
