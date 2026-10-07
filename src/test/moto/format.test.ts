@@ -4,10 +4,15 @@ import {
   OIL_TYPE_LABEL,
   formatDate,
   formatKm,
+  formatKmPerDay,
   formatKmPerLiter,
   formatLiters,
+  formatPerKm,
   formatPct,
   formatPerLiter,
+  formatRemainingDays,
+  formatRemainingKm,
+  pluralize,
 } from '@/pages/moto/format';
 import { plain } from './helpers';
 
@@ -29,6 +34,38 @@ describe('moto · format', () => {
   it('formatPerLiter é reais por litro', () => {
     expect(plain(formatPerLiter(6.333))).toBe('R$ 6,33/L');
     expect(formatPerLiter(null)).toBe('—');
+  });
+
+  it('formatKmPerDay tem 2 casas; nulo vira traço', () => {
+    expect(formatKmPerDay(9.68)).toBe('9,68 km/dia');
+    expect(formatKmPerDay(0)).toBe('0,00 km/dia');
+    expect(formatKmPerDay(null)).toBe('—');
+  });
+
+  it('formatPerKm é reais por km', () => {
+    expect(plain(formatPerKm(0.21))).toBe('R$ 0,21/km');
+    expect(formatPerKm(null)).toBe('—');
+  });
+
+  it('pluralize concorda com a quantidade e usa milhar pt-BR', () => {
+    expect(pluralize(1, 'dia', 'dias')).toBe('1 dia');
+    expect(pluralize(0, 'dia', 'dias')).toBe('0 dias');
+    expect(pluralize(122, 'dia', 'dias')).toBe('122 dias');
+    expect(pluralize(1500, 'mês', 'meses')).toBe('1.500 meses');
+  });
+
+  it('formatRemainingKm: faltam, vencida há, ou limite atingido', () => {
+    expect(formatRemainingKm(1000)).toBe('Faltam 1.000 km');
+    expect(formatRemainingKm(-100)).toBe('Vencida há 100 km');
+    expect(formatRemainingKm(0)).toBe('Vencimento atingido');
+  });
+
+  it('formatRemainingDays: faltam, vence hoje, ou vencida há (singular e plural)', () => {
+    expect(formatRemainingDays(122)).toBe('Faltam 122 dias');
+    expect(formatRemainingDays(1)).toBe('Faltam 1 dia');
+    expect(formatRemainingDays(0)).toBe('Vence hoje');
+    expect(formatRemainingDays(-1)).toBe('Vencida há 1 dia');
+    expect(formatRemainingDays(-30)).toBe('Vencida há 30 dias');
   });
 
   it('formatLiters', () => {

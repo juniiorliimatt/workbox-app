@@ -14,6 +14,7 @@ import {
   IRefueling,
   IRefuelingPage,
   IStats,
+  IYearlyStats,
 } from '@/interfaces/moto';
 import { createAuthValue } from '../forza/helpers';
 
@@ -129,6 +130,9 @@ export const makeStats = (overrides?: Partial<IStats>): IStats => ({
   longestSegmentKm: 300,
   ...overrides,
 });
+
+export const makeYearly = (years: number[] = [2026]): IYearlyStats[] =>
+  years.map((year) => ({ year, stats: makeStats({ from: `${year}-01-01`, to: `${year}-12-31`, km: 700, totalSpent: 205 }) }));
 
 export const makeMonthly = (year = 2026): IMonthlyStats[] =>
   Array.from({ length: 12 }, (_, i) => ({

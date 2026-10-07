@@ -34,7 +34,7 @@ import useLazyTabData from '@/hooks/useLazyTabData';
 import { useSnackbar } from '@/hooks/useSnackbar';
 import { IMotorcycle, IOilChange, IOilChangeRequest, IOilInterval, IOilStatus, OilLevel, OilType } from '@/interfaces/moto';
 import { errorMessage } from '@/pages/moto/errors';
-import { OIL_LEVEL_LABEL, OIL_TYPE_LABEL, formatDate, formatKm } from '@/pages/moto/format';
+import { OIL_LEVEL_LABEL, OIL_TYPE_LABEL, formatDate, formatKm, formatRemainingDays, formatRemainingKm, pluralize } from '@/pages/moto/format';
 import { createOilChange, deleteOilChange, getOilStatus, listOilChanges, listOilIntervals, updateOilChange } from '@/services/motoApi';
 import { useAxiosWithAuth } from '@/services/useAxiosWithAuth';
 import { formatCurrency } from '@/utils/format';
@@ -117,11 +117,6 @@ const toFormValues = (change: IOilChange): FormValues => ({
 
 const clampPercent = (value: number): number => Math.round(Math.min(100, Math.max(0, value)));
 
-const plural = (count: number, singular: string, pluralForm: string): string => `${count.toLocaleString('pt-BR')} ${count === 1 ? singular : pluralForm}`;
-
-const remainingText = (value: number, format: (n: number) => string): string =>
-  value >= 0 ? `Faltam ${format(value)}` : `Vencida há ${format(Math.abs(value))}`;
-
 interface ProgressRowProps {
   label: string;
   percent: number;
@@ -167,8 +162,8 @@ const NextChange: FC<{ status: IOilStatus; onRegister: () => void }> = ({ status
         <AlertTitle>{OIL_LEVEL_LABEL[level]}</AlertTitle>
         Próxima troca em {formatKm(status.dueKm)} ou até {formatDate(status.dueDate)}, o que vier primeiro.
       </Alert>
-      <ProgressRow label="Por km" percent={kmPercent} level={level} text={remainingText(status.kmRemaining, formatKm)} />
-      <ProgressRow label="Por tempo" percent={timePercent} level={level} text={remainingText(status.daysRemaining, (n) => plural(n, 'dia', 'dias'))} />
+      <ProgressRow label="Por km" percent={kmPercent} level={level} text={formatRemainingKm(status.kmRemaining)} />
+      <ProgressRow label="Por tempo" percent={timePercent} level={level} text={formatRemainingDays(status.daysRemaining)} />
       <Typography variant="body2" color="text.secondary" sx={{ mt: 1.5 }}>
         Vence primeiro por {status.limitedBy === 'TIME' ? 'tempo' : 'km'}
       </Typography>
@@ -340,7 +335,7 @@ const OleoTab: FC<OleoTabProps> = ({ motorcycle, active, refreshKey, onChanged }
                           {[OIL_TYPE_LABEL[change.oilType], [change.brand, change.viscosity].filter(Boolean).join(' ')].filter(Boolean).join(' · ')}
                         </TableCell>
                         <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>
-                          {formatKm(change.intervalKm)} / {plural(change.intervalMonths, 'mês', 'meses')}
+                          {formatKm(change.intervalKm)} / {pluralize(change.intervalMonths, 'mês', 'meses')}
                         </TableCell>
                         <TableCell align="right" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>
                           {change.cost === null ? '—' : formatCurrency(change.cost)}

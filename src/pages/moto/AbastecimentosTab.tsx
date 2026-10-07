@@ -38,7 +38,7 @@ import { useSnackbar } from '@/hooks/useSnackbar';
 import useLazyTabData from '@/hooks/useLazyTabData';
 import { FuelType, IMotorcycle, IRefueling, IRefuelingRequest } from '@/interfaces/moto';
 import { errorMessage } from '@/pages/moto/errors';
-import { FUEL_TYPE_LABEL, formatDate, formatKm, formatLiters, formatPerLiter } from '@/pages/moto/format';
+import { FUEL_TYPE_LABEL, MONTH_NAMES, formatDate, formatKm, formatLiters, formatPerLiter } from '@/pages/moto/format';
 import { createRefueling, deleteRefueling, listRefuelings, updateRefueling } from '@/services/motoApi';
 import { useAxiosWithAuth } from '@/services/useAxiosWithAuth';
 import { formatCurrency } from '@/utils/format';
@@ -56,7 +56,6 @@ type PeriodMode = 'todos' | 'mensal' | 'anual';
 const ISO = 'YYYY-MM-DD';
 const DEFAULT_PAGE_SIZE = 10;
 const PAGE_SIZE_OPTIONS = [10, 20, 50];
-const MONTHS = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
 
 /** Intervalo `from`/`to` (inclusivo) da API para o filtro escolhido; `{}` = sem período. */
 const periodRange = (mode: PeriodMode, year: number, month: number): { from?: string; to?: string } => {
@@ -255,7 +254,7 @@ const AbastecimentosTab: FC<AbastecimentosTabProps> = ({ motorcycle, active, onC
               }}
               sx={{ minWidth: 140 }}
             >
-              {MONTHS.map((name, index) => (
+              {MONTH_NAMES.map((name, index) => (
                 <MenuItem key={name} value={index + 1}>
                   {name}
                 </MenuItem>
