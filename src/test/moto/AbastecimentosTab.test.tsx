@@ -1,9 +1,9 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import dayjs from 'dayjs';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import AbastecimentosTab from '@/pages/moto/AbastecimentosTab';
-import { MOTO_ID, makeMotorcycle, makeRefueling, makeRefuelingPage, plain, renderMoto } from './helpers';
+import { MOTO_ID, makeMotorcycle, makeRefueling, makeRefuelingPage, mockCompactViewport, plain, renderMoto, resetViewport } from './helpers';
 
 const { mockApi } = vi.hoisted(() => ({ mockApi: { get: vi.fn(), post: vi.fn(), put: vi.fn(), delete: vi.fn() } }));
 vi.mock('@/services/useAxiosWithAuth', () => ({ useAxiosWithAuth: () => mockApi, default: () => mockApi }));
@@ -286,6 +286,55 @@ describe('Moto · aba Abastecimentos', () => {
       ).toBeInTheDocument();
       expect(screen.getByRole('dialog')).toBeInTheDocument();
       expect(onChanged).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('layout compacto (celular)', () => {
+    beforeEach(() => mockCompactViewport());
+    afterEach(() => resetViewport());
+
+    it('mostra cartões em vez da tabela, com todos os dados', async () => {
+      mockApi.get.mockResolvedValue({
+        data: makeRefuelingPage([makeRefueling(), makeRefueling({ id: 'b', date: '2026-01-20', odometerKm: 1300, fullTank: true, station: null, fuelType: 'ETANOL' })]),
+      });
+
+      renderTab();
+
+      const list = await screen.findByRole('list', { name: 'Abastecimentos' });
+      expect(screen.queryByRole('table', { name: 'Abastecimentos' })).not.toBeInTheDocument();
+      const items = within(list).getAllByRole('listitem');
+      expect(items).toHaveLength(2);
+      const first = within(items[0]);
+      expect(first.getByText('10/02/2026 · 1.500 km')).toBeInTheDocument();
+      expect(plain(first.getByText(/5,00 L/).textContent)).toBe('5,00 L · R$ 32,00 · R$ 6,40/L');
+      expect(first.getByText('Gasolina comum · Posto Shell')).toBeInTheDocument();
+      expect(first.getByText('Parcial')).toBeInTheDocument();
+      const second = within(items[1]);
+      expect(second.getByText('Etanol')).toBeInTheDocument();
+      expect(second.getByText('Tanque cheio')).toBeInTheDocument();
+    });
+
+    it('as ações de editar e excluir continuam acessíveis', async () => {
+      const user = userEvent.setup();
+      mockApi.delete.mockResolvedValue({ data: undefined });
+      renderTab();
+
+      await user.click(await screen.findByRole('button', { name: 'Editar abastecimento de 10/02/2026' }));
+      expect(within(await screen.findByRole('dialog')).getByLabelText(/^Hodômetro/)).toHaveValue('1500');
+      await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Cancelar' }));
+      await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+
+      await user.click(screen.getByRole('button', { name: 'Excluir abastecimento de 10/02/2026' }));
+      await user.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Confirmar' }));
+      await waitFor(() => expect(mockApi.delete).toHaveBeenCalledWith(`${URL}/${makeRefueling().id}`));
+    });
+
+    it('a paginação continua disponível', async () => {
+      mockApi.get.mockResolvedValue({ data: makeRefuelingPage([makeRefueling()], { totalElements: 25, totalPages: 3 }) });
+      renderTab();
+
+      expect(await screen.findByText('1–10 de 25')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Próxima página' })).toBeEnabled();
     });
   });
 

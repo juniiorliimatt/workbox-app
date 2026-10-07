@@ -38,6 +38,8 @@ import { useSnackbar } from '@/hooks/useSnackbar';
 import useLazyTabData from '@/hooks/useLazyTabData';
 import { FuelType, IMotorcycle, IRefueling, IRefuelingRequest } from '@/interfaces/moto';
 import { errorMessage } from '@/pages/moto/errors';
+import { RecordCard, RecordList } from '@/pages/moto/RecordList';
+import { useCompactLayout } from '@/pages/moto/useCompactLayout';
 import { FUEL_TYPE_LABEL, MONTH_NAMES, formatDate, formatKm, formatLiters, formatPerLiter } from '@/pages/moto/format';
 import { createRefueling, deleteRefueling, listRefuelings, updateRefueling } from '@/services/motoApi';
 import { useAxiosWithAuth } from '@/services/useAxiosWithAuth';
@@ -232,6 +234,18 @@ const AbastecimentosTab: FC<AbastecimentosTabProps> = ({ motorcycle, active, onC
 
   const yearOptions = Array.from({ length: 6 }, (_, i) => dayjs().year() - i);
   const items = data?.content ?? [];
+  const compact = useCompactLayout();
+
+  const renderActions = (item: IRefueling) => (
+    <>
+      <IconButton size="small" aria-label={`Editar abastecimento de ${formatDate(item.date)}`} onClick={() => openEdit(item)}>
+        <EditIcon fontSize="small" />
+      </IconButton>
+      <IconButton size="small" color="error" aria-label={`Excluir abastecimento de ${formatDate(item.date)}`} onClick={() => setToDelete(item)}>
+        <DeleteIcon fontSize="small" />
+      </IconButton>
+    </>
+  );
 
   return (
     <Box>
@@ -306,7 +320,29 @@ const AbastecimentosTab: FC<AbastecimentosTabProps> = ({ motorcycle, active, onC
 
       {!error && data !== null && items.length > 0 && (
         <>
-          <TableContainer>
+          {compact ? (
+            <RecordList label="Abastecimentos">
+              {items.map((item) => (
+                <RecordCard
+                  key={item.id}
+                  title={`${formatDate(item.date)} · ${formatKm(item.odometerKm)}`}
+                  badge={
+                    item.fullTank ? (
+                      <Chip size="small" color="success" variant="outlined" label="Tanque cheio" />
+                    ) : (
+                      <Typography variant="caption" color="text.secondary">Parcial</Typography>
+                    )
+                  }
+                  lines={[
+                    `${formatLiters(item.liters)} · ${formatCurrency(item.totalValue)} · ${formatPerLiter(item.pricePerLiter)}`,
+                    [FUEL_TYPE_LABEL[item.fuelType], item.station].filter(Boolean).join(' · '),
+                  ]}
+                  actions={renderActions(item)}
+                />
+              ))}
+            </RecordList>
+          ) : (
+          <TableContainer sx={{ position: 'relative' }}>
             <Table size="small" aria-label="Abastecimentos">
               <TableHead>
                 <TableRow>
@@ -336,19 +372,13 @@ const AbastecimentosTab: FC<AbastecimentosTabProps> = ({ motorcycle, active, onC
                     <TableCell>
                       {item.fullTank ? <Chip size="small" color="success" variant="outlined" label="Tanque cheio" /> : <Typography variant="body2" color="text.secondary">Parcial</Typography>}
                     </TableCell>
-                    <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
-                      <IconButton size="small" aria-label={`Editar abastecimento de ${formatDate(item.date)}`} onClick={() => openEdit(item)}>
-                        <EditIcon fontSize="small" />
-                      </IconButton>
-                      <IconButton size="small" color="error" aria-label={`Excluir abastecimento de ${formatDate(item.date)}`} onClick={() => setToDelete(item)}>
-                        <DeleteIcon fontSize="small" />
-                      </IconButton>
-                    </TableCell>
+                    <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>{renderActions(item)}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
           </TableContainer>
+          )}
           <TablePagination
             component="div"
             count={data?.page.totalElements ?? 0}

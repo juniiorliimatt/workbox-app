@@ -1,10 +1,10 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import dayjs from 'dayjs';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import OleoTab from '@/pages/moto/OleoTab';
 import { IOilStatus } from '@/interfaces/moto';
-import { MOTO_ID, OIL_INTERVALS, makeMotorcycle, makeOilChange, makeOilStatus, plain, renderMoto, routeGet } from './helpers';
+import { MOTO_ID, OIL_INTERVALS, makeMotorcycle, makeOilChange, makeOilStatus, mockCompactViewport, plain, renderMoto, resetViewport, routeGet } from './helpers';
 
 const { mockApi } = vi.hoisted(() => ({ mockApi: { get: vi.fn(), post: vi.fn(), put: vi.fn(), delete: vi.fn() } }));
 vi.mock('@/services/useAxiosWithAuth', () => ({ useAxiosWithAuth: () => mockApi, default: () => mockApi }));
@@ -245,6 +245,33 @@ describe('Moto · aba Óleo', () => {
 
       expect(await screen.findByText('Erro: Hodômetro (100 km) abaixo do hodômetro inicial da moto (1000 km)')).toBeInTheDocument();
       expect(screen.getByRole('dialog')).toBeInTheDocument();
+    });
+  });
+
+  describe('layout compacto (celular)', () => {
+    beforeEach(() => mockCompactViewport());
+    afterEach(() => resetViewport());
+
+    it('o histórico vira cartões com todos os dados, e editar/excluir seguem acessíveis', async () => {
+      const user = userEvent.setup();
+      mockApi.delete.mockResolvedValue({ data: undefined });
+      renderTab();
+
+      const list = await screen.findByRole('list', { name: 'Histórico de trocas de óleo' });
+      expect(screen.queryByRole('table', { name: 'Histórico de trocas de óleo' })).not.toBeInTheDocument();
+      const item = within(within(list).getAllByRole('listitem')[0]);
+      expect(item.getByText('01/06/2026 · 20.000 km')).toBeInTheDocument();
+      expect(item.getByText('Semissintético · Motul 10W-40')).toBeInTheDocument();
+      expect(plain(item.getByText(/4\.000 km \/ 6 meses/).textContent)).toBe('4.000 km / 6 meses · R$ 85,00');
+
+      await user.click(item.getByRole('button', { name: 'Editar troca de óleo de 01/06/2026' }));
+      expect(within(await screen.findByRole('dialog', { name: 'Editar troca de óleo' })).getByLabelText(/^Hodômetro/)).toHaveValue('20000');
+      await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Cancelar' }));
+      await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+
+      await user.click(screen.getByRole('button', { name: 'Excluir troca de óleo de 01/06/2026' }));
+      await user.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Confirmar' }));
+      await waitFor(() => expect(mockApi.delete).toHaveBeenCalledWith(`${BASE}/oil-changes/${makeOilChange().id}`));
     });
   });
 

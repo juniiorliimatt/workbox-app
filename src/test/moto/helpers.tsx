@@ -39,6 +39,27 @@ export const renderMoto = (ui: ReactElement, route = '/moto') => {
   return { ...result, rerenderUi: (next: ReactElement) => result.rerender(wrap(next, route)) };
 };
 
+/**
+ * O jsdom não tem `matchMedia`, então o MUI trata toda media query como "não casa" (layout largo). Isto liga o layout
+ * compacto de celular (`breakpoints.down('sm')`): chame no `beforeEach` e `resetViewport()` no `afterEach`.
+ */
+export const mockCompactViewport = (): void => {
+  window.matchMedia = ((query: string) => ({
+    matches: true,
+    media: query,
+    onchange: null,
+    addListener: () => undefined,
+    removeListener: () => undefined,
+    addEventListener: () => undefined,
+    removeEventListener: () => undefined,
+    dispatchEvent: () => false,
+  })) as typeof window.matchMedia;
+};
+
+export const resetViewport = (): void => {
+  delete (window as { matchMedia?: unknown }).matchMedia;
+};
+
 /** `toLocaleString` de moeda usa espaço não separável (U+00A0); normaliza pra comparar com texto simples. */
 export const plain = (text: string | null): string => (text ?? '').replace(/\u00a0/g, ' ');
 

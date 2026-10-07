@@ -34,6 +34,8 @@ import useLazyTabData from '@/hooks/useLazyTabData';
 import { useSnackbar } from '@/hooks/useSnackbar';
 import { IMotorcycle, IOilChange, IOilChangeRequest, IOilInterval, IOilStatus, OilLevel, OilType } from '@/interfaces/moto';
 import { errorMessage } from '@/pages/moto/errors';
+import { RecordCard, RecordList } from '@/pages/moto/RecordList';
+import { useCompactLayout } from '@/pages/moto/useCompactLayout';
 import { OIL_LEVEL_LABEL, OIL_TYPE_LABEL, formatDate, formatKm, formatRemainingDays, formatRemainingKm, pluralize } from '@/pages/moto/format';
 import { createOilChange, deleteOilChange, getOilStatus, listOilChanges, listOilIntervals, updateOilChange } from '@/services/motoApi';
 import { useAxiosWithAuth } from '@/services/useAxiosWithAuth';
@@ -117,6 +119,10 @@ const toFormValues = (change: IOilChange): FormValues => ({
 
 const clampPercent = (value: number): number => Math.round(Math.min(100, Math.max(0, value)));
 
+/** `Semissintético · Motul 10W-40`: tipo do óleo e, se houver, marca e viscosidade. */
+const changeLabel = (change: IOilChange): string =>
+  [OIL_TYPE_LABEL[change.oilType], [change.brand, change.viscosity].filter(Boolean).join(' ')].filter(Boolean).join(' · ');
+
 interface ProgressRowProps {
   label: string;
   percent: number;
@@ -184,6 +190,7 @@ const OleoTab: FC<OleoTabProps> = ({ motorcycle, active, refreshKey, onChanged }
   // Muda a chave de carga depois de gravar/excluir: o hook só recarrega quando a chave muda.
   const [version, setVersion] = useState(0);
   const reload = useCallback(() => setVersion((current) => current + 1), []);
+  const compact = useCompactLayout();
 
   const { data, error } = useLazyTabData(
     active,
@@ -269,6 +276,17 @@ const OleoTab: FC<OleoTabProps> = ({ motorcycle, active, refreshKey, onChanged }
     }
   };
 
+  const renderActions = (change: IOilChange) => (
+    <>
+      <IconButton size="small" aria-label={`Editar troca de óleo de ${formatDate(change.date)}`} onClick={() => openEdit(change)}>
+        <EditIcon fontSize="small" />
+      </IconButton>
+      <IconButton size="small" color="error" aria-label={`Excluir troca de óleo de ${formatDate(change.date)}`} onClick={() => setToDelete(change)}>
+        <DeleteIcon fontSize="small" />
+      </IconButton>
+    </>
+  );
+
   const confirmDelete = async () => {
     if (!toDelete) return;
     const change = toDelete;
@@ -312,7 +330,24 @@ const OleoTab: FC<OleoTabProps> = ({ motorcycle, active, refreshKey, onChanged }
           {data.changes.length > 0 && (
             <>
               <Typography variant="h6" component="h2" sx={{ mb: 1 }}>Histórico</Typography>
-              <TableContainer>
+              {compact ? (
+                <RecordList label="Histórico de trocas de óleo">
+                  {data.changes.map((change) => (
+                    <RecordCard
+                      key={change.id}
+                      title={`${formatDate(change.date)} · ${formatKm(change.odometerKm)}`}
+                      lines={[
+                        changeLabel(change),
+                        [`${formatKm(change.intervalKm)} / ${pluralize(change.intervalMonths, 'mês', 'meses')}`, change.cost === null ? null : formatCurrency(change.cost)]
+                          .filter(Boolean)
+                          .join(' · '),
+                      ]}
+                      actions={renderActions(change)}
+                    />
+                  ))}
+                </RecordList>
+              ) : (
+              <TableContainer sx={{ position: 'relative' }}>
                 <Table size="small" aria-label="Histórico de trocas de óleo">
                   <TableHead>
                     <TableRow>
@@ -331,28 +366,20 @@ const OleoTab: FC<OleoTabProps> = ({ motorcycle, active, refreshKey, onChanged }
                       <TableRow key={change.id} hover>
                         <TableCell>{formatDate(change.date)}</TableCell>
                         <TableCell align="right">{formatKm(change.odometerKm)}</TableCell>
-                        <TableCell>
-                          {[OIL_TYPE_LABEL[change.oilType], [change.brand, change.viscosity].filter(Boolean).join(' ')].filter(Boolean).join(' · ')}
-                        </TableCell>
+                        <TableCell>{changeLabel(change)}</TableCell>
                         <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>
                           {formatKm(change.intervalKm)} / {pluralize(change.intervalMonths, 'mês', 'meses')}
                         </TableCell>
                         <TableCell align="right" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>
                           {change.cost === null ? '—' : formatCurrency(change.cost)}
                         </TableCell>
-                        <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
-                          <IconButton size="small" aria-label={`Editar troca de óleo de ${formatDate(change.date)}`} onClick={() => openEdit(change)}>
-                            <EditIcon fontSize="small" />
-                          </IconButton>
-                          <IconButton size="small" color="error" aria-label={`Excluir troca de óleo de ${formatDate(change.date)}`} onClick={() => setToDelete(change)}>
-                            <DeleteIcon fontSize="small" />
-                          </IconButton>
-                        </TableCell>
+                        <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>{renderActions(change)}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
                 </Table>
               </TableContainer>
+              )}
             </>
           )}
         </>
