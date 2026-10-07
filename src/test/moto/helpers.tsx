@@ -17,17 +17,26 @@ import {
 } from '@/interfaces/moto';
 import { createAuthValue } from '../forza/helpers';
 
-/** Renderiza dentro de Auth + Snackbar + pt-BR do DatePicker + Router (como o `App.tsx`). */
-export const renderMoto = (ui: ReactElement, route = '/moto') =>
-  render(
-    <AuthContext.Provider value={createAuthValue()}>
-      <SnackbarProvider>
-        <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="pt-br">
-          <MemoryRouter initialEntries={[route]}>{ui}</MemoryRouter>
-        </LocalizationProvider>
-      </SnackbarProvider>
-    </AuthContext.Provider>,
-  );
+const authValue = createAuthValue();
+
+const wrap = (ui: ReactElement, route: string) => (
+  <AuthContext.Provider value={authValue}>
+    <SnackbarProvider>
+      <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="pt-br">
+        <MemoryRouter initialEntries={[route]}>{ui}</MemoryRouter>
+      </LocalizationProvider>
+    </SnackbarProvider>
+  </AuthContext.Provider>
+);
+
+/**
+ * Renderiza dentro de Auth + Snackbar + pt-BR do DatePicker + Router (como o `App.tsx`). `rerenderUi` troca só a
+ * árvore de baixo (ex.: virar `active` de uma aba) mantendo os provedores e o estado do componente.
+ */
+export const renderMoto = (ui: ReactElement, route = '/moto') => {
+  const result = render(wrap(ui, route));
+  return { ...result, rerenderUi: (next: ReactElement) => result.rerender(wrap(next, route)) };
+};
 
 /** `toLocaleString` de moeda usa espaço não separável (U+00A0); normaliza pra comparar com texto simples. */
 export const plain = (text: string | null): string => (text ?? '').replace(/\u00a0/g, ' ');
