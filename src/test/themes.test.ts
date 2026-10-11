@@ -1,30 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { Theme } from '@mui/material';
 import { buildTheme } from '@/themes';
-
-/** Luminância relativa e razão de contraste WCAG 2.x (aceita `#rgb`, `#rrggbb` e `rgb(...)`). */
-const channels = (color: string): [number, number, number] => {
-  const rgb = color.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)/);
-  if (rgb) return [Number(rgb[1]), Number(rgb[2]), Number(rgb[3])];
-  const hex = color.replace('#', '');
-  const full = hex.length === 3 ? hex.split('').map((c) => c + c).join('') : hex;
-  return [parseInt(full.slice(0, 2), 16), parseInt(full.slice(2, 4), 16), parseInt(full.slice(4, 6), 16)];
-};
-
-const luminance = (color: string): number => {
-  const [r, g, b] = channels(color).map((value) => {
-    const s = value / 255;
-    return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
-  });
-  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
-};
-
-const contrast = (a: string, b: string): number => {
-  const [light, dark] = [luminance(a), luminance(b)].sort((x, y) => y - x);
-  return (light + 0.05) / (dark + 0.05);
-};
-
-const AA_TEXT = 4.5;
+import { AA_TEXT, contrast, luminance } from './contrast';
 
 const pairs = (theme: Theme): Array<[string, string, string]> => {
   const { palette } = theme;
