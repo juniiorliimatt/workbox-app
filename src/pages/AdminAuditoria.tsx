@@ -152,7 +152,7 @@ export const AdminAuditoria: FC = () => {
   const mfaCount = logs.filter((l) => l.reason?.includes('mfa')).length;
 
   return (
-    <Box sx={{ width: '100%', minHeight: '100vh', bgcolor: 'grey.50', display: 'flex', flexDirection: 'column' }}>
+    <Box sx={{ width: '100%', minHeight: '100vh', bgcolor: 'background.default', display: 'flex', flexDirection: 'column' }}>
       <AppNavbar
         title="Auditoria de Logins"
         icon={<HistoryIcon sx={{ mr: 0.5 }} />}
@@ -319,9 +319,9 @@ export const AdminAuditoria: FC = () => {
               </Grid>
             </Box>
 
-            <TableContainer component={Paper} elevation={0} sx={{ border: '1px solid', borderColor: 'grey.200' }}>
+            <TableContainer component={Paper} elevation={0} sx={{ border: '1px solid', borderColor: 'divider' }}>
               <Table id="tabela-auditoria" aria-label="Tabela de Auditoria de Logins">
-                <TableHead sx={{ bgcolor: 'grey.100' }}>
+                <TableHead sx={{ bgcolor: 'action.hover' }}>
                   <TableRow>
                     <TableCell sx={{ fontWeight: 600 }}>Data & Hora</TableCell>
                     <TableCell sx={{ fontWeight: 600 }}>Identificador / E-mail</TableCell>

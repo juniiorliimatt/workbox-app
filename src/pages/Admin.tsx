@@ -72,7 +72,7 @@ const Admin: FC = () => {
   const navigate = useNavigate();
 
   return (
-    <Box sx={{ width: '100%', minHeight: '100vh', bgcolor: 'grey.50', display: 'flex', flexDirection: 'column' }}>
+    <Box sx={{ width: '100%', minHeight: '100vh', bgcolor: 'background.default', display: 'flex', flexDirection: 'column' }}>
       {/* Barra de Navegação Permanente com Perfil e Logout */}
       <AppNavbar
         title="Painel de Administração"

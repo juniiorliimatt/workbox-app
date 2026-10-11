@@ -153,7 +153,7 @@ export const AdminBackups: FC = () => {
   };
 
   return (
-    <Box sx={{ width: '100%', minHeight: '100vh', bgcolor: 'grey.50', display: 'flex', flexDirection: 'column' }}>
+    <Box sx={{ width: '100%', minHeight: '100vh', bgcolor: 'background.default', display: 'flex', flexDirection: 'column' }}>
       <AppNavbar
         title="Backup do banco"
         icon={<BackupIcon sx={{ mr: 0.5 }} />}
@@ -248,9 +248,9 @@ export const AdminBackups: FC = () => {
                 <CircularProgress />
               </Box>
             ) : (
-              <TableContainer component={Paper} elevation={0} sx={{ border: '1px solid', borderColor: 'grey.200' }}>
+              <TableContainer component={Paper} elevation={0} sx={{ border: '1px solid', borderColor: 'divider' }}>
                 <Table id="tabela-backups" aria-label="Tabela de backups">
-                  <TableHead sx={{ bgcolor: 'grey.100' }}>
+                  <TableHead sx={{ bgcolor: 'action.hover' }}>
                     <TableRow>
                       <TableCell sx={{ fontWeight: 600 }}>Arquivo e caminho no servidor</TableCell>
                       <TableCell sx={{ fontWeight: 600 }}>Gerado em</TableCell>

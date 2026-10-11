@@ -317,7 +317,7 @@ export const AdminUsuarios: FC = () => {
   };
 
   return (
-    <Box sx={{ width: '100%', minHeight: '100vh', bgcolor: 'grey.50', display: 'flex', flexDirection: 'column' }}>
+    <Box sx={{ width: '100%', minHeight: '100vh', bgcolor: 'background.default', display: 'flex', flexDirection: 'column' }}>
       <AppNavbar
         title="Gestão de Usuários"
         icon={<PersonIcon sx={{ mr: 0.5 }} />}
@@ -389,9 +389,9 @@ export const AdminUsuarios: FC = () => {
               </Box>
             ) : (
               <>
-              <TableContainer component={Paper} elevation={0} sx={{ border: '1px solid', borderColor: 'grey.200' }}>
+              <TableContainer component={Paper} elevation={0} sx={{ border: '1px solid', borderColor: 'divider' }}>
                 <Table id="tabela-usuarios" aria-label="Tabela de usuários">
-                  <TableHead sx={{ bgcolor: 'grey.100' }}>
+                  <TableHead sx={{ bgcolor: 'action.hover' }}>
                     <TableRow>
                       <TableCell sx={{ fontWeight: 600 }}>
                         <TableSortLabel active={orderBy === 'socialName'} direction={orderBy === 'socialName' ? orderDirection : 'asc'} onClick={() => handleRequestSort('socialName')}>Usuário</TableSortLabel>
@@ -697,9 +697,9 @@ export const AdminUsuarios: FC = () => {
               Nenhum registro de auditoria Envers encontrado para este usuário.
             </Typography>
           ) : (
-            <TableContainer component={Paper} elevation={0} sx={{ border: '1px solid', borderColor: 'grey.200' }}>
+            <TableContainer component={Paper} elevation={0} sx={{ border: '1px solid', borderColor: 'divider' }}>
               <Table size="small" aria-label="Tabela de Revisões do Usuário">
-                <TableHead sx={{ bgcolor: 'grey.100' }}>
+                <TableHead sx={{ bgcolor: 'action.hover' }}>
                   <TableRow>
                     <TableCell sx={{ fontWeight: 600 }}>Rev. #</TableCell>
                     <TableCell sx={{ fontWeight: 600 }}>Tipo</TableCell>

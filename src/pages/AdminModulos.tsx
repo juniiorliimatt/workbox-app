@@ -97,7 +97,7 @@ export const AdminModulos: FC = () => {
   };
 
   return (
-    <Box sx={{ width: '100%', minHeight: '100vh', bgcolor: 'grey.50', display: 'flex', flexDirection: 'column' }}>
+    <Box sx={{ width: '100%', minHeight: '100vh', bgcolor: 'background.default', display: 'flex', flexDirection: 'column' }}>
       <AppNavbar
         title="Papéis × Módulos"
         icon={<ModulesIcon sx={{ mr: 0.5 }} />}
@@ -143,9 +143,9 @@ export const AdminModulos: FC = () => {
                 <CircularProgress />
               </Box>
             ) : (
-              <TableContainer component={Paper} elevation={0} sx={{ border: '1px solid', borderColor: 'grey.200' }}>
+              <TableContainer component={Paper} elevation={0} sx={{ border: '1px solid', borderColor: 'divider' }}>
                 <Table id="tabela-papeis-modulos" aria-label="Tabela de Papéis e Módulos">
-                  <TableHead sx={{ bgcolor: 'grey.100' }}>
+                  <TableHead sx={{ bgcolor: 'action.hover' }}>
                     <TableRow>
                       <TableCell sx={{ fontWeight: 600 }}>Papel (Authority)</TableCell>
                       <TableCell sx={{ fontWeight: 600, width: 320 }}>Módulo liberado</TableCell>

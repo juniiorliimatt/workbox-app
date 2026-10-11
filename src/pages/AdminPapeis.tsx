@@ -220,7 +220,7 @@ export const AdminPapeis: FC = () => {
   };
 
   return (
-    <Box sx={{ width: '100%', minHeight: '100vh', bgcolor: 'grey.50', display: 'flex', flexDirection: 'column' }}>
+    <Box sx={{ width: '100%', minHeight: '100vh', bgcolor: 'background.default', display: 'flex', flexDirection: 'column' }}>
       <AppNavbar
         title="Papéis & Permissões"
         icon={<SecurityIcon sx={{ mr: 0.5 }} />}
@@ -280,9 +280,9 @@ export const AdminPapeis: FC = () => {
                 <CircularProgress />
               </Box>
             ) : (
-              <TableContainer component={Paper} elevation={0} sx={{ border: '1px solid', borderColor: 'grey.200' }}>
+              <TableContainer component={Paper} elevation={0} sx={{ border: '1px solid', borderColor: 'divider' }}>
                 <Table id="tabela-papeis" aria-label="Tabela de Papéis">
-                  <TableHead sx={{ bgcolor: 'grey.100' }}>
+                  <TableHead sx={{ bgcolor: 'action.hover' }}>
                     <TableRow>
                       <TableCell sx={{ fontWeight: 600, width: 100 }}>ID</TableCell>
                       <TableCell sx={{ fontWeight: 600 }}>Autoridade / Identificador (Authority)</TableCell>
@@ -460,9 +460,9 @@ export const AdminPapeis: FC = () => {
               Nenhum registro de auditoria Envers encontrado para este papel.
             </Typography>
           ) : (
-            <TableContainer component={Paper} elevation={0} sx={{ border: '1px solid', borderColor: 'grey.200' }}>
+            <TableContainer component={Paper} elevation={0} sx={{ border: '1px solid', borderColor: 'divider' }}>
               <Table size="small" aria-label="Tabela de Revisões do Papel">
-                <TableHead sx={{ bgcolor: 'grey.100' }}>
+                <TableHead sx={{ bgcolor: 'action.hover' }}>
                   <TableRow>
                     <TableCell sx={{ fontWeight: 600 }}>Rev. #</TableCell>
                     <TableCell sx={{ fontWeight: 600 }}>Tipo</TableCell>
