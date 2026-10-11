@@ -11,6 +11,7 @@ import ConfirmDialog from '@/components/ConfirmDialog';
 import { useSnackbar } from '@/hooks/useSnackbar';
 import { RevenueTypeDTO, SpendingTypeDTO, RevenueTypeRevisionDTO, SpendingTypeRevisionDTO } from '@/interfaces/budget';
 import { getErrorMessage } from '@/utils/errors';
+import { tonalSx } from '@/themes/tonal';
 
 const GerenciarTipos: FC = () => {
   const api = useAxiosWithAuth();
@@ -71,14 +72,10 @@ const GerenciarTipos: FC = () => {
       <Chip 
         label={isHidden ? `Oculto no ${context}` : `Exibido no ${context}`} 
         size="small" 
-        sx={{ 
-          ml: 1, 
-          height: 20, 
-          fontSize: '0.65rem',
-          bgcolor: isHidden ? '#ffebee' : '#e3f2fd',
-          color: isHidden ? '#c62828' : '#1565c0',
-          fontWeight: 600
-        }} 
+        sx={[
+          { ml: 1, height: 20, fontSize: '0.65rem', fontWeight: 600 },
+          tonalSx(isHidden ? 'error' : 'info'),
+        ]}
       />
     );
   };
@@ -218,7 +215,7 @@ const GerenciarTipos: FC = () => {
   };
 
   return (
-    <Box sx={{ width: '100%', minHeight: '100vh', bgcolor: 'grey.50', display: 'flex', flexDirection: 'column' }}>
+    <Box sx={{ width: '100%', minHeight: '100vh', bgcolor: 'background.default', display: 'flex', flexDirection: 'column' }}>
       <AppNavbar title="Gerenciar Tipos e Categorias" showBackButton backPath="/financas" backLabel="Voltar" />
       <Container maxWidth="xl" sx={{ mt: 4, mb: 4, flexGrow: 1 }}>
         <Grid container spacing={3}>
@@ -232,7 +229,7 @@ const GerenciarTipos: FC = () => {
               </Box>
               <TableContainer sx={{ flexGrow: 1 }}>
                 <Table size="small">
-                  <TableHead sx={{ bgcolor: 'grey.100' }}>
+                  <TableHead sx={{ bgcolor: 'action.hover' }}>
                     <TableRow>
                       <TableCell sx={{ fontWeight: 600 }}>Nome</TableCell>
                       <TableCell align="right" sx={{ fontWeight: 600 }}>Ações</TableCell>
@@ -276,7 +273,7 @@ const GerenciarTipos: FC = () => {
               </Box>
               <TableContainer sx={{ flexGrow: 1 }}>
                 <Table size="small">
-                  <TableHead sx={{ bgcolor: 'grey.100' }}>
+                  <TableHead sx={{ bgcolor: 'action.hover' }}>
                     <TableRow>
                       <TableCell sx={{ fontWeight: 600 }}>Nome</TableCell>
                       <TableCell sx={{ fontWeight: 600 }}>Regra 50/30/20</TableCell>
@@ -372,9 +369,9 @@ const GerenciarTipos: FC = () => {
               Nenhum registro de auditoria encontrado para este tipo.
             </Typography>
           ) : (
-            <TableContainer component={Paper} elevation={0} sx={{ border: '1px solid', borderColor: 'grey.200' }}>
+            <TableContainer component={Paper} elevation={0} sx={{ border: '1px solid', borderColor: 'divider' }}>
               <Table size="small">
-                <TableHead sx={{ bgcolor: 'grey.100' }}>
+                <TableHead sx={{ bgcolor: 'action.hover' }}>
                   <TableRow>
                     <TableCell sx={{ fontWeight: 600 }}>Rev. #</TableCell>
                     <TableCell sx={{ fontWeight: 600 }}>Operação</TableCell>

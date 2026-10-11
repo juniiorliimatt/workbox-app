@@ -7,6 +7,8 @@ import { useLazyTabData } from '@/hooks/useLazyTabData';
 import { useSnackbar } from '@/hooks/useSnackbar';
 import AppNavbar from '@/components/AppNavbar';
 import { formatCurrency } from '@/utils/format';
+import { tonalSx } from '@/themes/tonal';
+import { useChartTheme } from '@/themes/useChartTheme';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28'];
 
@@ -20,6 +22,7 @@ const TabSpinner: FC = () => (
 const Orcamentos: FC = () => {
   const api = useAxiosWithAuth();
   const { showSnackbar } = useSnackbar();
+  const chartTheme = useChartTheme();
   const today = new Date();
   const [month, setMonth] = useState(today.getMonth() + 1);
   const [year, setYear] = useState(today.getFullYear());
@@ -63,7 +66,7 @@ const Orcamentos: FC = () => {
   ] : [];
 
   return (
-    <Box sx={{ width: '100%', minHeight: '100vh', bgcolor: 'grey.50', display: 'flex', flexDirection: 'column' }}>
+    <Box sx={{ width: '100%', minHeight: '100vh', bgcolor: 'background.default', display: 'flex', flexDirection: 'column' }}>
       <AppNavbar title="Metas e Orçamentos" showBackButton backPath="/financas" backLabel="Voltar" />
       <Container maxWidth="xl" sx={{ mt: 4, mb: 4, flexGrow: 1 }}>
         <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
@@ -94,13 +97,13 @@ const Orcamentos: FC = () => {
                 <Typography variant="h6" gutterBottom>Resumo Geral do Mês</Typography>
                 <Grid container spacing={2}>
                   <Grid item xs={12} sm={6} md={2.4}>
-                    <Paper variant="outlined" sx={{ p: 2, textAlign: 'center', bgcolor: 'success.light', color: 'success.contrastText' }}>
+                    <Paper variant="outlined" sx={[{ p: 2, textAlign: 'center' }, tonalSx('success')]}>
                       <Typography variant="subtitle2">Total de Receitas</Typography>
                       <Typography variant="h6">{formatCurrency(summary?.totalRevenue)}</Typography>
                     </Paper>
                   </Grid>
                   <Grid item xs={12} sm={6} md={2.4}>
-                    <Paper variant="outlined" sx={{ p: 2, textAlign: 'center', bgcolor: 'error.light', color: 'error.contrastText' }}>
+                    <Paper variant="outlined" sx={[{ p: 2, textAlign: 'center' }, tonalSx('error')]}>
                       <Typography variant="subtitle2">Total de Despesas</Typography>
                       <Typography variant="h6">{formatCurrency(summary?.totalSpending)}</Typography>
                     </Paper>
@@ -118,7 +121,7 @@ const Orcamentos: FC = () => {
                     </Paper>
                   </Grid>
                   <Grid item xs={12} sm={12} md={2.4}>
-                    <Paper variant="outlined" sx={{ p: 2, textAlign: 'center', bgcolor: (summary?.projectedBalance || 0) >= 0 ? 'info.light' : 'warning.light' }}>
+                    <Paper variant="outlined" sx={[{ p: 2, textAlign: 'center' }, tonalSx((summary?.projectedBalance || 0) >= 0 ? 'info' : 'warning')]}>
                       <Typography variant="subtitle2">Previsão Saldo Final</Typography>
                       <Typography variant="h6">{formatCurrency(summary?.projectedBalance)}</Typography>
                     </Paper>
@@ -139,15 +142,15 @@ const Orcamentos: FC = () => {
                           <Cell key={`cell-rs-${index}`} fill={entry.fill} />
                         ))}
                       </Pie>
-                      <RechartsTooltip formatter={(value: unknown) => formatCurrency(value as number)} />
-                      <Legend verticalAlign="bottom" height={36} />
+                      <RechartsTooltip formatter={(value: unknown) => formatCurrency(value as number)} {...chartTheme.tooltip} />
+                      <Legend verticalAlign="bottom" height={36} {...chartTheme.legend} />
                     </PieChart>
                   </ResponsiveContainer>
                 </Box>
 
-                <TableContainer sx={{ mt: 2, border: '1px solid', borderColor: 'grey.200', borderRadius: 1 }}>
+                <TableContainer sx={{ mt: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
                   <Table size="small">
-                    <TableHead sx={{ bgcolor: 'grey.100' }}>
+                    <TableHead sx={{ bgcolor: 'action.hover' }}>
                       <TableRow>
                         <TableCell sx={{ fontWeight: 600 }}>Categoria</TableCell>
                         <TableCell align="right" sx={{ fontWeight: 600 }}>Valor (R$)</TableCell>
@@ -179,8 +182,8 @@ const Orcamentos: FC = () => {
                           <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                         ))}
                       </Pie>
-                      <RechartsTooltip formatter={(value: unknown) => formatCurrency(value as number)} />
-                      <Legend verticalAlign="bottom" height={36} />
+                      <RechartsTooltip formatter={(value: unknown) => formatCurrency(value as number)} {...chartTheme.tooltip} />
+                      <Legend verticalAlign="bottom" height={36} {...chartTheme.legend} />
                     </PieChart>
                   </ResponsiveContainer>
                 </Box>
@@ -191,12 +194,12 @@ const Orcamentos: FC = () => {
             <Grid item xs={12} md={6}>
               <Paper sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column' }}>
                 <Typography variant="h6" align="center" gutterBottom>Receitas por Tipo (Mês atual)</Typography>
-                <TableContainer sx={{ mt: 2, border: '1px solid', borderColor: 'grey.200', borderRadius: 1 }}>
+                <TableContainer sx={{ mt: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
                   <Table size="small" stickyHeader>
                     <TableHead>
                       <TableRow>
-                        <TableCell sx={{ fontWeight: 600, bgcolor: 'grey.100' }}>Tipo de Receita</TableCell>
-                        <TableCell align="right" sx={{ fontWeight: 600, bgcolor: 'grey.100' }}>Valor Arrecadado (R$)</TableCell>
+                        <TableCell sx={{ fontWeight: 600, bgcolor: 'action.hover' }}>Tipo de Receita</TableCell>
+                        <TableCell align="right" sx={{ fontWeight: 600, bgcolor: 'action.hover' }}>Valor Arrecadado (R$)</TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
@@ -217,12 +220,12 @@ const Orcamentos: FC = () => {
             <Grid item xs={12} md={6}>
               <Paper sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column' }}>
                 <Typography variant="h6" align="center" gutterBottom>Despesas por Tipo (Mês atual)</Typography>
-                <TableContainer sx={{ mt: 2, border: '1px solid', borderColor: 'grey.200', borderRadius: 1 }}>
+                <TableContainer sx={{ mt: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
                   <Table size="small" stickyHeader>
                     <TableHead>
                       <TableRow>
-                        <TableCell sx={{ fontWeight: 600, bgcolor: 'grey.100' }}>Tipo de Despesa</TableCell>
-                        <TableCell align="right" sx={{ fontWeight: 600, bgcolor: 'grey.100' }}>Valor Gasto (R$)</TableCell>
+                        <TableCell sx={{ fontWeight: 600, bgcolor: 'action.hover' }}>Tipo de Despesa</TableCell>
+                        <TableCell align="right" sx={{ fontWeight: 600, bgcolor: 'action.hover' }}>Valor Gasto (R$)</TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
@@ -304,19 +307,19 @@ const Orcamentos: FC = () => {
                 <Typography variant="h6" gutterBottom>Resumo Geral do Ano</Typography>
                 <Grid container spacing={2}>
                   <Grid item xs={12} sm={4}>
-                    <Paper variant="outlined" sx={{ p: 2, textAlign: 'center', bgcolor: 'success.light', color: 'success.contrastText' }}>
+                    <Paper variant="outlined" sx={[{ p: 2, textAlign: 'center' }, tonalSx('success')]}>
                       <Typography variant="subtitle2">Total de Receitas (Ano)</Typography>
                       <Typography variant="h6">{formatCurrency(yearlySummary?.totalRevenue)}</Typography>
                     </Paper>
                   </Grid>
                   <Grid item xs={12} sm={4}>
-                    <Paper variant="outlined" sx={{ p: 2, textAlign: 'center', bgcolor: 'error.light', color: 'error.contrastText' }}>
+                    <Paper variant="outlined" sx={[{ p: 2, textAlign: 'center' }, tonalSx('error')]}>
                       <Typography variant="subtitle2">Total de Despesas (Ano)</Typography>
                       <Typography variant="h6">{formatCurrency(yearlySummary?.totalSpending)}</Typography>
                     </Paper>
                   </Grid>
                   <Grid item xs={12} sm={4}>
-                    <Paper variant="outlined" sx={{ p: 2, textAlign: 'center', bgcolor: (yearlySummary?.balance || 0) >= 0 ? 'info.light' : 'warning.light' }}>
+                    <Paper variant="outlined" sx={[{ p: 2, textAlign: 'center' }, tonalSx((yearlySummary?.balance || 0) >= 0 ? 'info' : 'warning')]}>
                       <Typography variant="subtitle2">Saldo (Ano)</Typography>
                       <Typography variant="h6">{formatCurrency(yearlySummary?.balance)}</Typography>
                     </Paper>
@@ -328,12 +331,12 @@ const Orcamentos: FC = () => {
             <Grid item xs={12} md={6}>
               <Paper sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column' }}>
                 <Typography variant="h6" align="center" gutterBottom>Receitas por Tipo ({year})</Typography>
-                <TableContainer sx={{ mt: 2, border: '1px solid', borderColor: 'grey.200', borderRadius: 1 }}>
+                <TableContainer sx={{ mt: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
                   <Table size="small" stickyHeader>
                     <TableHead>
                       <TableRow>
-                        <TableCell sx={{ fontWeight: 600, bgcolor: 'grey.100' }}>Tipo de Receita</TableCell>
-                        <TableCell align="right" sx={{ fontWeight: 600, bgcolor: 'grey.100' }}>Valor Arrecadado (R$)</TableCell>
+                        <TableCell sx={{ fontWeight: 600, bgcolor: 'action.hover' }}>Tipo de Receita</TableCell>
+                        <TableCell align="right" sx={{ fontWeight: 600, bgcolor: 'action.hover' }}>Valor Arrecadado (R$)</TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
@@ -354,12 +357,12 @@ const Orcamentos: FC = () => {
             <Grid item xs={12} md={6}>
               <Paper sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column' }}>
                 <Typography variant="h6" align="center" gutterBottom>Despesas por Tipo ({year})</Typography>
-                <TableContainer sx={{ mt: 2, border: '1px solid', borderColor: 'grey.200', borderRadius: 1 }}>
+                <TableContainer sx={{ mt: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
                   <Table size="small" stickyHeader>
                     <TableHead>
                       <TableRow>
-                        <TableCell sx={{ fontWeight: 600, bgcolor: 'grey.100' }}>Tipo de Despesa</TableCell>
-                        <TableCell align="right" sx={{ fontWeight: 600, bgcolor: 'grey.100' }}>Valor Gasto (R$)</TableCell>
+                        <TableCell sx={{ fontWeight: 600, bgcolor: 'action.hover' }}>Tipo de Despesa</TableCell>
+                        <TableCell align="right" sx={{ fontWeight: 600, bgcolor: 'action.hover' }}>Valor Gasto (R$)</TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
@@ -399,11 +402,11 @@ const Orcamentos: FC = () => {
                     <Box sx={{ flexGrow: 1, minHeight: 0, mt: 2 }}>
                       <ResponsiveContainer width="100%" height="100%">
                         <LineChart data={yearlyChartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                          <CartesianGrid strokeDasharray="3 3" />
-                          <XAxis dataKey="monthName" />
-                          <YAxis tickFormatter={(val) => `R$ ${val}`} />
-                          <RechartsTooltip formatter={(value: unknown) => formatCurrency(value as number)} />
-                          <Legend />
+                          <CartesianGrid strokeDasharray="3 3" {...chartTheme.grid} />
+                          <XAxis dataKey="monthName" {...chartTheme.axis} />
+                          <YAxis tickFormatter={(val) => `R$ ${val}`} {...chartTheme.axis} />
+                          <RechartsTooltip formatter={(value: unknown) => formatCurrency(value as number)} {...chartTheme.tooltip} />
+                          <Legend {...chartTheme.legend} />
                           <Line type="monotone" dataKey="receitas" name="Receitas (Salário)" stroke="#82ca9d" strokeWidth={2} activeDot={{ r: 8 }} />
                           <Line type="monotone" dataKey="despesas" name="Despesas" stroke="#ff7300" strokeWidth={2} />
                         </LineChart>
@@ -417,11 +420,11 @@ const Orcamentos: FC = () => {
                     <Box sx={{ flexGrow: 1, minHeight: 0, mt: 2 }}>
                       <ResponsiveContainer width="100%" height="100%">
                         <LineChart data={yearlyChartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                          <CartesianGrid strokeDasharray="3 3" />
-                          <XAxis dataKey="monthName" />
-                          <YAxis tickFormatter={(val) => `R$ ${val}`} />
-                          <RechartsTooltip formatter={(value: unknown) => formatCurrency(value as number)} />
-                          <Legend />
+                          <CartesianGrid strokeDasharray="3 3" {...chartTheme.grid} />
+                          <XAxis dataKey="monthName" {...chartTheme.axis} />
+                          <YAxis tickFormatter={(val) => `R$ ${val}`} {...chartTheme.axis} />
+                          <RechartsTooltip formatter={(value: unknown) => formatCurrency(value as number)} {...chartTheme.tooltip} />
+                          <Legend {...chartTheme.legend} />
                           <Line type="monotone" dataKey="essenciais" name="Essenciais (50%)" stroke="#0088FE" strokeWidth={2} />
                           <Line type="monotone" dataKey="pessoais" name="Pessoais (30%)" stroke="#00C49F" strokeWidth={2} />
                           <Line type="monotone" dataKey="poupanca" name="Poupança (20%)" stroke="#FFBB28" strokeWidth={2} />

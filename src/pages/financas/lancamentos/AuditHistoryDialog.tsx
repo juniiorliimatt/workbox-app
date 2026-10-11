@@ -39,9 +39,9 @@ const AuditHistoryDialog: FC<Props> = ({ target, loading, history, onClose }) =>
           Nenhum registro de auditoria encontrado.
         </Typography>
       ) : (
-        <TableContainer component={Paper} elevation={0} sx={{ border: '1px solid', borderColor: 'grey.200' }}>
+        <TableContainer component={Paper} elevation={0} sx={{ border: '1px solid', borderColor: 'divider' }}>
           <Table size="small">
-            <TableHead sx={{ bgcolor: 'grey.100' }}>
+            <TableHead sx={{ bgcolor: 'action.hover' }}>
               <TableRow>
                 <TableCell sx={{ fontWeight: 600 }}>Rev. #</TableCell>
                 <TableCell sx={{ fontWeight: 600 }}>Tipo</TableCell>

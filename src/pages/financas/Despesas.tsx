@@ -4,6 +4,7 @@ import dayjs from 'dayjs';
 import { SpendingDTO, SpendingTypeDTO } from '@/interfaces/budget';
 import { formatCurrency } from '@/utils/format';
 import { getErrorMessage } from '@/utils/errors';
+import { tonalSx } from '@/themes/tonal';
 import LancamentosPage, { LancamentoColumn } from './lancamentos/LancamentosPage';
 import { basePayload, LancamentoConfig, useLancamentos } from './lancamentos/useLancamentos';
 
@@ -70,7 +71,7 @@ const Despesas: FC = () => {
             <Chip
               label={spending.wasPaid ? 'Pago' : 'Pendente'}
               size="small"
-              sx={{ fontWeight: 500, bgcolor: spending.wasPaid ? '#e8f5e9' : '#fff3e0', color: spending.wasPaid ? '#2e7d32' : '#ed6c02' }}
+              sx={[{ fontWeight: 500 }, tonalSx(spending.wasPaid ? 'success' : 'warning')]}
             />
           </TableCell>
           <TableCell>{formatCurrency(spending.value)}</TableCell>

@@ -53,7 +53,7 @@ const LancamentosPage = <TItem extends { id: string }, TType extends { id: strin
   const colSpan = columns.length + 1;
 
   return (
-    <Box sx={{ width: '100%', minHeight: '100vh', bgcolor: 'grey.50', display: 'flex', flexDirection: 'column' }}>
+    <Box sx={{ width: '100%', minHeight: '100vh', bgcolor: 'background.default', display: 'flex', flexDirection: 'column' }}>
       <AppNavbar title={title} showBackButton backPath="/financas" backLabel="Voltar" />
       <Container maxWidth="lg" sx={{ mt: 4, mb: 4, flexGrow: 1 }}>
         <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
@@ -100,7 +100,7 @@ const LancamentosPage = <TItem extends { id: string }, TType extends { id: strin
 
         <TableContainer component={Paper}>
           <Table size="small" sx={{ '& .MuiTableCell-root': { fontSize: '0.95rem', py: 1 } }}>
-            <TableHead sx={{ bgcolor: 'grey.100' }}>
+            <TableHead sx={{ bgcolor: 'action.hover' }}>
               <TableRow>
                 {columns.map((column) => (
                   <TableCell key={column.label}>
