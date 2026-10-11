@@ -166,7 +166,12 @@ export interface TuningCarDTO {
   samples: number;
   requiredSessions: number;
   requiredSamples: number;
+  /** Nível inicial atingido: libera a recomendação. */
   ready: boolean;
+  /** Nível de ajuste fino atingido (só se `ready`): `highRequiredSessions` sessões e `highRequiredSamples` amostras. */
+  highConfidence: boolean;
+  highRequiredSessions: number;
+  highRequiredSamples: number;
   lastSessionAt: string;
   /** Sessão sendo gravada agora nessa build (ainda não conta no progresso), ou nula. */
   activeSession?: TuningActiveSessionDTO | null;
@@ -184,6 +189,10 @@ export interface TuningReadinessDTO {
   requiredSessions: number;
   samples: number;
   requiredSamples: number;
+  /** Nível de ajuste fino atingido (só se `ready`). `missing` descreve só o nível inicial. */
+  highConfidence: boolean;
+  highRequiredSessions: number;
+  highRequiredSamples: number;
   missing: string[];
 }
 

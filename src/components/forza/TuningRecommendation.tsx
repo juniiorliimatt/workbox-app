@@ -1,7 +1,7 @@
 import { FC } from 'react';
 import { Accordion, AccordionDetails, AccordionSummary, Alert, Box, Chip, LinearProgress, List, ListItem, Paper, Typography } from '@mui/material';
 import { ArrowDownward as DownIcon, ArrowUpward as UpIcon, ExpandMore as ExpandIcon } from '@mui/icons-material';
-import { TuningAxle, TuningGuideDTO, TuningGuideStatus, TuningRecommendationDTO, TuningSuggestionDTO } from '@/interfaces/forza';
+import { TuningAxle, TuningGuideDTO, TuningGuideStatus, TuningReadinessDTO, TuningRecommendationDTO, TuningSuggestionDTO } from '@/interfaces/forza';
 import { formatNumber, formatSessionStart } from '@/utils/forza';
 import InitialSetup from './InitialSetup';
 
@@ -133,6 +133,19 @@ const windowText = (recommendation: TuningRecommendationDTO) =>
     ? `Baseado em ${recommendation.readiness.sessions} sessões, de ${formatSessionStart(recommendation.windowFrom)} a ${formatSessionStart(recommendation.windowTo)}.`
     : null;
 
+/** O que falta pro nível de ajuste fino ("3 sessões e 26.000 amostras"), só dos requisitos ainda não cumpridos. */
+const highConfidenceMissing = ({ sessions, samples, highRequiredSessions, highRequiredSamples }: TuningReadinessDTO) => {
+  const parts: string[] = [];
+  if (sessions < highRequiredSessions) {
+    const need = highRequiredSessions - sessions;
+    parts.push(`${need} ${need === 1 ? 'sessão' : 'sessões'}`);
+  }
+  if (samples < highRequiredSamples) {
+    parts.push(`${formatNumber(highRequiredSamples - samples, 0)} amostras`);
+  }
+  return parts.join(' e ');
+};
+
 const Readiness: FC<{ recommendation: TuningRecommendationDTO }> = ({ recommendation }) => {
   const { readiness } = recommendation;
   const sessionsPercent = Math.min(100, Math.round((readiness.sessions / readiness.requiredSessions) * 100));
@@ -149,6 +162,16 @@ const Readiness: FC<{ recommendation: TuningRecommendationDTO }> = ({ recommenda
           {message}
         </Alert>
       ))}
+      {readiness.ready && !readiness.highConfidence && (
+        <Alert severity="info" sx={{ mt: 1.5 }}>
+          {`Alta confiança (ajuste fino) com ${readiness.highRequiredSessions} sessões e ${formatNumber(readiness.highRequiredSamples, 0)} amostras: faltam ${highConfidenceMissing(readiness)}.`}
+        </Alert>
+      )}
+      {readiness.highConfidence && (
+        <Alert severity="success" sx={{ mt: 1.5 }}>
+          Alta confiança: dados suficientes para o ajuste fino.
+        </Alert>
+      )}
       {readiness.ready && basedOn && (
         <Typography variant="caption" color="text.secondary" component="p" sx={{ mt: 1.5 }}>
           {basedOn}

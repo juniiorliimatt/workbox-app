@@ -202,7 +202,17 @@ const TuningCarros: FC = () => {
                         )}
                       </TableCell>
                       <TableCell>
-                        <Chip size="small" label={car.ready ? 'Pronto' : 'Coletando'} color={car.ready ? 'success' : 'default'} variant={car.ready ? 'filled' : 'outlined'} />
+                        <Chip
+                          size="small"
+                          label={car.highConfidence ? 'Alta confiança' : car.ready ? 'Pronto' : 'Coletando'}
+                          color={car.ready ? 'success' : 'default'}
+                          variant={car.ready ? 'filled' : 'outlined'}
+                        />
+                        {car.ready && !car.highConfidence && (
+                          <Typography variant="caption" color="text.secondary" component="p" sx={{ mt: 0.5 }}>
+                            {`Alta confiança (ajuste fino): ${car.highRequiredSessions} sessões e ${formatNumber(car.highRequiredSamples, 0)} amostras.`}
+                          </Typography>
+                        )}
                       </TableCell>
                     </TableRow>
                   );

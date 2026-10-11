@@ -113,7 +113,9 @@ textos exatos). Achado preservado: o "Novo Tipo de Receita" tem checkboxes de co
   scroll lazy (decisão do desenvolvedor: lista vai crescer muito e 5 por página basta).
 - **Tuning (FH6)** (`/forza/tuning`, `/forza/tuning/:carOrdinal/:performanceClass`): lista de carros **por classe de PI**
   (D, C, B, A, S1, S2, R — cada classe é uma build, então o mesmo carro aparece uma vez por classe; o rótulo vem do
-  `performanceClass` da API, não do `carClass` cru do pacote) com progresso até 10 sessões e
+  `performanceClass` da API, não do `carClass` cru do pacote) com progresso até o **nível inicial** (`ready`: libera a
+  recomendação — hoje 5 sessões/20.000 amostras, valores vêm da API) e **alta confiança** (`highConfidence`, ajuste fino —
+  10 sessões/50.000): chip "Pronto" → "Alta confiança" (sempre em texto) e o que falta para o ajuste fino; e
   detalhe com "Aplicar neste ciclo" (≤ 3 ajustes, sentido em texto + ícone, evidência) e **todas** as 9 guias em
   acordeões com status em texto (Ajustar / OK / Sem sinal). Enquanto coleta, só progresso e o que falta. "Reiniciar
   coleta" (com confirmação) chama `POST .../checkpoint`. Rotas `/api/v1/tuning` roteadas no Vite e no nginx.

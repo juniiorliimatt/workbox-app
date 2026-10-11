@@ -94,7 +94,7 @@ describe('Forza · Tuning · recomendação do carro', () => {
   describe('configuração inicial', () => {
     const collecting = (overrides = {}) =>
       makeRecommendation({
-        readiness: { ready: false, sessions: 3, requiredSessions: 10, samples: 9000, requiredSamples: 50000, missing: ['Faltam 7 sessões.'] },
+        readiness: { ready: false, sessions: 3, requiredSessions: 10, samples: 9000, requiredSamples: 50000, highConfidence: false, highRequiredSessions: 15, highRequiredSamples: 80000, missing: ['Faltam 7 sessões.'] },
         guides: [],
         thisCycle: [],
         initialSetup: makeInitialSetup(),
@@ -122,7 +122,7 @@ describe('Forza · Tuning · recomendação do carro', () => {
     it('carro só com a sessão em andamento (0 sessões fechadas, sem janela de datas) já mostra a recomendação inicial e o progresso zerado', async () => {
       mockApi.get.mockResolvedValue({
         data: collecting({
-          readiness: { ready: false, sessions: 0, requiredSessions: 10, samples: 0, requiredSamples: 50000, missing: ['Faltam 10 sessões com este carro (0 de 10).'] },
+          readiness: { ready: false, sessions: 0, requiredSessions: 10, samples: 0, requiredSamples: 50000, highConfidence: false, highRequiredSessions: 15, highRequiredSamples: 80000, missing: ['Faltam 10 sessões com este carro (0 de 10).'] },
           windowFrom: null,
           windowTo: null,
         }),
@@ -280,10 +280,49 @@ describe('Forza · Tuning · recomendação do carro', () => {
     expect(screen.getByRole('button', { name: /^Freios/ })).toBeInTheDocument();
   });
 
+  it('ready at the initial level: shows the guides and what is left to reach high confidence', async () => {
+    mockApi.get.mockResolvedValue({
+      data: makeRecommendation({
+        readiness: { ready: true, sessions: 7, requiredSessions: 5, samples: 24000, requiredSamples: 20000, highConfidence: false, highRequiredSessions: 10, highRequiredSamples: 50000, missing: [] },
+      }),
+    });
+
+    renderPage();
+
+    expect(await screen.findByText(/Alta confiança \(ajuste fino\) com 10 sessões e 50\.000 amostras: faltam 3 sessões e 26\.000 amostras\./)).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: /Aplicar neste ciclo/i })).toBeInTheDocument();
+  });
+
+  it('ready and short of only one high-confidence requirement: names just that one', async () => {
+    mockApi.get.mockResolvedValue({
+      data: makeRecommendation({
+        readiness: { ready: true, sessions: 12, requiredSessions: 5, samples: 30000, requiredSamples: 20000, highConfidence: false, highRequiredSessions: 10, highRequiredSamples: 50000, missing: [] },
+      }),
+    });
+
+    renderPage();
+
+    expect(await screen.findByText(/faltam 20\.000 amostras\./)).toBeInTheDocument();
+    expect(screen.queryByText(/faltam .* sessões/)).not.toBeInTheDocument();
+  });
+
+  it('high confidence: says the data is enough for fine-tuning, with no "what is left" notice', async () => {
+    mockApi.get.mockResolvedValue({
+      data: makeRecommendation({
+        readiness: { ready: true, sessions: 12, requiredSessions: 5, samples: 60000, requiredSamples: 20000, highConfidence: true, highRequiredSessions: 10, highRequiredSamples: 50000, missing: [] },
+      }),
+    });
+
+    renderPage();
+
+    expect(await screen.findByText(/Alta confiança: dados suficientes para o ajuste fino/)).toBeInTheDocument();
+    expect(screen.queryByText(/faltam/)).not.toBeInTheDocument();
+  });
+
   it('while collecting: shows progress and what is missing, no guides and no reset button', async () => {
     mockApi.get.mockResolvedValue({
       data: makeRecommendation({
-        readiness: { ready: false, sessions: 7, requiredSessions: 10, samples: 4000, requiredSamples: 6000, missing: ['Faltam 3 sessões com este carro (7 de 10).', 'Faltam 2000 amostras (~2 min de pilotagem gravada).'] },
+        readiness: { ready: false, sessions: 7, requiredSessions: 10, samples: 4000, requiredSamples: 6000, highConfidence: false, highRequiredSessions: 15, highRequiredSamples: 80000, missing: ['Faltam 3 sessões com este carro (7 de 10).', 'Faltam 2000 amostras (~2 min de pilotagem gravada).'] },
         guides: [],
         thisCycle: [],
       }),

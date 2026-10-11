@@ -37,6 +37,35 @@ describe('Forza · Tuning · carros', () => {
     expect(screen.getByText('Coletando')).toBeInTheDocument();
   });
 
+  it('ready but short of high confidence: stays "Pronto" and says what the fine-tuning level asks', async () => {
+    mockApi.get.mockResolvedValue({ data: [makeTuningCar({ ready: true, highConfidence: false, highRequiredSessions: 10, highRequiredSamples: 50000 })] });
+
+    renderPage();
+
+    expect(await screen.findByText('Pronto')).toBeInTheDocument();
+    expect(screen.queryByText('Alta confiança')).not.toBeInTheDocument();
+    expect(screen.getByText(/Alta confiança \(ajuste fino\): 10 sessões e 50\.000 amostras/)).toBeInTheDocument();
+  });
+
+  it('high confidence: the chip says so (text, not only color) and the hint goes away', async () => {
+    mockApi.get.mockResolvedValue({ data: [makeTuningCar({ ready: true, highConfidence: true })] });
+
+    renderPage();
+
+    expect(await screen.findByText('Alta confiança')).toBeInTheDocument();
+    expect(screen.queryByText('Pronto')).not.toBeInTheDocument();
+    expect(screen.queryByText(/ajuste fino\)/)).not.toBeInTheDocument();
+  });
+
+  it('still collecting: no high-confidence hint yet', async () => {
+    mockApi.get.mockResolvedValue({ data: [makeTuningCar({ ready: false, sessions: 2, samples: 3000 })] });
+
+    renderPage();
+
+    expect(await screen.findByText('Coletando')).toBeInTheDocument();
+    expect(screen.queryByText(/ajuste fino\)/)).not.toBeInTheDocument();
+  });
+
   it('falls back to #ordinal when the car name is unknown', async () => {
     mockApi.get.mockResolvedValue({ data: [makeTuningCar({ carOrdinal: 1234, carName: null })] });
 
