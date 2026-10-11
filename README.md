@@ -190,6 +190,9 @@ Exclusivo para contas com permissão de administrador (papel `ADMIN`):
 - Cabeçalho persistente em todos os módulos autenticados.
 - Exibe o Avatar do usuário, nome social e função (Administrador / Meu Perfil).
 - Acesso rápido permanente à tela de Perfil e botão de Logout seguro.
+- Botão de **tema** (claro / escuro / automático pelo sistema), também presente no Login e na redefinição de senha. A escolha
+  fica no `localStorage` (`workbox.colorMode`); o padrão é seguir o sistema (`prefers-color-scheme`). Os tokens ficam em
+  `src/themes/` (`buildTheme`, `tonalSx` para cores de status, `useChartTheme` para gráficos); contraste AA coberto por testes.
 
 ---
 

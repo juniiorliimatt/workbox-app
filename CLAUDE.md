@@ -191,6 +191,15 @@ textos exatos). Achado preservado: o "Novo Tipo de Receita" tem checkboxes de co
   performance — manter.
 - **Tema/UI**: MUI + tokens do tema; sem cores/espaçamentos mágicos; mobile-first; foco
   visível e navegação por teclado em elementos custom; contraste AA.
+- **Tema claro/escuro**: `themes/index.ts#buildTheme(mode)`; `ColorModeProvider` (em `App.tsx`) guarda a preferência
+  `light|dark|system` em `localStorage` (`workbox.colorMode`, sempre `try/catch`, padrão `system` via
+  `prefers-color-scheme`); `ColorModeToggle` (`#btn-tema`) está no `AppNavbar`, no Login e no ResetPassword; `index.html`
+  pinta o fundo antes do React (sem flash branco). **Sem cor fixa nas telas** (`grey.*`, `#fff`, `white`, hex): use
+  `background.default/paper`, `action.hover/selected`, `divider`, `primary.contrastText`. Cor de status em chip/cartão:
+  `tonalSx('success'|'warning'|'error'|'info')` (`themes/tonal.ts`, contraste AA testado nos dois modos — nunca
+  `*.light` + `contrastText`). Gráficos recharts: espalhe `useChartTheme()` (`grid`, `axis`, `tooltip`, `legend`) — os
+  cinzas e o tooltip branco padrão ficam ilegíveis no escuro. Exceção deliberada: QR do MFA continua branco (leitura).
+  Tela nova: valide nos dois modos (screenshot do recharts: não use `fullPage`, ele redimensiona e o gráfico sai em branco).
 - **Segurança** (apontar sempre que tocar):
   - O **refresh token fica em `localStorage`** (`AuthContext`, chave
     `REFRESH_TOKEN_STORAGE_KEY`) — exposto a XSS (CWE-922); o ideal é cookie
