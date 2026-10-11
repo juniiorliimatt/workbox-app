@@ -339,7 +339,7 @@ const Perfil: FC = () => {
   };
 
   return (
-    <Box sx={{ width: '100%', minHeight: '100vh', bgcolor: 'grey.50', display: 'flex', flexDirection: 'column' }}>
+    <Box sx={{ width: '100%', minHeight: '100vh', bgcolor: 'background.default', display: 'flex', flexDirection: 'column' }}>
       {/* Barra de Navegação Permanente com Perfil e Logout */}
       <AppNavbar
         title="Meu Perfil & Segurança"
@@ -435,10 +435,10 @@ const Perfil: FC = () => {
                     alignItems: 'center',
                     gap: 2,
                     p: 1.5,
-                    bgcolor: 'grey.50',
+                    bgcolor: 'action.hover',
                     borderRadius: 2,
                     border: '1px dashed',
-                    borderColor: 'grey.300',
+                    borderColor: 'divider',
                     mb: 2,
                   }}
                 >
@@ -450,7 +450,7 @@ const Perfil: FC = () => {
                         <IconButton
                           component="span"
                           size="small"
-                          sx={{ bgcolor: 'primary.main', color: 'white', '&:hover': { bgcolor: 'primary.dark' }, p: 0.5 }}
+                          sx={{ bgcolor: 'primary.main', color: 'primary.contrastText', '&:hover': { bgcolor: 'primary.dark' }, p: 0.5 }}
                         >
                           <PhotoCameraIcon sx={{ fontSize: 14 }} />
                         </IconButton>
@@ -774,13 +774,14 @@ const Perfil: FC = () => {
                 )}
 
                 {enrollData ? (
-                  <Box sx={{ p: 2, bgcolor: 'grey.100', borderRadius: 2 }}>
+                  <Box sx={{ p: 2, bgcolor: 'action.hover', borderRadius: 2 }}>
                     <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1.5, textAlign: 'center' }}>
                       1. Escaneie o QR Code no seu aplicativo autenticador:
                     </Typography>
 
                     {/* QR Code para Google Authenticator / Authy */}
                     <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
+                      {/* O QR code fica sempre sobre branco (de propósito, nos dois temas): o leitor do autenticador precisa desse contraste. */}
                       <Paper
                         elevation={1}
                         id="mfa-qr-code-container"
@@ -801,7 +802,7 @@ const Perfil: FC = () => {
                     <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5, textAlign: 'center' }}>
                       Ou digite a chave manual no autenticador:
                     </Typography>
-                    <Box sx={{ display: 'flex', alignItems: 'center', bgcolor: 'white', p: 1, borderRadius: 1, mb: 2 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', bgcolor: 'background.paper', p: 1, borderRadius: 1, mb: 2 }}>
                       <Typography variant="caption" sx={{ fontFamily: 'monospace', wordBreak: 'break-all', flexGrow: 1 }}>
                         {enrollData.secret}
                       </Typography>
@@ -827,7 +828,7 @@ const Perfil: FC = () => {
                       value={mfaCode}
                       onChange={(e) => setMfaCode(e.target.value)}
                       inputProps={{ maxLength: 6, inputMode: 'numeric', pattern: '[0-9]*' }}
-                      sx={{ mb: 2, bgcolor: 'white' }}
+                      sx={{ mb: 2, bgcolor: 'background.paper' }}
                       disabled={isVerifyingMfa}
                     />
 
@@ -852,7 +853,7 @@ const Perfil: FC = () => {
                     </Box>
                   </Box>
                 ) : isDisablingMfa ? (
-                  <Box sx={{ p: 2, bgcolor: 'grey.100', borderRadius: 2 }}>
+                  <Box sx={{ p: 2, bgcolor: 'action.hover', borderRadius: 2 }}>
                     <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
                       Confirmar Desativação de MFA:
                     </Typography>
@@ -867,7 +868,7 @@ const Perfil: FC = () => {
                       value={disableCode}
                       onChange={(e) => setDisableCode(e.target.value)}
                       inputProps={{ maxLength: 6, inputMode: 'numeric' }}
-                      sx={{ mb: 2, bgcolor: 'white' }}
+                      sx={{ mb: 2, bgcolor: 'background.paper' }}
                       disabled={isVerifyingMfa}
                     />
                     <Box sx={{ display: 'flex', gap: 1 }}>

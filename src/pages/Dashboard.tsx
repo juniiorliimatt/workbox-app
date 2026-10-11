@@ -166,7 +166,7 @@ const Dashboard: FC = () => {
   });
 
   return (
-    <Box sx={{ width: '100%', minHeight: '100vh', bgcolor: 'grey.50', display: 'flex', flexDirection: 'column' }}>
+    <Box sx={{ width: '100%', minHeight: '100vh', bgcolor: 'background.default', display: 'flex', flexDirection: 'column' }}>
       {/* Barra de Navegação Permanente com Perfil e Logout */}
       <AppNavbar title="Workbox Hub" icon={<DashboardIcon sx={{ mr: 0.5 }} />} />
 
@@ -234,7 +234,7 @@ const Dashboard: FC = () => {
                       <Chip
                         label="Em breve"
                         size="small"
-                        sx={{ bgcolor: 'grey.200', color: 'text.secondary', fontWeight: 500 }}
+                        sx={{ bgcolor: 'action.selected', color: 'text.secondary', fontWeight: 500 }}
                       />
                     </Box>
                     <Typography variant="h6" component="h3" sx={{ fontWeight: 600, mb: 1, color: 'text.secondary' }}>

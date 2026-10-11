@@ -274,7 +274,7 @@ const Login: FC = () => {
             sx={{
               m: 1,
               bgcolor: 'primary.main',
-              color: 'white',
+              color: 'primary.contrastText',
               p: 1.5,
               borderRadius: '50%',
               display: 'flex',
