@@ -6,6 +6,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import api from '@/services/api';
+import ColorModeToggle from '@/components/ColorModeToggle';
 import {
   Alert,
   Box,
@@ -251,8 +252,12 @@ const Login: FC = () => {
         px: 2,
         py: 4,
         bgcolor: 'background.default',
+        position: 'relative',
       }}
     >
+      <Box sx={{ position: 'absolute', top: 8, right: 8 }}>
+        <ColorModeToggle />
+      </Box>
       <Container component="main" maxWidth="xs" disableGutters>
         <Paper
           elevation={3}

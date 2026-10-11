@@ -12,6 +12,7 @@ import {
   ArrowBack as ArrowBackIcon,
   ExitToApp as LogoutIcon,
 } from '@mui/icons-material';
+import ColorModeToggle from '@/components/ColorModeToggle';
 import UserAvatar from '@/components/UserAvatar';
 
 export interface IAppNavbarProps {
@@ -59,6 +60,8 @@ export const AppNavbar: FC<IAppNavbarProps> = ({
         </Typography>
 
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <ColorModeToggle />
+
           {/* Botão de Perfil / Edição Permanente em todos os módulos */}
           <Button
             id="btn-perfil"

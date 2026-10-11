@@ -6,6 +6,24 @@
   <link rel="icon" type="image/png" sizes="32x32" href="/ux.png">
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Workbox App</title>
+  <!--
+    Evita o "flash" branco ao abrir no tema escuro: antes de o React montar, pinta o fundo conforme a escolha guardada
+    (chave `workbox.colorMode`: light | dark | system) ou, sem escolha, o tema do sistema. O tema de verdade é do
+    ColorModeProvider; isto só cobre o intervalo até o JS carregar.
+  -->
+  <script>
+    (function () {
+      try {
+        var stored = window.localStorage.getItem('workbox.colorMode');
+        var dark = stored === 'dark' || ((stored === null || stored === 'system') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        var root = document.documentElement;
+        root.style.colorScheme = dark ? 'dark' : 'light';
+        root.style.backgroundColor = dark ? '#121212' : '#f4f6f8';
+      } catch (e) {
+        /* sem localStorage/matchMedia: segue o padrão claro */
+      }
+    })();
+  </script>
 </head>
 
 <body>

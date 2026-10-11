@@ -19,6 +19,7 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import axios from 'axios';
 import api from '@/services/api';
+import ColorModeToggle from '@/components/ColorModeToggle';
 
 const resetSchema = yup.object().shape({
   newPassword: yup
@@ -103,8 +104,12 @@ const ResetPassword: FC = () => {
         justifyContent: 'center',
         bgcolor: 'background.default',
         p: 2,
+        position: 'relative',
       }}
     >
+      <Box sx={{ position: 'absolute', top: 8, right: 8 }}>
+        <ColorModeToggle />
+      </Box>
       <Card elevation={3} sx={{ maxWidth: 450, width: '100%', borderRadius: 2 }}>
         <CardContent sx={{ p: { xs: 3, sm: 4 } }}>
           <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 3 }}>
