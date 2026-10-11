@@ -20,7 +20,7 @@ const SetupTable: FC<{ groups: TuningSetupGroupDTO[] }> = ({ groups }) => (
       <TableBody>
         {groups.map((group) => [
           <TableRow key={`${group.id}-title`}>
-            <TableCell component="th" scope="colgroup" colSpan={4} sx={{ bgcolor: 'grey.100', fontWeight: 700 }}>
+            <TableCell component="th" scope="colgroup" colSpan={4} sx={{ bgcolor: 'action.hover', fontWeight: 700 }}>
               {group.title}
             </TableCell>
           </TableRow>,

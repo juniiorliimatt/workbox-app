@@ -125,7 +125,7 @@ const SessaoDetalhe: FC = () => {
   };
 
   return (
-    <Box sx={{ width: '100%', minHeight: '100vh', bgcolor: 'grey.50', display: 'flex', flexDirection: 'column' }}>
+    <Box sx={{ width: '100%', minHeight: '100vh', bgcolor: 'background.default', display: 'flex', flexDirection: 'column' }}>
       <AppNavbar
         title="Workbox Forza"
         icon={<ForzaIcon sx={{ mr: 0.5 }} />}
