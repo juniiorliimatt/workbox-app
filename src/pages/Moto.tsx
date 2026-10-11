@@ -35,7 +35,7 @@ const Moto: FC = () => {
   const tab: TabKey = !selected ? 'motos' : isTabKey(requested) ? requested : 'resumo';
 
   return (
-    <Box sx={{ width: '100%', minHeight: '100vh', bgcolor: 'grey.50', display: 'flex', flexDirection: 'column' }}>
+    <Box sx={{ width: '100%', minHeight: '100vh', bgcolor: 'background.default', display: 'flex', flexDirection: 'column' }}>
       <AppNavbar
         title="Workbox Moto"
         icon={<MotoIcon sx={{ mr: 0.5 }} />}

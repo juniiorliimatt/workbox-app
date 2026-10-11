@@ -50,6 +50,7 @@ import {
   pluralize,
 } from '@/pages/moto/format';
 import { createOdometerReading, getMonthlyStats, getOilStatus, getStats, getYearlyStats } from '@/services/motoApi';
+import { useChartTheme } from '@/themes/useChartTheme';
 import { useAxiosWithAuth } from '@/services/useAxiosWithAuth';
 import { formatCurrency } from '@/utils/format';
 
@@ -164,6 +165,7 @@ const oilCardLines = (oil: IOilStatus): ReactNode[] => {
 const ResumoTab: FC<ResumoTabProps> = ({ motorcycle, active, refreshKey, onChanged }) => {
   const api = useAxiosWithAuth();
   const theme = useTheme();
+  const chartTheme = useChartTheme();
   const { showSnackbar } = useSnackbar();
   const now = dayjs();
   const currentYear = now.year();
@@ -351,10 +353,10 @@ const ResumoTab: FC<ResumoTabProps> = ({ motorcycle, active, refreshKey, onChang
                   tableRows={series.map((point) => [point.label, formatKmPerLiter(point.stats.kmPerLiter)])}
                 >
                   <LineChart data={series.map((point) => ({ name: point.name, value: point.stats.kmPerLiter }))} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke={theme.palette.divider} />
-                    <XAxis dataKey="name" />
-                    <YAxis />
-                    <ChartTooltip formatter={(value) => formatKmPerLiter(Number(value))} />
+                    <CartesianGrid strokeDasharray="3 3" {...chartTheme.grid} />
+                    <XAxis dataKey="name" {...chartTheme.axis} />
+                    <YAxis {...chartTheme.axis} />
+                    <ChartTooltip formatter={(value) => formatKmPerLiter(Number(value))} {...chartTheme.tooltip} />
                     <Line type="monotone" dataKey="value" name="Consumo" stroke={theme.palette.primary.main} strokeWidth={2} connectNulls={false} />
                   </LineChart>
                 </ChartCard>
@@ -366,10 +368,10 @@ const ResumoTab: FC<ResumoTabProps> = ({ motorcycle, active, refreshKey, onChang
                   tableRows={series.map((point) => [point.label, formatCurrency(point.stats.totalSpent)])}
                 >
                   <BarChart data={series.map((point) => ({ name: point.name, value: point.stats.totalSpent }))} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke={theme.palette.divider} />
-                    <XAxis dataKey="name" />
-                    <YAxis />
-                    <ChartTooltip formatter={(value) => formatCurrency(Number(value))} />
+                    <CartesianGrid strokeDasharray="3 3" {...chartTheme.grid} />
+                    <XAxis dataKey="name" {...chartTheme.axis} />
+                    <YAxis {...chartTheme.axis} />
+                    <ChartTooltip formatter={(value) => formatCurrency(Number(value))} {...chartTheme.tooltip} />
                     <Bar dataKey="value" name="Gasto" fill={theme.palette.secondary.main} />
                   </BarChart>
                 </ChartCard>
@@ -381,10 +383,10 @@ const ResumoTab: FC<ResumoTabProps> = ({ motorcycle, active, refreshKey, onChang
                   tableRows={series.map((point) => [point.label, formatKm(point.stats.km)])}
                 >
                   <BarChart data={series.map((point) => ({ name: point.name, value: point.stats.km }))} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke={theme.palette.divider} />
-                    <XAxis dataKey="name" />
-                    <YAxis />
-                    <ChartTooltip formatter={(value) => formatKm(Number(value))} />
+                    <CartesianGrid strokeDasharray="3 3" {...chartTheme.grid} />
+                    <XAxis dataKey="name" {...chartTheme.axis} />
+                    <YAxis {...chartTheme.axis} />
+                    <ChartTooltip formatter={(value) => formatKm(Number(value))} {...chartTheme.tooltip} />
                     <Bar dataKey="value" name="Km rodados" fill={theme.palette.success.main} />
                   </BarChart>
                 </ChartCard>
@@ -397,10 +399,10 @@ const ResumoTab: FC<ResumoTabProps> = ({ motorcycle, active, refreshKey, onChang
                     tableRows={overview.data.yearly.map((entry) => [String(entry.year), formatKm(entry.stats.km)])}
                   >
                     <BarChart data={overview.data.yearly.map((entry) => ({ name: String(entry.year), value: entry.stats.km }))} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke={theme.palette.divider} />
-                      <XAxis dataKey="name" />
-                      <YAxis />
-                      <ChartTooltip formatter={(value) => formatKm(Number(value))} />
+                      <CartesianGrid strokeDasharray="3 3" {...chartTheme.grid} />
+                      <XAxis dataKey="name" {...chartTheme.axis} />
+                      <YAxis {...chartTheme.axis} />
+                      <ChartTooltip formatter={(value) => formatKm(Number(value))} {...chartTheme.tooltip} />
                       <Bar dataKey="value" name="Km rodados" fill={theme.palette.info.main} />
                     </BarChart>
                   </ChartCard>
