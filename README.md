@@ -106,8 +106,9 @@ em uso).
 - **Autenticação em Duas Etapas (MFA / 2FA)**:
   - Detecção automática de contas com MFA ativo via desafio `mfa_token`.
   - Formulário dedicado para validação do código de 6 dígitos gerado por aplicativo autenticador.
-- **Controle de Inatividade (Auto-Logout)**: O frontend expira e invalida a sessão automaticamente se o usuário ficar inativo por 15 minutos (sem interação com mouse/teclado/touch).
+- **Controle de Inatividade (Auto-Logout)**: O frontend expira e invalida a sessão automaticamente se o usuário ficar inativo por 15 minutos (sem interação com mouse/teclado/touch). Exceção: na tela **Forza › Ao vivo**, enquanto a telemetria está chegando, a sessão conta como ativa (quem joga no Xbox e só acompanha a tela não é deslogado); com o jogo parado a inatividade volta a valer.
 - **Renovação de Sessão (Token Refresh)**:
+  - O access token (15 min) é renovado sozinho **2 min antes de expirar**; falha transitória (rede, 5xx, 429) não derruba a sessão e tenta de novo em 15 s — só o servidor recusando o refresh token encerra.
   - Rotação contínua de refresh tokens via `POST /api/v1/auth/refresh` com corpo JSON `{ "refreshToken": "..." }`.
   - Renovação automática transparente via interceptors do Axios em respostas 401.
 

@@ -209,7 +209,12 @@ textos exatos). Achado preservado: o "Novo Tipo de Receita" tem checkboxes de co
     contrato novo no `workbox-api`. O access token fica só em memória (`useState`).
   - "Lembrar de mim" guarda só o e-mail em `localStorage`.
   - Sem `dangerouslySetInnerHTML`/`innerHTML`; manter assim.
-  - Auto-logout por inatividade de 15 min (`IdleMonitor`).
+  - Auto-logout por inatividade de 15 min (`IdleMonitor`: teclado/mouse/toque + o evento `SESSION_ACTIVITY_EVENT` de
+    `utils/sessionActivity`). Tela que acompanha algo sem input do usuário reporta atividade (hoje só `forza/AoVivo`, via
+    `useLiveSessionActivity`, e só com a telemetria chegando — jogo parado não segura a sessão). Não isente rotas do monitor.
+  - Access token (15 min) renovado por timer **2 min antes de expirar** (`AuthContext`); `refresh()` é single-flight e a
+    referência da promessa é limpa em `.finally` (um `finally` interno já travou o refresh para sempre no retorno antecipado).
+    Só 4xx (≠ 408/429) do `/auth/refresh` encerra a sessão; rede/5xx/429 mantém o refresh token e tenta de novo em 15 s.
 
 ## Testes (test-first)
 - Vitest + Testing Library em `src/test/` (`*.test.tsx`, `setupTests.ts`): comportamento,
