@@ -215,6 +215,8 @@ textos exatos). Achado preservado: o "Novo Tipo de Receita" tem checkboxes de co
   - Access token (15 min) renovado por timer **2 min antes de expirar** (`AuthContext`); `refresh()` é single-flight e a
     referência da promessa é limpa em `.finally` (um `finally` interno já travou o refresh para sempre no retorno antecipado).
     Só 4xx (≠ 408/429) do `/auth/refresh` encerra a sessão; rede/5xx/429 mantém o refresh token e tenta de novo em 15 s.
+    O interceptor 401 → refresh → repete a chamada é instalado **uma vez no `ProtectedRoute`** (`useAxiosWithAuth()`), então vale
+    também para telas que montam o header à mão (Admin*, avatar). Tela nova pode usar `api` direto sem perder a renovação.
 
 ## Testes (test-first)
 - Vitest + Testing Library em `src/test/` (`*.test.tsx`, `setupTests.ts`): comportamento,
