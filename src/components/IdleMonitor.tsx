@@ -1,6 +1,7 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useLocation } from 'react-router-dom';
+import { SESSION_ACTIVITY_EVENT } from '@/utils/sessionActivity';
 
 const IDLE_TIMEOUT_MS = 15 * 60 * 1000; // 15 minutos
 
@@ -30,7 +31,8 @@ export const IdleMonitor = () => {
     resetTimer();
 
     // Eventos que indicam que o usuário está ativo
-    const events = ['mousemove', 'keydown', 'wheel', 'click', 'touchstart'];
+    // + atividade reportada pela tela (telemetria ao vivo chegando), p/ quem acompanha sem tocar no teclado/mouse
+    const events = ['mousemove', 'keydown', 'wheel', 'click', 'touchstart', SESSION_ACTIVITY_EVENT];
     
     const handleActivity = () => resetTimer();
 

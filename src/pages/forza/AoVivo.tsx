@@ -5,6 +5,7 @@ import AppNavbar from '@/components/AppNavbar';
 import DataOutHint from '@/components/forza/DataOutHint';
 import ShiftLights from '@/components/forza/ShiftLights';
 import StatTile from '@/components/forza/StatTile';
+import { useLiveSessionActivity } from '@/hooks/useLiveSessionActivity';
 import { useLiveSnapshot } from '@/hooks/useLiveSnapshot';
 import { LiveSnapshotDTO } from '@/interfaces/forza';
 import { useAxiosWithAuth } from '@/services/useAxiosWithAuth';
@@ -117,6 +118,7 @@ const LivePanel: FC<{ snapshot: LiveSnapshotDTO }> = ({ snapshot }) => {
 const AoVivo: FC = () => {
   const api = useAxiosWithAuth();
   const { snapshot, status } = useLiveSnapshot(api);
+  useLiveSessionActivity(status); // acompanhar a telemetria sem tocar no navegador não pode expirar a sessão por inatividade
 
   return (
     <Box sx={{ width: '100%', minHeight: '100vh', bgcolor: 'background.default', display: 'flex', flexDirection: 'column' }}>
