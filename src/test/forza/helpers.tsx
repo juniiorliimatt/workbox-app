@@ -5,7 +5,7 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { AuthContext } from '@/contexts/AuthContextValue';
 import { SnackbarProvider } from '@/contexts/SnackbarContext';
 import { IAuthContext } from '@/interfaces/IAuthContext';
-import { SessionDTO, TuningCarDTO, TuningGuideDTO, TuningHistoryItemDTO, TuningRecommendationDTO, TuningSetupGroupDTO, TuningSummary } from '@/interfaces/forza';
+import { CarSetupDTO, CarSetupFieldDTO, SessionDTO, TuningCarDTO, TuningGuideDTO, TuningHistoryItemDTO, TuningRecommendationDTO, TuningSetupGroupDTO, TuningSummary } from '@/interfaces/forza';
 
 export const createAuthValue = (overrides?: Partial<IAuthContext>): IAuthContext => ({
   accessToken: 'mock-access-token',
@@ -184,6 +184,7 @@ export const makeRecommendation = (overrides?: Partial<TuningRecommendationDTO>)
     windowFrom: '2026-10-01T10:00:00Z',
     windowTo: '2026-10-10T12:00:00Z',
     checkpointAt: null,
+    setupConfirmed: true,
     guides: makeGuides({
       molas: { status: 'ADJUST', summary: '1 ajuste sugerido', suggestions: [suggestion] },
       pneus: { status: 'ADJUST', summary: '1 ajuste sugerido', suggestions: [second] },
@@ -199,3 +200,42 @@ export const makeInitialSetup = (): TuningSetupGroupDTO[] => [
   { id: 'molas', title: 'Molas', items: [{ parameter: 'Molas', front: '80', rear: '80', note: 'No valor que o slider do jogo mostra.' }] },
   { id: 'freios', title: 'Freios', items: [{ parameter: 'Equilíbrio', value: '45%' }, { parameter: 'Pressão', value: '105%' }] },
 ];
+
+const setupField = (key: string, guide: string, label: string, axle: CarSetupFieldDTO['axle'], unit: string, min: number | null, max: number | null): CarSetupFieldDTO => ({
+  key,
+  guide,
+  label,
+  axle,
+  unit,
+  min,
+  max,
+  perCar: min === null,
+});
+
+/** Um recorte do setup no formato do serviço: pressão, câmbio (6 marchas), caster, mola (por carro) e freio. `confirmed = false` é o rascunho da receita. */
+export const makeCarSetup = (overrides?: Partial<CarSetupDTO>): CarSetupDTO => ({
+  confirmed: true,
+  gearCount: 6,
+  values: { tire_pressure_front: 1.8, tire_pressure_rear: 1.8, final_drive: 3.5, gear_1: 3, gear_2: 2.2, gear_3: 1.7, gear_4: 1.3, gear_5: 1.05, gear_6: 0.85, caster: 7, spring_front: 80, brake_balance: 45 },
+  ranges: { spring_front: { min: 20, max: 220 } },
+  fields: [
+    setupField('tire_pressure_front', 'pneus', 'Pressão dos pneus dianteiros', 'FRONT', 'bar', 1, 3.8),
+    setupField('tire_pressure_rear', 'pneus', 'Pressão dos pneus traseiros', 'REAR', 'bar', 1, 3.8),
+    setupField('final_drive', 'cambio', 'Transmissão final', 'NONE', '', 2.2, 6.1),
+    ...[1, 2, 3, 4, 5, 6].map((n) => setupField(`gear_${n}`, 'cambio', `Relação da ${n}ª marcha`, 'NONE', '', 0.48, 6)),
+    setupField('caster', 'alinhamento', 'Caster dianteiro', 'FRONT', '°', 1, 7),
+    setupField('spring_front', 'molas', 'Mola dianteira', 'FRONT', '', null, null),
+    setupField('brake_balance', 'freios', 'Equilíbrio de freio (0% traseira, 100% dianteira)', 'NONE', '%', 0, 100),
+  ],
+  confirmedAt: '2026-10-13T12:00:00Z',
+  ...overrides,
+});
+
+/** O rascunho da receita inicial: sem câmbio nem intervalo da mola, que o usuário informa. */
+export const makeDraftSetup = (): CarSetupDTO =>
+  makeCarSetup({
+    confirmed: false,
+    confirmedAt: null,
+    values: { tire_pressure_front: 1.75, tire_pressure_rear: 1.75, caster: 7, spring_front: 80, brake_balance: 45 },
+    ranges: {},
+  });

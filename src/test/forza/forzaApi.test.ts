@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import type { AxiosInstance } from 'axios';
-import { getLiveInfo, getTuningHistoryEntry, getTuningRecommendation, listTuningCars, listTuningHistory, resetTuningCollection, getLiveSnapshot, getSession, getSessionLaps, getSessionSamples, getSessionSummary, listSessions } from '@/services/forzaApi';
+import { applyCarSetup, deleteCarSetup, getCarSetup, saveCarSetup, getLiveInfo, getTuningHistoryEntry, getTuningRecommendation, listTuningCars, listTuningHistory, resetTuningCollection, getLiveSnapshot, getSession, getSessionLaps, getSessionSamples, getSessionSummary, listSessions } from '@/services/forzaApi';
 
 const makeApi = (data: unknown = {}) => ({ get: vi.fn().mockResolvedValue({ data }) }) as unknown as AxiosInstance & { get: ReturnType<typeof vi.fn> };
 
@@ -100,5 +100,26 @@ describe('forzaApi', () => {
     await resetTuningCollection(api, 3667, 'S2');
 
     expect(post).toHaveBeenCalledWith('/api/v1/tuning/cars/3667/S2/checkpoint');
+  });
+
+  it('car setup: get, save (PUT), apply (POST) and delete hit /setup of the car in that class', async () => {
+    const setup = { confirmed: true };
+    const get = vi.fn().mockResolvedValue({ data: setup });
+    const put = vi.fn().mockResolvedValue({ data: setup });
+    const post = vi.fn().mockResolvedValue({ data: setup });
+    const del = vi.fn().mockResolvedValue({ status: 204 });
+    const api = { get, put, post, delete: del } as unknown as AxiosInstance;
+    const signal = new AbortController().signal;
+    const body = { gearCount: 6, values: { caster: 7 }, ranges: { spring_front: { min: 20, max: 220 } } };
+
+    expect(await getCarSetup(api, 3667, 'S2', signal)).toBe(setup);
+    expect(await saveCarSetup(api, 3667, 'S2', body)).toBe(setup);
+    expect(await applyCarSetup(api, 3667, 'S2')).toBe(setup);
+    await deleteCarSetup(api, 3667, 'S2');
+
+    expect(get).toHaveBeenCalledWith('/api/v1/tuning/cars/3667/S2/setup', { signal });
+    expect(put).toHaveBeenCalledWith('/api/v1/tuning/cars/3667/S2/setup', body);
+    expect(post).toHaveBeenCalledWith('/api/v1/tuning/cars/3667/S2/setup/apply');
+    expect(del).toHaveBeenCalledWith('/api/v1/tuning/cars/3667/S2/setup');
   });
 });

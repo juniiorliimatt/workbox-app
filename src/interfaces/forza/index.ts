@@ -175,6 +175,8 @@ export interface TuningCarDTO {
   lastSessionAt: string;
   /** Sessão sendo gravada agora nessa build (ainda não conta no progresso), ou nula. */
   activeSession?: TuningActiveSessionDTO | null;
+  /** Setup do carro conferido e aceito: só então a coleta conta sessões (sem ele, `sessions` é 0). */
+  setupConfirmed?: boolean;
 }
 
 export interface TuningActiveSessionDTO {
@@ -213,6 +215,13 @@ export interface TuningSuggestionDTO {
   amount?: number | null;
   unit?: string | null;
   magnitude?: 'SMALL' | 'MEDIUM' | 'LARGE' | null;
+  /** Campo do setup do carro que a sugestão mexe; nulo sem setup aceito ou sem campo correspondente (ex.: altura do solo). */
+  setupKey?: string | null;
+  /** Valor atual informado pelo usuário e valor-alvo (`atual ± passo`, travado no mín/máx do jogo). */
+  current?: number | null;
+  target?: number | null;
+  /** O valor atual já está no limite na direção sugerida: não dá para ir além. */
+  atLimit?: boolean;
 }
 
 export interface TuningGuideDTO {
@@ -280,4 +289,40 @@ export interface TuningRecommendationDTO {
   thisCycle: TuningSuggestionDTO[];
   /** Configuração inicial (ponto de partida do desenvolvedor); ausente/vazia em fotos do histórico. */
   initialSetup?: TuningSetupGroupDTO[] | null;
+  /** Setup do carro conferido e aceito pelo usuário: só então a coleta conta sessões e as sugestões trazem atual → alvo. Ausente em fotos antigas. */
+  setupConfirmed?: boolean;
+}
+
+/** Um campo do formulário de setup, com os limites do jogo; `min`/`max` são nulos em molas e aerodinâmica (`perCar`), cujo intervalo o usuário informa. */
+export interface CarSetupFieldDTO {
+  key: string;
+  guide: string;
+  label: string;
+  axle: 'FRONT' | 'REAR' | 'NONE';
+  unit: string;
+  min?: number | null;
+  max?: number | null;
+  perCar: boolean;
+}
+
+export interface SetupRange {
+  min: number;
+  max: number;
+}
+
+/** `GET /api/v1/tuning/cars/{carOrdinal}/{performanceClass}/setup` — `confirmed = false` é o rascunho da receita inicial, ainda não salvo. */
+export interface CarSetupDTO {
+  confirmed: boolean;
+  gearCount: number;
+  values: Record<string, number>;
+  ranges: Record<string, SetupRange>;
+  fields: CarSetupFieldDTO[];
+  confirmedAt?: string | null;
+}
+
+/** Corpo do `PUT .../setup`. */
+export interface CarSetupRequest {
+  gearCount: number;
+  values: Record<string, number>;
+  ranges: Record<string, SetupRange>;
 }

@@ -138,6 +138,16 @@ Consome só `forza-telemetry-service/openapi/openapi.yaml` (tipos em `src/interf
   andamento aparece como "Gravando agora: X de Y amostras" e o total de amostras **conta ao vivo** (sessões fechadas + a em andamento, com o detalhamento ao lado; a
   recomendação, porém, só usa sessões fechadas; numa corrida/evento ela passa do alvo e só fecha ao terminar); a lista se atualiza sozinha **a cada
   15 s**, sem spinner e pausando com a aba oculta.
+  - **Setup do carro** (aba **Setup** do detalhe): o jogo não envia o setup, então você o informa por carro e classe. O formulário
+    vem **pré-preenchido com a receita inicial** (pressão em bar, barras, molas, amortecimento, freio, diferencial) e pede o que
+    depende do carro: transmissão final e a relação de cada marcha (depois de informar a **quantidade de marchas**) e o mínimo/máximo
+    do slider de molas e aerodinâmica. Cada campo mostra o limite do jogo e a validação bloqueia o que estiver fora. **A coleta só começa
+    quando você confere e clica em "Aceitar e iniciar coleta"** — até lá o carro aparece como "Setup a confirmar", com progresso zerado.
+    Mudar qualquer valor ao salvar reinicia a coleta (as amostras antigas são de outro setup); "Apagar setup" volta ao rascunho.
+  - **Valor atual → alvo**: com o setup aceito, cada ajuste do ciclo mostra "Atual 1,8 bar → alvo 1,7 bar" (atual ± o passo,
+    travado no mínimo/máximo do jogo); quem já está no limite sai do ciclo ("No limite: não dá para ir além") e entra o próximo. Depois
+    de mexer no jogo, **"Apliquei estes ajustes no jogo"** (com confirmação) grava os alvos como novos valores atuais e reinicia a coleta
+    (a recomendação pronta vai antes para "Tunings feitos"). Ajustes sem campo no setup (altura do solo) seguem só com o passo.
 - **Tunings feitos** (`/forza/tuning/historico`, `/forza/tuning/historico/:id`): ao reiniciar a coleta de um carro com
   recomendação pronta, o serviço guarda uma foto dela; a lista mostra carro, classe/PI, data, sessões usadas e quantos
   ajustes indicava, e o detalhe reabre a recomendação completa (ciclo + 9 guias) como era na época, só leitura.

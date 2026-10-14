@@ -1,5 +1,7 @@
 import axios, { AxiosInstance } from 'axios';
 import {
+  CarSetupDTO,
+  CarSetupRequest,
   LapDTO,
   LiveInfoDTO,
   LiveSnapshotDTO,
@@ -77,6 +79,23 @@ export const listTuningHistory = async (api: AxiosInstance, signal?: AbortSignal
 
 export const getTuningHistoryEntry = async (api: AxiosInstance, id: string, signal?: AbortSignal): Promise<TuningHistoryDTO> =>
   (await api.get<TuningHistoryDTO>(`/api/v1/tuning/history/${id}`, { signal })).data;
+
+/** O setup aceito do carro ou, se ainda não houver, o rascunho com a receita inicial (`confirmed = false`); sempre com os limites de cada campo. */
+export const getCarSetup = async (api: AxiosInstance, carOrdinal: number, performanceClass: string, signal?: AbortSignal): Promise<CarSetupDTO> =>
+  (await api.get<CarSetupDTO>(`/api/v1/tuning/cars/${carOrdinal}/${performanceClass}/setup`, { signal })).data;
+
+/** Valida, salva e aceita o setup (422 com `errors` se fora dos limites). Mudar qualquer valor reinicia a coleta. */
+export const saveCarSetup = async (api: AxiosInstance, carOrdinal: number, performanceClass: string, request: CarSetupRequest): Promise<CarSetupDTO> =>
+  (await api.put<CarSetupDTO>(`/api/v1/tuning/cars/${carOrdinal}/${performanceClass}/setup`, request)).data;
+
+/** "Apliquei": grava os alvos do ciclo como valores atuais e reinicia a coleta. */
+export const applyCarSetup = async (api: AxiosInstance, carOrdinal: number, performanceClass: string): Promise<CarSetupDTO> =>
+  (await api.post<CarSetupDTO>(`/api/v1/tuning/cars/${carOrdinal}/${performanceClass}/setup/apply`)).data;
+
+/** Apaga o setup: o carro volta ao rascunho e a coleta para até aceitar de novo. */
+export const deleteCarSetup = async (api: AxiosInstance, carOrdinal: number, performanceClass: string): Promise<void> => {
+  await api.delete(`/api/v1/tuning/cars/${carOrdinal}/${performanceClass}/setup`);
+};
 
 /** Reinicia a coleta do carro nessa classe de PI (só sessões novas passam a contar). Com recomendação pronta, o backend a salva no histórico. */
 export const resetTuningCollection = async (api: AxiosInstance, carOrdinal: number, performanceClass: string): Promise<void> => {

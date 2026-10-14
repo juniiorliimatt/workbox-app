@@ -119,6 +119,16 @@ textos exatos). Achado preservado: o "Novo Tipo de Receita" tem checkboxes de co
   detalhe com "Aplicar neste ciclo" (≤ 3 ajustes, sentido em texto + ícone, evidência) e **todas** as 9 guias em
   acordeões com status em texto (Ajustar / OK / Sem sinal). Enquanto coleta, só progresso e o que falta. "Reiniciar
   coleta" (com confirmação) chama `POST .../checkpoint`. Rotas `/api/v1/tuning` roteadas no Vite e no nginx.
+- **Setup do carro** (`components/forza/SetupForm`, aba "Setup" de `pages/forza/TuningCarro`, rotas `.../setup` e
+  `.../setup/apply` em `forzaApi`): o usuário informa o setup atual (o Data Out não traz). O serviço devolve o rascunho
+  pré-preenchido (`confirmed=false`) ou o aceito, **sempre com os limites de cada campo** (`fields`) — o front não duplica
+  limites, só valida para UX (a trava é o 422 do backend). Molas/aerodinâmica (`perCar`) pedem mín/máx do slider; o câmbio gera
+  um campo por marcha pelo `gearCount` (limites das marchas vêm do campo `gear_1`). **Sem setup aceito (`setupConfirmed === false`)
+  não há coleta**: a página abre na aba Setup, o chip da lista vira "Setup a confirmar" e "Reiniciar coleta" some. O setup só é
+  buscado ao abrir a aba (a de recomendação carrega sozinha, 1 GET). `SetupForm` recebe `key={confirmedAt ?? 'rascunho'}` para
+  reiniciar o estado depois de salvar/aplicar. Na recomendação, `TuningSuggestionDTO` traz `current`/`target`/`atLimit`
+  ("Atual X → alvo Y"); "Apliquei" (`onApply`, só se algum ajuste do ciclo tem alvo) confirma e chama `POST .../setup/apply`.
+  Erros mostram o `detail` do problem+json (`getProblemDetail`), nunca o texto técnico do axios.
 - **Configuração inicial** (`components/forza/InitialSetup`, campo `initialSetup` da recomendação): a receita base do
   desenvolvedor (valores absolutos por eixo, em texto) vinda do serviço. Em destaque como **"Recomendação inicial"** no
   topo enquanto o carro coleta pela primeira vez (`!readiness.ready` e sem `checkpointAt`); depois (pronto ou coleta

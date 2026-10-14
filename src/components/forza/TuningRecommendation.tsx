@@ -1,6 +1,6 @@
 import { FC } from 'react';
-import { Accordion, AccordionDetails, AccordionSummary, Alert, Box, Chip, LinearProgress, List, ListItem, Paper, Typography } from '@mui/material';
-import { ArrowDownward as DownIcon, ArrowUpward as UpIcon, ExpandMore as ExpandIcon } from '@mui/icons-material';
+import { Accordion, AccordionDetails, AccordionSummary, Alert, Box, Button, Chip, LinearProgress, List, ListItem, Paper, Typography } from '@mui/material';
+import { ArrowDownward as DownIcon, ArrowUpward as UpIcon, CheckCircleOutline as AppliedIcon, ExpandMore as ExpandIcon } from '@mui/icons-material';
 import { TuningAxle, TuningGuideDTO, TuningGuideStatus, TuningReadinessDTO, TuningRecommendationDTO, TuningSuggestionDTO } from '@/interfaces/forza';
 import { formatNumber, formatSessionStart } from '@/utils/forza';
 import InitialSetup from './InitialSetup';
@@ -25,6 +25,12 @@ const stepText = (suggestion: TuningSuggestionDTO): string => {
   const glued = suggestion.unit === '°';
   return glued ? `${amount}${suggestion.unit}` : `${amount} ${suggestion.unit}`;
 };
+
+/** Unidade colada ao valor atual/alvo; vazia onde a unidade do passo não é a do campo (ex.: molas, em pontos percentuais do curso). */
+const VALUE_UNIT: Record<string, string> = { bar: ' bar', '°': '°', cm: ' cm', 'pontos percentuais': '%' };
+
+const valueText = (value: number, unit?: string | null) =>
+  `${value.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}${unit ? (VALUE_UNIT[unit] ?? '') : ''}`;
 
 /** Sentido (e quanto) em texto + ícone (a informação nunca fica só na cor). */
 // Exemplo didático do cálculo da mola: um slider de 20 a 150 kgf/mm (curso = 130). Não é o valor do carro — o jogo não envia.
@@ -80,6 +86,16 @@ const Suggestion: FC<{ suggestion: TuningSuggestionDTO }> = ({ suggestion }) => 
         {suggestion.magnitude && <Chip size="small" color="primary" variant="outlined" label={MAGNITUDE_LABEL[suggestion.magnitude]} />}
         {axle && !brake && <Chip size="small" variant="outlined" label={axle} />}
       </Box>
+      {suggestion.current != null && suggestion.target != null && !suggestion.atLimit && (
+        <Typography variant="body2" sx={{ mt: 0.5, fontWeight: 600 }}>
+          {`Atual ${valueText(suggestion.current, suggestion.unit)} → alvo ${valueText(suggestion.target, suggestion.unit)}`}
+        </Typography>
+      )}
+      {suggestion.atLimit && (
+        <Typography variant="body2" sx={{ mt: 0.5, fontWeight: 600 }}>
+          {`No limite: não dá para ir além${suggestion.current != null ? ` (atual ${valueText(suggestion.current, suggestion.unit)})` : ''}.`}
+        </Typography>
+      )}
       <Typography variant="body2" sx={{ mt: 0.5 }}>
         {suggestion.rationale}
       </Typography>
@@ -186,11 +202,14 @@ interface Props {
   recommendation: TuningRecommendationDTO;
   /** Foto salva no histórico: só leitura, sem barras de progresso da coleta nem instrução de reiniciar. */
   snapshot?: boolean;
+  /** "Apliquei": grava os alvos do ciclo como valores atuais e reinicia a coleta. Só aparece se algum ajuste do ciclo tem alvo. */
+  onApply?: () => void;
 }
 
 /** Progresso da coleta, ajustes do ciclo e todas as guias de tuning de uma recomendação (ao vivo ou salva). */
-const TuningRecommendation: FC<Props> = ({ recommendation, snapshot = false }) => {
+const TuningRecommendation: FC<Props> = ({ recommendation, snapshot = false, onApply }) => {
   const basedOn = windowText(recommendation);
+  const hasTargets = recommendation.thisCycle.some((s) => s.target != null && !s.atLimit);
   // Só na tela ao vivo (a foto do histórico não a guarda). Em destaque antes do primeiro ciclo: ainda coletando e sem reinício.
   const initialSetup = !snapshot && recommendation.initialSetup?.length ? recommendation.initialSetup : null;
   const firstCycle = !recommendation.readiness.ready && !recommendation.checkpointAt;
@@ -211,11 +230,20 @@ const TuningRecommendation: FC<Props> = ({ recommendation, snapshot = false }) =
       {recommendation.readiness.ready && (
         <>
           <Alert severity="info" sx={{ mb: 3 }}>
-            O Data Out do jogo não envia os valores do setup (nem peso e distribuição), por isso as sugestões indicam o <strong>sentido</strong> do ajuste
-            (aumentar ou reduzir), com a evidência medida.
-            {snapshot
-              ? ' Valores absolutos exigem peso e limites de interface do carro.'
-              : ' Faça no máximo 3 ajustes por ciclo, teste algumas voltas e depois use “Reiniciar coleta” para medir o novo setup. Valores absolutos exigem peso e limites de interface do carro.'}
+            {hasTargets && !snapshot ? (
+              <>
+                Os valores atuais vêm do <strong>setup que você cadastrou</strong>; o alvo é o atual mais ou menos o passo do ciclo, sempre dentro dos
+                limites do jogo. Faça no máximo 3 ajustes por ciclo, teste algumas voltas e clique em “Apliquei” para gravar os alvos e reiniciar a coleta.
+              </>
+            ) : (
+              <>
+                O Data Out do jogo não envia os valores do setup (nem peso e distribuição), por isso as sugestões indicam o <strong>sentido</strong> do ajuste
+                (aumentar ou reduzir), com a evidência medida.
+                {snapshot
+                  ? ' Valores absolutos exigem peso e limites de interface do carro.'
+                  : ' Faça no máximo 3 ajustes por ciclo, teste algumas voltas e depois use “Reiniciar coleta” para medir o novo setup. Valores absolutos exigem peso e limites de interface do carro.'}
+              </>
+            )}
           </Alert>
 
           <Box component="section" aria-labelledby="ciclo-titulo" sx={{ mb: 4 }}>
@@ -242,6 +270,11 @@ const TuningRecommendation: FC<Props> = ({ recommendation, snapshot = false }) =
                   ))}
                 </List>
               </Paper>
+            )}
+            {!snapshot && onApply && hasTargets && (
+              <Button variant="contained" startIcon={<AppliedIcon />} onClick={onApply} sx={{ mt: 2 }}>
+                Apliquei estes ajustes no jogo
+              </Button>
             )}
           </Box>
 

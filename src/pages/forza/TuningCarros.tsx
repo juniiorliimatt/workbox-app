@@ -202,12 +202,21 @@ const TuningCarros: FC = () => {
                         )}
                       </TableCell>
                       <TableCell>
-                        <Chip
-                          size="small"
-                          label={car.highConfidence ? 'Alta confiança' : car.ready ? 'Pronto' : 'Coletando'}
-                          color={car.ready ? 'success' : 'default'}
-                          variant={car.ready ? 'filled' : 'outlined'}
-                        />
+                        {car.setupConfirmed === false ? (
+                          <>
+                            <Chip size="small" color="warning" label="Setup a confirmar" />
+                            <Typography variant="caption" color="text.secondary" component="p" sx={{ mt: 0.5 }}>
+                              Abra o carro e aceite o setup do carro para começar a coleta.
+                            </Typography>
+                          </>
+                        ) : (
+                          <Chip
+                            size="small"
+                            label={car.highConfidence ? 'Alta confiança' : car.ready ? 'Pronto' : 'Coletando'}
+                            color={car.ready ? 'success' : 'default'}
+                            variant={car.ready ? 'filled' : 'outlined'}
+                          />
+                        )}
                         {car.ready && !car.highConfidence && (
                           <Typography variant="caption" color="text.secondary" component="p" sx={{ mt: 0.5 }}>
                             {`Alta confiança (ajuste fino): ${car.highRequiredSessions} sessões e ${formatNumber(car.highRequiredSamples, 0)} amostras.`}

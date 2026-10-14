@@ -66,6 +66,25 @@ describe('Forza · Tuning · carros', () => {
     expect(screen.queryByText(/ajuste fino\)/)).not.toBeInTheDocument();
   });
 
+  it('car whose setup was not accepted yet: says so instead of "Coletando", since no session counts until then', async () => {
+    mockApi.get.mockResolvedValue({ data: [makeTuningCar({ setupConfirmed: false, sessions: 0, samples: 0, ready: false })] });
+
+    renderPage();
+
+    expect(await screen.findByText('Setup a confirmar')).toBeInTheDocument();
+    expect(screen.queryByText('Coletando')).not.toBeInTheDocument();
+    expect(screen.getByText(/aceite o setup do carro para começar a coleta/i)).toBeInTheDocument();
+  });
+
+  it('a car without the field (older service) keeps the usual status', async () => {
+    mockApi.get.mockResolvedValue({ data: [makeTuningCar({ ready: false, sessions: 2, samples: 3000 })] });
+
+    renderPage();
+
+    expect(await screen.findByText('Coletando')).toBeInTheDocument();
+    expect(screen.queryByText('Setup a confirmar')).not.toBeInTheDocument();
+  });
+
   it('falls back to #ordinal when the car name is unknown', async () => {
     mockApi.get.mockResolvedValue({ data: [makeTuningCar({ carOrdinal: 1234, carName: null })] });
 
