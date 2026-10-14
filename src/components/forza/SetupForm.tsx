@@ -58,7 +58,17 @@ const SetupForm: FC<Props> = ({ setup, saving, onSave, onDelete }) => {
   const [ranges, setRanges] = useState<Record<string, RangeText>>(() =>
     Object.fromEntries(Object.entries(setup.ranges).map(([k, r]) => [k, { min: String(r.min), max: String(r.max) }])),
   );
-  const [touched, setTouched] = useState<Set<string>>(new Set());
+  // Setup já salvo que ganhou campo novo depois (ex.: altura do solo): o que falta aparece como "Obrigatório." de cara, para ficar claro
+  // por que salvar está bloqueado. No rascunho nada grita antes de o usuário mexer.
+  const [touched, setTouched] = useState<Set<string>>(() => {
+    const missing = new Set<string>();
+    if (!setup.confirmed) return missing;
+    setup.fields.forEach((f) => {
+      if (setup.values[f.key] === undefined) missing.add(f.key);
+      if (f.perCar && !setup.ranges[f.key]) missing.add(`${f.key}.min`).add(`${f.key}.max`);
+    });
+    return missing;
+  });
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   const gearsNumber = Number(gearCount);

@@ -151,6 +151,20 @@ describe('Forza · Tuning · formulário de setup do carro', () => {
     expect(screen.getByRole('button', { name: /salvar setup/i })).toBeEnabled();
   });
 
+  it('a saved setup that lacks a newer field (e.g. ride height) flags it as required right away, so it is clear why saving is blocked', () => {
+    const values = Object.fromEntries(Object.entries(makeCarSetup().values).filter(([key]) => key !== 'ride_height_front'));
+    renderForm(makeCarSetup({ values, ranges: { spring_front: { min: 20, max: 220 } } }));
+
+    expect(screen.getByRole('button', { name: /salvar setup/i })).toBeDisabled();
+    expect(screen.getAllByText('Obrigatório.')).toHaveLength(2);   // o valor e o intervalo (mensagem sob o máximo) da altura
+  });
+
+  it('the draft does not shout "Obrigatório." before the user touches the empty fields', () => {
+    renderForm(makeDraftSetup());
+
+    expect(screen.queryByText('Obrigatório.')).not.toBeInTheDocument();
+  });
+
   it('delete: only when the setup is confirmed, asking for confirmation first', async () => {
     const { onDelete } = renderForm();
 
