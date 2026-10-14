@@ -73,7 +73,7 @@ describe('Forza · Tuning · carros', () => {
 
     expect(await screen.findByText('Setup a confirmar')).toBeInTheDocument();
     expect(screen.queryByText('Coletando')).not.toBeInTheDocument();
-    expect(screen.getByText(/aceite o setup do carro para começar a coleta/i)).toBeInTheDocument();
+    expect(screen.getByText(/confira o setup e aceite para começar a coleta/i)).toBeInTheDocument();
   });
 
   it('a car without the field (older service) keeps the usual status', async () => {

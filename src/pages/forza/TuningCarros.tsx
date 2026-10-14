@@ -206,7 +206,7 @@ const TuningCarros: FC = () => {
                           <>
                             <Chip size="small" color="warning" label="Setup a confirmar" />
                             <Typography variant="caption" color="text.secondary" component="p" sx={{ mt: 0.5 }}>
-                              Abra o carro e aceite o setup do carro para começar a coleta.
+                              Abra o carro, confira o setup e aceite para começar a coleta.
                             </Typography>
                           </>
                         ) : (
