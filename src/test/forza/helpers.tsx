@@ -216,8 +216,8 @@ const setupField = (key: string, guide: string, label: string, axle: CarSetupFie
 export const makeCarSetup = (overrides?: Partial<CarSetupDTO>): CarSetupDTO => ({
   confirmed: true,
   gearCount: 6,
-  values: { tire_pressure_front: 1.8, tire_pressure_rear: 1.8, final_drive: 3.5, gear_1: 3, gear_2: 2.2, gear_3: 1.7, gear_4: 1.3, gear_5: 1.05, gear_6: 0.85, caster: 7, spring_front: 80, brake_balance: 45 },
-  ranges: { spring_front: { min: 20, max: 220 } },
+  values: { tire_pressure_front: 1.8, tire_pressure_rear: 1.8, final_drive: 3.5, gear_1: 3, gear_2: 2.2, gear_3: 1.7, gear_4: 1.3, gear_5: 1.05, gear_6: 0.85, caster: 7, spring_front: 80, ride_height_front: 220, brake_balance: 45 },
+  ranges: { spring_front: { min: 20, max: 220 }, ride_height_front: { min: 10, max: 220 } },
   fields: [
     setupField('tire_pressure_front', 'pneus', 'Pressão dos pneus dianteiros', 'FRONT', 'bar', 1, 3.8),
     setupField('tire_pressure_rear', 'pneus', 'Pressão dos pneus traseiros', 'REAR', 'bar', 1, 3.8),
@@ -225,6 +225,7 @@ export const makeCarSetup = (overrides?: Partial<CarSetupDTO>): CarSetupDTO => (
     ...[1, 2, 3, 4, 5, 6].map((n) => setupField(`gear_${n}`, 'cambio', `Relação da ${n}ª marcha`, 'NONE', '', 0.48, 6)),
     setupField('caster', 'alinhamento', 'Caster dianteiro', 'FRONT', '°', 1, 7),
     setupField('spring_front', 'molas', 'Mola dianteira', 'FRONT', '', null, null),
+    setupField('ride_height_front', 'molas', 'Altura do solo dianteira (sempre no máximo)', 'FRONT', '', null, null),
     setupField('brake_balance', 'freios', 'Equilíbrio de freio (0% traseira, 100% dianteira)', 'NONE', '%', 0, 100),
   ],
   confirmedAt: '2026-10-13T12:00:00Z',

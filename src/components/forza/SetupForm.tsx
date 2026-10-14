@@ -128,30 +128,35 @@ const SetupForm: FC<Props> = ({ setup, saving, onSave, onDelete }) => {
         </Alert>
       )}
 
-      <Paper variant="outlined" sx={{ p: 2, mb: 2, borderRadius: 2 }}>
-        <TextField
-          label="Quantidade de marchas"
-          type="number"
-          size="small"
-          value={gearCount}
-          onChange={(e) => setGearCount(e.target.value)}
-          error={!gearsValid}
-          helperText={gearsValid ? `1 a ${MAX_GEARS}` : `Informe de 1 a ${MAX_GEARS} marchas.`}
-          inputProps={{ step: 1 }}
-          sx={{ width: 220 }}
-        />
-      </Paper>
-
       {groups.map(([guide, guideFields]) => (
-        <Paper key={guide} variant="outlined" sx={{ p: 2, mb: 2, borderRadius: 2 }}>
-          <Typography variant="subtitle1" component="h3" sx={{ fontWeight: 600, mb: 1.5 }}>
+        <Paper key={guide} component="section" aria-labelledby={`grupo-${guide}`} variant="outlined" sx={{ p: 2, mb: 2, borderRadius: 2 }}>
+          <Typography id={`grupo-${guide}`} variant="subtitle1" component="h3" sx={{ fontWeight: 600, mb: 1.5 }}>
             {GUIDE_TITLE[guide] ?? guide}
           </Typography>
+          {guide === 'cambio' && (
+            <TextField
+              label="Quantidade de marchas"
+              type="number"
+              size="small"
+              value={gearCount}
+              onChange={(e) => setGearCount(e.target.value)}
+              error={!gearsValid}
+              helperText={gearsValid ? `1 a ${MAX_GEARS}` : `Informe de 1 a ${MAX_GEARS} marchas.`}
+              inputProps={{ step: 1 }}
+              sx={{ width: 220, mb: 2 }}
+            />
+          )}
           <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)' } }}>
             {guideFields.map((field) => {
               const error = shown(field.key, fieldError(field));
+              // A altura do solo fica sempre no máximo (baixar o carro faz o jogo perder velocidade): só avisa, não bloqueia.
+              const heightRange = field.key.startsWith('ride_height') ? validRange(ranges[field.key]) : null;
+              const heightValue = toNumber(values[field.key] ?? '');
+              const belowMax = heightRange !== null && heightValue !== null && heightValue < heightRange.max;
               const limits = field.perCar
-                ? 'Dentro do intervalo do slider do carro'
+                ? belowMax
+                  ? 'Abaixo do máximo: baixar o carro faz o jogo perder velocidade.'
+                  : 'Dentro do intervalo do slider do carro'
                 : limitsText(field.min ?? 0, field.max ?? 0, field.unit);
               return (
                 <Box key={field.key} sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>

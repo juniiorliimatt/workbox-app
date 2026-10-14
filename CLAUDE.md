@@ -123,7 +123,9 @@ textos exatos). Achado preservado: o "Novo Tipo de Receita" tem checkboxes de co
   `.../setup/apply` em `forzaApi`): o usuário informa o setup atual (o Data Out não traz). O serviço devolve o rascunho
   pré-preenchido (`confirmed=false`) ou o aceito, **sempre com os limites de cada campo** (`fields`) — o front não duplica
   limites, só valida para UX (a trava é o 422 do backend). Molas/aerodinâmica (`perCar`) pedem mín/máx do slider; o câmbio gera
-  um campo por marcha pelo `gearCount` (limites das marchas vêm do campo `gear_1`). **Sem setup aceito (`setupConfirmed === false`)
+  um campo por marcha pelo `gearCount` (limites das marchas vêm do campo `gear_1`); o campo "Quantidade de marchas" fica **dentro do
+  card do Câmbio**. Altura do solo (`ride_height_*`) é `perCar` como a aerodinâmica e deve ficar sempre no máximo: o form só avisa
+  (helper text, sem bloquear) quando o valor está abaixo do máximo informado. **Sem setup aceito (`setupConfirmed === false`)
   não há coleta**: a página abre na aba Setup, o chip da lista vira "Setup a confirmar" e "Reiniciar coleta" some. O setup só é
   buscado ao abrir a aba (a de recomendação carrega sozinha, 1 GET). `SetupForm` recebe `key={confirmedAt ?? 'rascunho'}` para
   reiniciar o estado depois de salvar/aplicar. Na recomendação, `TuningSuggestionDTO` traz `current`/`target`/`atLimit`

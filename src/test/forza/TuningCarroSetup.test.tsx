@@ -190,12 +190,15 @@ describe('Forza · Tuning · setup do carro e valor-alvo', () => {
       }
       await user.type(screen.getByRole('spinbutton', { name: 'Mola dianteira — mínimo do slider' }), '20');
       await user.type(screen.getByRole('spinbutton', { name: 'Mola dianteira — máximo do slider' }), '220');
+      await user.type(screen.getByRole('spinbutton', { name: 'Altura do solo dianteira (sempre no máximo)' }), '220');
+      await user.type(screen.getByRole('spinbutton', { name: 'Altura do solo dianteira (sempre no máximo) — mínimo do slider' }), '10');
+      await user.type(screen.getByRole('spinbutton', { name: 'Altura do solo dianteira (sempre no máximo) — máximo do slider' }), '220');
       serve(makeRecommendation({ setupConfirmed: true }));
 
       await user.click(screen.getByRole('button', { name: /Aceitar e iniciar coleta/i }));
 
       await waitFor(() => expect(mockApi.put).toHaveBeenCalledTimes(1));
-      expect(mockApi.put.mock.calls[0][1]).toMatchObject({ gearCount: 6, ranges: { spring_front: { min: 20, max: 220 } } });
+      expect(mockApi.put.mock.calls[0][1]).toMatchObject({ gearCount: 6, ranges: { spring_front: { min: 20, max: 220 }, ride_height_front: { min: 10, max: 220 } } });
       expect(await screen.findByText(/a coleta começa agora/i)).toBeInTheDocument();
       expect(await screen.findByRole('region', { name: /Aplicar neste ciclo/i })).toBeInTheDocument();
     }, 30000);   // digitar o câmbio e o intervalo da mola, campo a campo, é lento no jsdom

@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi } from 'vitest';
 import SetupForm from '@/components/forza/SetupForm';
@@ -118,7 +118,37 @@ describe('Forza · Tuning · formulário de setup do carro', () => {
     expect(request.values.caster).toBe(6.5);
     expect(request.values.gear_5).toBe(1.05);
     expect(request.values).not.toHaveProperty('gear_6');
-    expect(request.ranges).toEqual({ spring_front: { min: 20, max: 220 } });
+    expect(request.ranges).toEqual({ spring_front: { min: 20, max: 220 }, ride_height_front: { min: 10, max: 220 } });
+  });
+
+  it('the number of gears lives inside the Câmbio card, together with the ratios', () => {
+    renderForm();
+
+    const gearbox = screen.getByRole('region', { name: 'Câmbio' });
+    expect(within(gearbox).getByRole('spinbutton', { name: 'Quantidade de marchas' })).toBeInTheDocument();
+    expect(within(gearbox).getByRole('spinbutton', { name: 'Transmissão final' })).toBeInTheDocument();
+    expect(within(gearbox).getByRole('spinbutton', { name: 'Relação da 6ª marcha' })).toBeInTheDocument();
+    expect(screen.getAllByRole('spinbutton', { name: 'Quantidade de marchas' })).toHaveLength(1);
+  });
+
+  it('ride height asks for the slider range of the car, like springs and aerodynamics', () => {
+    renderForm();
+
+    expect(field('Altura do solo dianteira (sempre no máximo)').value).toBe('220');
+    expect(field('Altura do solo dianteira (sempre no máximo) — mínimo do slider').value).toBe('10');
+    expect(field('Altura do solo dianteira (sempre no máximo) — máximo do slider').value).toBe('220');
+  });
+
+  it('warns, without blocking, when the ride height is below the maximum of the slider', async () => {
+    renderForm();
+    expect(screen.queryByText(/baixar o carro faz o jogo perder velocidade/i)).not.toBeInTheDocument();
+
+    const height = field('Altura do solo dianteira (sempre no máximo)');
+    await userEvent.clear(height);
+    await userEvent.type(height, '150');
+
+    expect(screen.getByText(/abaixo do máximo: baixar o carro faz o jogo perder velocidade/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /salvar setup/i })).toBeEnabled();
   });
 
   it('delete: only when the setup is confirmed, asking for confirmation first', async () => {
