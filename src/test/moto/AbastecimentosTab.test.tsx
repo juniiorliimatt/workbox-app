@@ -251,7 +251,7 @@ describe('Moto · aba Abastecimentos', () => {
       mockApi.post.mockResolvedValue({ data: makeRefueling() });
       renderTab();
       const form = await openNew(user);
-      expect(form.getByText('Marcar melhora a precisão do km/l; é opcional.')).toBeInTheDocument();
+      expect(form.getByText('Opcional: só registra o abastecimento; não altera o cálculo do km/l.')).toBeInTheDocument();
 
       await user.type(form.getByLabelText(/^Hodômetro/), '1500');
       await user.type(form.getByLabelText(/^Litros/), '5');

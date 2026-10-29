@@ -485,7 +485,7 @@ const AbastecimentosTab: FC<AbastecimentosTabProps> = ({ motorcycle, active, onC
                     />
                   )}
                 />
-                <FormHelperText sx={{ mt: -0.5, ml: 4 }}>Marcar melhora a precisão do km/l; é opcional.</FormHelperText>
+                <FormHelperText sx={{ mt: -0.5, ml: 4 }}>Opcional: só registra o abastecimento; não altera o cálculo do km/l.</FormHelperText>
               </Grid>
             </Grid>
           </DialogContent>
