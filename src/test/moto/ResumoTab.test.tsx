@@ -30,7 +30,7 @@ interface Data {
 }
 
 const defaults = (): Data => ({
-  overall: makeStats({ km: 700, kmPerDay: 10, kmPerLiter: 30.43, costPerKm: 0.21, pricePerLiter: 6.2, segmentCount: 3, lowConfidence: false, bestKmPerLiter: 40, worstKmPerLiter: 20 }),
+  overall: makeStats({ km: 700, kmPerDay: 10, kmPerLiter: 30.43, costPerKm: 0.21, pricePerLiter: 6.2, segmentCount: 3, lowConfidence: false }),
   month: makeStats({ km: 150, totalSpent: 95, litersRefueled: 15 }),
   yearly: makeYearly([YEAR]),
   monthly: (year) => makeMonthly(year),
@@ -91,7 +91,9 @@ describe('Moto · aba Resumo', () => {
       await screen.findByRole('group', { name: 'Consumo médio' });
 
       expect(card('Consumo médio').getByText('30,43 km/l')).toBeInTheDocument();
-      expect(card('Consumo médio').getByText('Melhor 40,00 km/l · Pior 20,00 km/l')).toBeInTheDocument();
+      // só o valor da média: sem contagem de trechos nem melhor/pior (o km/l por trecho dava valores irreais)
+      expect(card('Consumo médio').queryByText(/trecho/i)).not.toBeInTheDocument();
+      expect(card('Consumo médio').queryByText(/Melhor|Pior/)).not.toBeInTheDocument();
       expect(card('Km rodados').getByText('700 km')).toBeInTheDocument();
       expect(card('Km rodados').getByText('10,00 km/dia')).toBeInTheDocument();
       expect(card('Km no mês').getByText('150 km')).toBeInTheDocument();
@@ -120,7 +122,7 @@ describe('Moto · aba Resumo', () => {
 
     it('valores ausentes viram traço, nunca "NaN", "null" ou "undefined"', async () => {
       mockData({
-        overall: makeStats({ km: 0, kmPerDay: 0, kmPerLiter: null, costPerKm: null, pricePerLiter: null, bestKmPerLiter: null, worstKmPerLiter: null, segmentCount: 0, lowConfidence: true, totalSpent: 0 }),
+        overall: makeStats({ km: 0, kmPerDay: 0, kmPerLiter: null, costPerKm: null, pricePerLiter: null, segmentCount: 0, lowConfidence: true, totalSpent: 0 }),
         month: makeStats({ km: 0, totalSpent: 0, kmPerLiter: null }),
         yearly: [],
         oil: { lastChange: null, currentOdometerKm: 1000, dueDate: null, dueKm: null, kmRemaining: null, daysRemaining: null, level: null, limitedBy: null },

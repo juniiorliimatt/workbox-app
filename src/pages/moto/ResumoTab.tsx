@@ -47,7 +47,6 @@ import {
   formatPerLiter,
   formatRemainingDays,
   formatRemainingKm,
-  pluralize,
 } from '@/pages/moto/format';
 import { createOdometerReading, getMonthlyStats, getOilStatus, getStats, getYearlyStats } from '@/services/motoApi';
 import { useChartTheme } from '@/themes/useChartTheme';
@@ -266,11 +265,6 @@ const ResumoTab: FC<ResumoTabProps> = ({ motorcycle, active, refreshKey, onChang
               <StatCard
                 title="Consumo médio"
                 value={formatKmPerLiter(overall.kmPerLiter)}
-                lines={[
-                  overall.kmPerLiter !== null && pluralize(overall.segmentCount, 'trecho', 'trechos'),
-                  overall.bestKmPerLiter !== null && overall.worstKmPerLiter !== null &&
-                    `Melhor ${formatKmPerLiter(overall.bestKmPerLiter)} · Pior ${formatKmPerLiter(overall.worstKmPerLiter)}`,
-                ].filter(Boolean)}
                 extra={
                   lowConfidence && (
                     <Tooltip title={LOW_CONFIDENCE_HINT}>

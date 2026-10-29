@@ -115,7 +115,7 @@ export interface IOilStatus {
   limitedBy: OilLimit | null;
 }
 
-/** Métricas de um período. km/l e custo por km são ponderados (Σkm / Σlitros); `lowConfidence` = menos de 3 trechos. */
+/** Métricas de um período. km/l e custo por km = km dos trechos ÷ litros (e gasto) de todos os abastecimentos; `lowConfidence` = menos de 3 trechos. */
 export interface IStats {
   from: string;
   to: string;
@@ -128,9 +128,6 @@ export interface IStats {
   costPerKm: number | null;
   segmentCount: number;
   lowConfidence: boolean;
-  bestKmPerLiter: number | null;
-  worstKmPerLiter: number | null;
-  longestSegmentKm: number | null;
 }
 
 export interface IMonthlyStats {

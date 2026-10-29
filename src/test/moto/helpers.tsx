@@ -146,9 +146,6 @@ export const makeStats = (overrides?: Partial<IStats>): IStats => ({
   costPerKm: 0.17,
   segmentCount: 3,
   lowConfidence: false,
-  bestKmPerLiter: 40,
-  worstKmPerLiter: 20,
-  longestSegmentKm: 300,
   ...overrides,
 });
 
