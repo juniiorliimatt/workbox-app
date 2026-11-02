@@ -43,7 +43,6 @@ export interface IRefueling {
   pricePerLiter: number;
   station: string | null;
   fuelType: FuelType;
-  fullTank: boolean;
 }
 
 export interface IRefuelingRequest {
@@ -53,7 +52,6 @@ export interface IRefuelingRequest {
   totalValue: number;
   station?: string | null;
   fuelType: FuelType;
-  fullTank?: boolean;
 }
 
 export interface IPageMetadata {

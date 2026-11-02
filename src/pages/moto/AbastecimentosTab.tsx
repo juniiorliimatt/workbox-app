@@ -3,15 +3,11 @@ import {
   Alert,
   Box,
   Button,
-  Checkbox,
-  Chip,
   CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
-  FormControlLabel,
-  FormHelperText,
   Grid,
   IconButton,
   MenuItem,
@@ -76,10 +72,9 @@ interface FormValues {
   totalValue: string;
   station: string;
   fuelType: FuelType;
-  fullTank: boolean;
 }
 
-const EMPTY: FormValues = { odometerKm: '', liters: '', totalValue: '', station: '', fuelType: 'GASOLINA_COMUM', fullTank: false };
+const EMPTY: FormValues = { odometerKm: '', liters: '', totalValue: '', station: '', fuelType: 'GASOLINA_COMUM' };
 
 const DECIMAL = /^\d+([.,]\d{1,2})?$/;
 const toNumber = (text: string): number => Number(text.trim().replace(',', '.'));
@@ -103,7 +98,6 @@ const schema = yup.object().shape({
   totalValue: decimalField('Valor é obrigatório', 'Valor inválido', 'Valor deve ser maior que zero'),
   station: yup.string().trim().max(120, 'Máximo de 120 caracteres').default(''),
   fuelType: yup.mixed<FuelType>().oneOf(Object.keys(FUEL_TYPE_LABEL) as FuelType[]).default('GASOLINA_COMUM'),
-  fullTank: yup.boolean().default(false),
 });
 
 const toFormValues = (refueling: IRefueling): FormValues => ({
@@ -112,7 +106,6 @@ const toFormValues = (refueling: IRefueling): FormValues => ({
   totalValue: refueling.totalValue.toString(),
   station: refueling.station ?? '',
   fuelType: refueling.fuelType,
-  fullTank: refueling.fullTank,
 });
 
 /** Preço por litro a partir do que está digitado; `null` enquanto algum dos dois não for um número válido. */
@@ -200,7 +193,6 @@ const AbastecimentosTab: FC<AbastecimentosTabProps> = ({ motorcycle, active, onC
       totalValue: toNumber(values.totalValue),
       station: values.station.trim() || null,
       fuelType: values.fuelType,
-      fullTank: values.fullTank,
     };
     try {
       if (editing) {
@@ -326,13 +318,6 @@ const AbastecimentosTab: FC<AbastecimentosTabProps> = ({ motorcycle, active, onC
                 <RecordCard
                   key={item.id}
                   title={`${formatDate(item.date)} · ${formatKm(item.odometerKm)}`}
-                  badge={
-                    item.fullTank ? (
-                      <Chip size="small" color="success" variant="outlined" label="Tanque cheio" />
-                    ) : (
-                      <Typography variant="caption" color="text.secondary">Parcial</Typography>
-                    )
-                  }
                   lines={[
                     `${formatLiters(item.liters)} · ${formatCurrency(item.totalValue)} · ${formatPerLiter(item.pricePerLiter)}`,
                     [FUEL_TYPE_LABEL[item.fuelType], item.station].filter(Boolean).join(' · '),
@@ -353,7 +338,6 @@ const AbastecimentosTab: FC<AbastecimentosTabProps> = ({ motorcycle, active, onC
                   <TableCell align="right" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>R$/L</TableCell>
                   <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>Combustível</TableCell>
                   <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>Posto</TableCell>
-                  <TableCell>Tanque</TableCell>
                   <TableCell align="right">
                     <span style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0 0 0 0)' }}>Ações</span>
                   </TableCell>
@@ -369,9 +353,6 @@ const AbastecimentosTab: FC<AbastecimentosTabProps> = ({ motorcycle, active, onC
                     <TableCell align="right" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{formatPerLiter(item.pricePerLiter)}</TableCell>
                     <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>{FUEL_TYPE_LABEL[item.fuelType]}</TableCell>
                     <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>{item.station ?? '—'}</TableCell>
-                    <TableCell>
-                      {item.fullTank ? <Chip size="small" color="success" variant="outlined" label="Tanque cheio" /> : <Typography variant="body2" color="text.secondary">Parcial</Typography>}
-                    </TableCell>
                     <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>{renderActions(item)}</TableCell>
                   </TableRow>
                 ))}
@@ -473,19 +454,6 @@ const AbastecimentosTab: FC<AbastecimentosTabProps> = ({ motorcycle, active, onC
               </Grid>
               <Grid item xs={12} sm={6}>
                 <TextField label="Posto" fullWidth {...register('station')} error={Boolean(errors.station)} helperText={errors.station?.message} />
-              </Grid>
-              <Grid item xs={12}>
-                <Controller
-                  name="fullTank"
-                  control={control}
-                  render={({ field }) => (
-                    <FormControlLabel
-                      control={<Checkbox checked={field.value} onChange={(event) => field.onChange(event.target.checked)} />}
-                      label="Completei o tanque"
-                    />
-                  )}
-                />
-                <FormHelperText sx={{ mt: -0.5, ml: 4 }}>Opcional: só registra o abastecimento; não altera o cálculo do km/l.</FormHelperText>
               </Grid>
             </Grid>
           </DialogContent>

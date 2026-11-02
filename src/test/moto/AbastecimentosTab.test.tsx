@@ -49,7 +49,7 @@ describe('Moto · aba Abastecimentos', () => {
     mockApi.get.mockResolvedValue({
       data: makeRefuelingPage([
         makeRefueling(),
-        makeRefueling({ id: 'b', date: '2026-01-20', odometerKm: 1300, liters: 8, totalValue: 50, pricePerLiter: 6.25, fuelType: 'ETANOL', fullTank: true, station: null }),
+        makeRefueling({ id: 'b', date: '2026-01-20', odometerKm: 1300, liters: 8, totalValue: 50, pricePerLiter: 6.25, fuelType: 'ETANOL', station: null }),
       ]),
     });
 
@@ -66,10 +66,10 @@ describe('Moto · aba Abastecimentos', () => {
     expect(plain(first.getByText(/6,40\/L/).textContent)).toBe('R$ 6,40/L');
     expect(first.getByText('Gasolina comum')).toBeInTheDocument();
     expect(first.getByText('Posto Shell')).toBeInTheDocument();
-    expect(first.getByText('Parcial')).toBeInTheDocument();
     const second = within(rows[2]);
-    expect(second.getByText('Tanque cheio')).toBeInTheDocument();
     expect(second.getByText('Etanol')).toBeInTheDocument();
+    expect(within(table).queryByRole('columnheader', { name: 'Tanque' })).not.toBeInTheDocument();
+    expect(within(table).queryByText(/Tanque cheio|Parcial/)).not.toBeInTheDocument();
     expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
   });
 
@@ -237,7 +237,6 @@ describe('Moto · aba Abastecimentos', () => {
           totalValue: 35.2,
           station: null,
           fuelType: 'GASOLINA_COMUM',
-          fullTank: false,
         }),
       );
       expect(await screen.findByText('Abastecimento registrado!')).toBeInTheDocument();
@@ -246,28 +245,26 @@ describe('Moto · aba Abastecimentos', () => {
       await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
     });
 
-    it('"Completei o tanque" é opcional, explica o efeito e envia fullTank', async () => {
+    it('não tem marcação de tanque completo e envia posto e combustível sem fullTank', async () => {
       const user = userEvent.setup();
       mockApi.post.mockResolvedValue({ data: makeRefueling() });
       renderTab();
       const form = await openNew(user);
-      expect(form.getByText('Opcional: só registra o abastecimento; não altera o cálculo do km/l.')).toBeInTheDocument();
+      expect(form.queryByRole('checkbox')).not.toBeInTheDocument();
+      expect(form.queryByText(/Completei o tanque/)).not.toBeInTheDocument();
 
       await user.type(form.getByLabelText(/^Hodômetro/), '1500');
       await user.type(form.getByLabelText(/^Litros/), '5');
       await user.type(form.getByLabelText(/^Valor total/), '32');
       await user.type(form.getByLabelText(/^Posto/), '  Shell Centro ');
-      await user.click(form.getByRole('checkbox', { name: /Completei o tanque/ }));
       await user.click(form.getByRole('combobox', { name: /Combustível/ }));
       await user.click(await screen.findByRole('option', { name: 'Etanol' }));
       await user.click(form.getByRole('button', { name: 'Salvar' }));
 
-      await waitFor(() =>
-        expect(mockApi.post).toHaveBeenCalledWith(
-          URL,
-          expect.objectContaining({ station: 'Shell Centro', fuelType: 'ETANOL', fullTank: true }),
-        ),
-      );
+      await waitFor(() => expect(mockApi.post).toHaveBeenCalledTimes(1));
+      const body = mockApi.post.mock.calls[0][1];
+      expect(body).toMatchObject({ station: 'Shell Centro', fuelType: 'ETANOL' });
+      expect(body).not.toHaveProperty('fullTank');
     });
 
     it('erro da API (ex.: hodômetro fora de ordem) mostra o motivo e mantém o diálogo aberto', async () => {
@@ -295,7 +292,7 @@ describe('Moto · aba Abastecimentos', () => {
 
     it('mostra cartões em vez da tabela, com todos os dados', async () => {
       mockApi.get.mockResolvedValue({
-        data: makeRefuelingPage([makeRefueling(), makeRefueling({ id: 'b', date: '2026-01-20', odometerKm: 1300, fullTank: true, station: null, fuelType: 'ETANOL' })]),
+        data: makeRefuelingPage([makeRefueling(), makeRefueling({ id: 'b', date: '2026-01-20', odometerKm: 1300, station: null, fuelType: 'ETANOL' })]),
       });
 
       renderTab();
@@ -308,10 +305,9 @@ describe('Moto · aba Abastecimentos', () => {
       expect(first.getByText('10/02/2026 · 1.500 km')).toBeInTheDocument();
       expect(plain(first.getByText(/5,00 L/).textContent)).toBe('5,00 L · R$ 32,00 · R$ 6,40/L');
       expect(first.getByText('Gasolina comum · Posto Shell')).toBeInTheDocument();
-      expect(first.getByText('Parcial')).toBeInTheDocument();
       const second = within(items[1]);
       expect(second.getByText('Etanol')).toBeInTheDocument();
-      expect(second.getByText('Tanque cheio')).toBeInTheDocument();
+      expect(within(list).queryByText(/Tanque cheio|Parcial/)).not.toBeInTheDocument();
     });
 
     it('as ações de editar e excluir continuam acessíveis', async () => {

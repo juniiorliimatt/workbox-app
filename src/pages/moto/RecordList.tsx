@@ -17,7 +17,7 @@ export const RecordList: FC<RecordListProps> = ({ label, children }) => (
 export interface RecordCardProps {
   /** Linha principal (em destaque). */
   title: string;
-  /** Selo ao lado do título (ex.: "Tanque cheio"). */
+  /** Selo ao lado do título (ex.: estado de uma troca de óleo). */
   badge?: ReactNode;
   /** Linhas de apoio, uma por item. */
   lines: ReactNode[];
