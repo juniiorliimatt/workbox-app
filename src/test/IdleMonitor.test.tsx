@@ -1,11 +1,20 @@
 import { act, render } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, useNavigate } from 'react-router-dom';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { IdleMonitor } from '@/components/IdleMonitor';
 import { reportSessionActivity } from '@/utils/sessionActivity';
 
-const { logout } = vi.hoisted(() => ({ logout: vi.fn().mockResolvedValue(undefined) }));
-vi.mock('@/hooks/useAuth', () => ({ useAuth: () => ({ isAuthenticated: true, logout }), default: () => ({ isAuthenticated: true, logout }) }));
+const { logout, auth, useAuthMock } = vi.hoisted(() => {
+  const logoutFn = vi.fn().mockResolvedValue(undefined);
+  // `unstableLogout`: imita o AuthProvider real, que entrega uma função `logout` nova a cada render do contexto.
+  const state = { unstableLogout: false };
+  const hook = () => ({
+    isAuthenticated: true,
+    logout: state.unstableLogout ? (...args: unknown[]) => logoutFn(...args) : logoutFn,
+  });
+  return { logout: logoutFn, auth: state, useAuthMock: hook };
+});
+vi.mock('@/hooks/useAuth', () => ({ useAuth: useAuthMock, default: useAuthMock }));
 
 const MIN = 60_000;
 
@@ -20,6 +29,46 @@ describe('IdleMonitor · logout por inatividade', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.useFakeTimers();
+    auth.unstableLogout = false;
+  });
+
+  it('re-render do contexto de auth (ex.: renovação do token a cada 13 min) não adia o logout', () => {
+    auth.unstableLogout = true;
+    const view = mount();
+    const rerender = () =>
+      view.rerender(
+        <MemoryRouter>
+          <IdleMonitor />
+        </MemoryRouter>,
+      );
+
+    act(() => vi.advanceTimersByTime(13 * MIN));
+    act(() => rerender());
+    act(() => vi.advanceTimersByTime(2 * MIN + 1));
+
+    expect(logout).toHaveBeenCalledTimes(1);
+  });
+
+  it('navegar entre telas conta como atividade', () => {
+    let navigate: (to: string) => void = () => undefined;
+    const Navigator = () => {
+      navigate = useNavigate();
+      return null;
+    };
+    render(
+      <MemoryRouter initialEntries={['/moto']}>
+        <IdleMonitor />
+        <Navigator />
+      </MemoryRouter>,
+    );
+
+    act(() => vi.advanceTimersByTime(14 * MIN));
+    act(() => navigate('/financas'));
+    act(() => vi.advanceTimersByTime(14 * MIN));
+    expect(logout).not.toHaveBeenCalled();
+
+    act(() => vi.advanceTimersByTime(MIN + 1));
+    expect(logout).toHaveBeenCalledTimes(1);
   });
   afterEach(() => vi.useRealTimers());
 

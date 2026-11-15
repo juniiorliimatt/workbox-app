@@ -233,6 +233,8 @@ textos exatos). Achado preservado: o "Novo Tipo de Receita" tem checkboxes de co
   - Auto-logout por inatividade de 15 min (`IdleMonitor`: teclado/mouse/toque + o evento `SESSION_ACTIVITY_EVENT` de
     `utils/sessionActivity`). Tela que acompanha algo sem input do usuário reporta atividade (hoje só `forza/AoVivo`, via
     `useLiveSessionActivity`, e só com a telemetria chegando — jogo parado não segura a sessão). Não isente rotas do monitor.
+    O timer depende **só** de `isAuthenticated` (o `logout` vai por ref): o `logout` do `AuthProvider` muda a cada render, e
+    quando ele entrava nas deps a renovação do token (a cada ~13 min) reiniciava a contagem — o logout nunca disparava.
   - Access token (15 min) renovado por timer **2 min antes de expirar** (`AuthContext`); `refresh()` é single-flight e a
     referência da promessa é limpa em `.finally` (um `finally` interno já travou o refresh para sempre no retorno antecipado).
     Só 4xx (≠ 408/429) do `/auth/refresh` encerra a sessão; rede/5xx/429 mantém o refresh token e tenta de novo em 15 s.
