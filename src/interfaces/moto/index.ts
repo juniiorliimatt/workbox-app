@@ -43,6 +43,10 @@ export interface IRefueling {
   pricePerLiter: number;
   station: string | null;
   fuelType: FuelType;
+  /** Hodômetro − hodômetro do abastecimento anterior da moto (independe de filtro/página); nulo no primeiro. */
+  kmSincePrevious: number | null;
+  /** km/l bruto desse trecho (km ÷ litros deste abastecimento); nulo no primeiro ou sem km. Não é a média. */
+  kmPerLiterSincePrevious: number | null;
 }
 
 export interface IRefuelingRequest {

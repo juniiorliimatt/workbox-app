@@ -36,7 +36,7 @@ import { FuelType, IMotorcycle, IRefueling, IRefuelingRequest } from '@/interfac
 import { errorMessage } from '@/pages/moto/errors';
 import { RecordCard, RecordList } from '@/pages/moto/RecordList';
 import { useCompactLayout } from '@/pages/moto/useCompactLayout';
-import { FUEL_TYPE_LABEL, MONTH_NAMES, formatDate, formatKm, formatLiters, formatPerLiter } from '@/pages/moto/format';
+import { FUEL_TYPE_LABEL, MONTH_NAMES, formatDate, formatKm, formatKmPerLiter, formatLiters, formatPerLiter } from '@/pages/moto/format';
 import { createRefueling, deleteRefueling, listRefuelings, updateRefueling } from '@/services/motoApi';
 import { useAxiosWithAuth } from '@/services/useAxiosWithAuth';
 import { formatCurrency } from '@/utils/format';
@@ -320,8 +320,10 @@ const AbastecimentosTab: FC<AbastecimentosTabProps> = ({ motorcycle, active, onC
                   title={`${formatDate(item.date)} · ${formatKm(item.odometerKm)}`}
                   lines={[
                     `${formatLiters(item.liters)} · ${formatCurrency(item.totalValue)} · ${formatPerLiter(item.pricePerLiter)}`,
+                    item.kmSincePrevious !== null &&
+                      `${formatKm(item.kmSincePrevious)} rodados · ${formatKmPerLiter(item.kmPerLiterSincePrevious)}`,
                     [FUEL_TYPE_LABEL[item.fuelType], item.station].filter(Boolean).join(' · '),
-                  ]}
+                  ].filter(Boolean)}
                   actions={renderActions(item)}
                 />
               ))}
@@ -333,6 +335,8 @@ const AbastecimentosTab: FC<AbastecimentosTabProps> = ({ motorcycle, active, onC
                 <TableRow>
                   <TableCell>Data</TableCell>
                   <TableCell align="right">Hodômetro</TableCell>
+                  <TableCell align="right">Km rodados</TableCell>
+                  <TableCell align="right">Consumo</TableCell>
                   <TableCell align="right">Litros</TableCell>
                   <TableCell align="right">Valor</TableCell>
                   <TableCell align="right" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>R$/L</TableCell>
@@ -348,6 +352,8 @@ const AbastecimentosTab: FC<AbastecimentosTabProps> = ({ motorcycle, active, onC
                   <TableRow key={item.id} hover>
                     <TableCell>{formatDate(item.date)}</TableCell>
                     <TableCell align="right">{formatKm(item.odometerKm)}</TableCell>
+                    <TableCell align="right">{formatKm(item.kmSincePrevious)}</TableCell>
+                    <TableCell align="right">{formatKmPerLiter(item.kmPerLiterSincePrevious)}</TableCell>
                     <TableCell align="right">{formatLiters(item.liters)}</TableCell>
                     <TableCell align="right">{formatCurrency(item.totalValue)}</TableCell>
                     <TableCell align="right" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{formatPerLiter(item.pricePerLiter)}</TableCell>

@@ -68,7 +68,7 @@ src/
 │   ├── Forza.tsx          # Hub do módulo Forza (telemetria)
 │   ├── forza/             # Sessoes (lista), SessaoDetalhe (resumo/voltas/telemetria), AoVivo
 │   ├── Moto.tsx           # Módulo Moto (abas Resumo, Abastecimentos, Óleo, Motos)
-│   └── moto/              # Uma tela por aba (ResumoTab, AbastecimentosTab, OleoTab, MotosTab) + useMotos, format, errors
+│   └── moto/              # Uma tela por aba (ResumoTab, AbastecimentosTab, OleoTab, MotosTab) + TrechosTable, useMotos, format, errors
 ├── routes/          # Definição e configuração das rotas
 │   ├── routes.tsx         # Rotas (catch-all "*" redireciona pra "/")
 │   ├── ProtectedRoute.tsx # Guarda de rota autenticada
@@ -158,8 +158,8 @@ Consome só `forza-telemetry-service/openapi/openapi.yaml` (tipos em `src/interf
 
 #### Módulo Moto (`/moto`)
 Consome só `moto-service/openapi/openapi.yaml` (tipos em `src/interfaces/moto`). Uma página com seletor de moto (a escolha fica em `localStorage`) e quatro abas, que ficam em `?aba=resumo|abastecimentos|oleo|motos` (link compartilhável); sem nenhuma moto só a aba **Motos** está liberada. Cada aba só busca dados quando fica visível.
-- **Resumo**: indicadores — consumo médio (só o valor do km/l — diferença de hodômetro ÷ litros abastecidos, sem contagem de trechos nem melhor/pior —, com selo **Baixa confiança** quando há menos de 3 trechos), km rodados e km/dia, km e gasto do mês (com a variação contra o mês anterior), gasto no ano, custo por km e a próxima troca de óleo — e gráficos mês a mês (km/l, gasto, km) com seletor de ano, mais a visão por ano quando há mais de um. Todo gráfico tem uma tabela equivalente para leitores de tela. O botão **Atualizar km** grava uma leitura avulsa de hodômetro (sem abastecer).
-- **Abastecimentos**: lista paginada (mais recentes primeiro) com filtro Todos / Mensal / Anual e formulário (data, hodômetro **total**, litros, valor, combustível, posto; não há marcação de "tanque completo" — o km/l usa só distância e litros). Mostra o preço por litro enquanto digita.
+- **Resumo**: indicadores — consumo médio (só o valor do km/l — diferença de hodômetro ÷ litros abastecidos, sem contagem de trechos nem melhor/pior —, com selo **Baixa confiança** quando há menos de 3 trechos), km rodados e km/dia, km e gasto do mês (com a variação contra o mês anterior), gasto no ano, custo por km e a próxima troca de óleo —, a tabela **Entre abastecimentos** (paginada, 10 por página, mais recentes primeiro: data, hodômetro, km rodados desde o abastecimento anterior, litros e o km/l bruto desse trecho; o primeiro abastecimento mostra "—") e gráficos mês a mês (km/l, gasto, km) com seletor de ano, mais a visão por ano quando há mais de um. Todo gráfico tem uma tabela equivalente para leitores de tela. O botão **Atualizar km** grava uma leitura avulsa de hodômetro (sem abastecer).
+- **Abastecimentos**: lista paginada (mais recentes primeiro) com filtro Todos / Mensal / Anual, com as colunas **Km rodados** e **Consumo** (km e km/l desde o abastecimento anterior; vêm do servidor, que considera o anterior mesmo fora do filtro ou da página), e formulário (data, hodômetro **total**, litros, valor, combustível, posto; não há marcação de "tanque completo" — o km/l usa só distância e litros). Mostra o preço por litro enquanto digita.
 - **Óleo**: card da próxima troca por **km e por tempo, o que vencer primeiro** (barras de progresso e estado sempre em texto: Em dia / Troca próxima / Troca vencida), histórico e formulário que pré-preenche o intervalo padrão do tipo de óleo (`GET /oil-intervals`), mantendo-o editável.
 - **Motos**: cadastro (apelido, marca, modelo, ano, placa, hodômetro inicial, tanque, ativa); excluir apaga também abastecimentos, trocas e leituras da moto (com confirmação).
 - O hodômetro precisa respeitar a ordem cronológica da moto: se a API recusar (400), o motivo do `problem+json` aparece no snackbar e o diálogo continua aberto.

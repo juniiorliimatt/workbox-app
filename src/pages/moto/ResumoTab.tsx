@@ -48,6 +48,7 @@ import {
   formatRemainingDays,
   formatRemainingKm,
 } from '@/pages/moto/format';
+import TrechosTable from '@/pages/moto/TrechosTable';
 import { createOdometerReading, getMonthlyStats, getOilStatus, getStats, getYearlyStats } from '@/services/motoApi';
 import { useChartTheme } from '@/themes/useChartTheme';
 import { useAxiosWithAuth } from '@/services/useAxiosWithAuth';
@@ -316,6 +317,8 @@ const ResumoTab: FC<ResumoTabProps> = ({ motorcycle, active, refreshKey, onChang
               />
             </Grid>
           </Grid>
+
+          <TrechosTable motoId={motorcycle.id} active={active} refreshKey={refreshKey} />
 
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 2, mb: 2 }}>
             <Typography variant="h6" component="h2">

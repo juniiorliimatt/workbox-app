@@ -49,7 +49,18 @@ describe('Moto · aba Abastecimentos', () => {
     mockApi.get.mockResolvedValue({
       data: makeRefuelingPage([
         makeRefueling(),
-        makeRefueling({ id: 'b', date: '2026-01-20', odometerKm: 1300, liters: 8, totalValue: 50, pricePerLiter: 6.25, fuelType: 'ETANOL', station: null }),
+        makeRefueling({
+          id: 'b',
+          date: '2026-01-20',
+          odometerKm: 1300,
+          liters: 8,
+          totalValue: 50,
+          pricePerLiter: 6.25,
+          fuelType: 'ETANOL',
+          station: null,
+          kmSincePrevious: null,
+          kmPerLiterSincePrevious: null,
+        }),
       ]),
     });
 
@@ -57,10 +68,15 @@ describe('Moto · aba Abastecimentos', () => {
 
     expect(screen.getByRole('progressbar')).toBeInTheDocument();
     const table = await screen.findByRole('table', { name: 'Abastecimentos' });
+    const headers = within(table).getAllByRole('columnheader').map((h) => h.textContent);
+    expect(headers.slice(0, 4)).toEqual(['Data', 'Hodômetro', 'Km rodados', 'Consumo']);
     const rows = within(table).getAllByRole('row');
     const first = within(rows[1]);
     expect(first.getByText('10/02/2026')).toBeInTheDocument();
     expect(first.getByText('1.500 km')).toBeInTheDocument();
+    expect(first.getByText('200 km')).toBeInTheDocument();
+    expect(first.getByText('40,00 km/l')).toBeInTheDocument();
+    expect(within(rows[2]).getAllByText('—')).toHaveLength(3);
     expect(first.getByText('5,00 L')).toBeInTheDocument();
     expect(plain(first.getByText(/R\$\s32,00/).textContent)).toBe('R$ 32,00');
     expect(plain(first.getByText(/6,40\/L/).textContent)).toBe('R$ 6,40/L');
@@ -292,12 +308,17 @@ describe('Moto · aba Abastecimentos', () => {
 
     it('mostra cartões em vez da tabela, com todos os dados', async () => {
       mockApi.get.mockResolvedValue({
-        data: makeRefuelingPage([makeRefueling(), makeRefueling({ id: 'b', date: '2026-01-20', odometerKm: 1300, station: null, fuelType: 'ETANOL' })]),
+        data: makeRefuelingPage([
+          makeRefueling(),
+          makeRefueling({ id: 'b', date: '2026-01-20', odometerKm: 1300, station: null, fuelType: 'ETANOL', kmSincePrevious: null, kmPerLiterSincePrevious: null }),
+        ]),
       });
 
       renderTab();
 
       const list = await screen.findByRole('list', { name: 'Abastecimentos' });
+      expect(within(list).getByText('200 km rodados · 40,00 km/l')).toBeInTheDocument();
+      expect(within(list).getAllByText(/km rodados/)).toHaveLength(1);
       expect(screen.queryByRole('table', { name: 'Abastecimentos' })).not.toBeInTheDocument();
       const items = within(list).getAllByRole('listitem');
       expect(items).toHaveLength(2);

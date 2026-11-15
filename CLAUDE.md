@@ -169,6 +169,11 @@ textos exatos). Achado preservado: o "Novo Tipo de Receita" tem checkboxes de co
 - **Gráficos** (`recharts`, só no Resumo): o desenho é `aria-hidden` e **toda** série tem uma tabela visualmente
   oculta equivalente (é onde os testes asseguram os números — o recharts não desenha no jsdom). Cores só de
   `theme.palette`. Estado de óleo (Em dia / Troca próxima / Troca vencida) **sempre em texto**, nunca só cor.
+- **Km/l por trecho** (`kmSincePrevious`/`kmPerLiterSincePrevious` do `IRefueling`): colunas na aba Abastecimentos e a
+  tabela `pages/moto/TrechosTable` no Resumo (entre os cards e o "Mês a mês", com paginação e carga próprias, então uma
+  falha nela não derruba os cards). Vêm **prontos do servidor**: não calcular no cliente pela página (o anterior pode
+  estar em outra página ou fora do filtro). É o valor bruto do trecho (um parcial dá 70 km/l, e isso é aceito) e nunca
+  entra na média do card.
 - Valores com `format.ts` (`formatKm`, `formatKmPerLiter`, `formatRemainingKm/Days`, `pluralize`, ...): ausência vira
   "—", nunca "NaN"/"null". `formatCurrency` com NBSP: nos testes use `plain()` (`test/moto/helpers.tsx`).
 

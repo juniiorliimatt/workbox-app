@@ -1,10 +1,23 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import dayjs from 'dayjs';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import ResumoTab from '@/pages/moto/ResumoTab';
-import { IMonthlyStats, IOilStatus, IStats, IYearlyStats } from '@/interfaces/moto';
-import { MOTO_ID, makeMonthly, makeMotorcycle, makeOilStatus, makeStats, makeYearly, plain, renderMoto } from './helpers';
+import { IMonthlyStats, IOilStatus, IRefuelingPage, IStats, IYearlyStats } from '@/interfaces/moto';
+import {
+  MOTO_ID,
+  makeMonthly,
+  makeMotorcycle,
+  makeOilStatus,
+  makeRefueling,
+  makeRefuelingPage,
+  makeStats,
+  makeYearly,
+  mockCompactViewport,
+  plain,
+  renderMoto,
+  resetViewport,
+} from './helpers';
 
 const { mockApi } = vi.hoisted(() => ({ mockApi: { get: vi.fn(), post: vi.fn(), put: vi.fn(), delete: vi.fn() } }));
 vi.mock('@/services/useAxiosWithAuth', () => ({ useAxiosWithAuth: () => mockApi, default: () => mockApi }));
@@ -27,6 +40,7 @@ interface Data {
   yearly: IYearlyStats[];
   monthly: (year: number) => IMonthlyStats[];
   oil: IOilStatus;
+  refuelings: (page: number) => IRefuelingPage;
 }
 
 const defaults = (): Data => ({
@@ -35,12 +49,18 @@ const defaults = (): Data => ({
   yearly: makeYearly([YEAR]),
   monthly: (year) => makeMonthly(year),
   oil: makeOilStatus(),
+  refuelings: () =>
+    makeRefuelingPage([
+      makeRefueling(),
+      makeRefueling({ id: 'b', date: '2026-01-20', odometerKm: 1300, liters: 8, kmSincePrevious: null, kmPerLiterSincePrevious: null }),
+    ]),
 });
 
 /** Responde cada rota; `/stats` distingue o resumo geral (sem período) do mês atual (com `from`). */
 const mockData = (overrides: Partial<Data> = {}) => {
   const data = { ...defaults(), ...overrides };
-  mockApi.get.mockImplementation(async (url: string, config?: { params?: { from?: string; year?: number } }) => {
+  mockApi.get.mockImplementation(async (url: string, config?: { params?: { from?: string; year?: number; page?: number } }) => {
+    if (url === `${BASE}/refuelings`) return { data: data.refuelings(config?.params?.page ?? 0) };
     if (url === `${BASE}/stats`) return { data: config?.params?.from ? data.month : data.overall };
     if (url === `${BASE}/stats/monthly`) return { data: data.monthly(config?.params?.year ?? YEAR) };
     if (url === `${BASE}/stats/yearly`) return { data: data.yearly };
@@ -160,6 +180,106 @@ describe('Moto · aba Resumo', () => {
       await screen.findByRole('group', { name: 'Próxima troca de óleo' });
       expect(card('Próxima troca de óleo').getByText('Troca próxima')).toBeInTheDocument();
       expect(card('Próxima troca de óleo').getByText('Faltam 20 dias')).toBeInTheDocument();
+    });
+  });
+
+  describe('entre abastecimentos', () => {
+    const TITLE = 'Entre abastecimentos';
+
+    it('lista km rodados e consumo de cada abastecimento desde o anterior, entre os cards e os gráficos', async () => {
+      renderTab();
+
+      const table = await screen.findByRole('table', { name: TITLE });
+      expect(within(table).getAllByRole('columnheader').map((h) => h.textContent)).toEqual([
+        'Data',
+        'Hodômetro',
+        'Km rodados',
+        'Litros',
+        'Consumo',
+      ]);
+      const rows = within(table).getAllByRole('row');
+      expect(rows).toHaveLength(3);
+      const first = within(rows[1]);
+      expect(first.getByText('10/02/2026')).toBeInTheDocument();
+      expect(first.getByText('1.500 km')).toBeInTheDocument();
+      expect(first.getByText('200 km')).toBeInTheDocument();
+      expect(first.getByText('5,00 L')).toBeInTheDocument();
+      expect(first.getByText('40,00 km/l')).toBeInTheDocument();
+      expect(within(rows[2]).getAllByText('—')).toHaveLength(2);
+      expect(calls('/refuelings')[0][1].params).toEqual({ page: 0, size: 10 });
+
+      const cards = screen.getByRole('group', { name: 'Próxima troca de óleo' });
+      const monthly = screen.getByRole('heading', { name: 'Mês a mês' });
+      expect(cards.compareDocumentPosition(table) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+      expect(table.compareDocumentPosition(monthly) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    });
+
+    it('pagina: a próxima página busca a página seguinte', async () => {
+      const user = userEvent.setup();
+      mockData({
+        refuelings: (page) =>
+          makeRefuelingPage([makeRefueling({ id: `p${page}`, odometerKm: page === 0 ? 1500 : 900 })], { number: page, totalElements: 11, totalPages: 2 }),
+      });
+      renderTab();
+      await screen.findByRole('table', { name: TITLE });
+
+      await user.click(screen.getByRole('button', { name: 'Próxima página' }));
+
+      await waitFor(() => expect(calls('/refuelings').at(-1)?.[1].params).toEqual({ page: 1, size: 10 }));
+      expect(await screen.findByText('900 km')).toBeInTheDocument();
+    });
+
+    it('sem abastecimentos mostra o estado vazio', async () => {
+      mockData({ refuelings: () => makeRefuelingPage([]) });
+      renderTab();
+
+      expect(await screen.findByText('Nenhum abastecimento registrado.')).toBeInTheDocument();
+      expect(screen.queryByRole('table', { name: TITLE })).not.toBeInTheDocument();
+    });
+
+    it('falha ao carregar só a tabela avisa e não derruba o resto do resumo', async () => {
+      const user = userEvent.setup();
+      const ok = defaults();
+      let fail = true;
+      mockData({
+        refuelings: (page) => {
+          if (fail) throw new Error('boom');
+          return ok.refuelings(page);
+        },
+      });
+      renderTab();
+
+      expect(await screen.findByText('Não foi possível carregar os abastecimentos.')).toBeInTheDocument();
+      expect(screen.getByRole('group', { name: 'Consumo médio' })).toBeInTheDocument();
+      fail = false;
+      await user.click(screen.getByRole('button', { name: 'Tentar carregar os abastecimentos de novo' }));
+      expect(await screen.findByRole('table', { name: TITLE })).toBeInTheDocument();
+    });
+
+    it('recarrega quando outra aba muda os dados (refreshKey)', async () => {
+      const { rerenderUi } = renderTab(true, 0);
+      await screen.findByRole('table', { name: TITLE });
+      const before = calls('/refuelings').length;
+
+      rerenderUi(<ResumoTab motorcycle={MOTO} active refreshKey={1} onChanged={onChanged} />);
+
+      await waitFor(() => expect(calls('/refuelings').length).toBe(before + 1));
+    });
+
+    describe('layout compacto (celular)', () => {
+      beforeEach(() => mockCompactViewport());
+      afterEach(() => resetViewport());
+
+      it('mostra cartões em vez da tabela', async () => {
+        renderTab();
+
+        const list = await screen.findByRole('list', { name: TITLE });
+        expect(screen.queryByRole('table', { name: TITLE })).not.toBeInTheDocument();
+        const items = within(list).getAllByRole('listitem');
+        expect(within(items[0]).getByText('10/02/2026 · 1.500 km')).toBeInTheDocument();
+        expect(within(items[0]).getByText('200 km rodados · 5,00 L · 40,00 km/l')).toBeInTheDocument();
+        expect(within(items[1]).getByText('Primeiro abastecimento · 8,00 L')).toBeInTheDocument();
+      });
     });
   });
 
