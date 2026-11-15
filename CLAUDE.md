@@ -173,7 +173,10 @@ textos exatos). Achado preservado: o "Novo Tipo de Receita" tem checkboxes de co
   `pages/moto/TrechosTable` no Resumo (entre os cards e o "Mês a mês", com paginação e carga próprias, então uma falha
   nela não derruba os cards). Cada linha mostra os km rodados com o **combustível dela** (até o próximo) e km ÷ os
   litros dela. O mais recente vem nulo e aparece como **"Em aberto"** (`OPEN_CONSUMPTION`), nunca "—": fluxo do
-  desenvolvedor — abasteceu hoje, quem ganha a média é o anterior. Vêm **prontos do servidor**: não calcular no
+  desenvolvedor — abasteceu hoje, quem ganha a média é o anterior. Campo opcional **"Já havia no tanque (L)"**
+  (`litersInTank`): soma aos litros no consumo (no servidor) e aparece como `formatLitersWithTank` ("9,00 L + 5,00 L no
+  tanque"). O rótulo não começa com "Litros" de propósito (colidiria com o campo Litros em `getByLabelText(/^Litros/)`
+  e para leitores de tela). Substitui a ideia de "tanque cheio", que **não** deve voltar. Vêm **prontos do servidor**: não calcular no
   cliente pela página (o próximo pode estar em outra página ou fora do filtro).
 - Valores com `format.ts` (`formatKm`, `formatKmPerLiter`, `formatRemainingKm/Days`, `pluralize`, ...): ausência vira
   "—", nunca "NaN"/"null". `formatCurrency` com NBSP: nos testes use `plain()` (`test/moto/helpers.tsx`).

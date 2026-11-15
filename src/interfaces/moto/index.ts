@@ -43,12 +43,14 @@ export interface IRefueling {
   pricePerLiter: number;
   station: string | null;
   fuelType: FuelType;
+  /** Litros que já estavam no tanque antes de abastecer (estimativa do dono); somam a `liters` no consumo. */
+  litersInTank: number | null;
   /**
    * Km rodados com o combustível deste abastecimento: hodômetro do próximo − o deste (independe de filtro/página).
    * Nulo no mais recente: fica **em aberto** até o próximo abastecimento ser registrado.
    */
   kmDriven: number | null;
-  /** `kmDriven` ÷ litros deste abastecimento; nulo em aberto ou sem km rodados. */
+  /** `kmDriven` ÷ (litros deste abastecimento + `litersInTank`); nulo em aberto ou sem km rodados. */
   kmPerLiter: number | null;
 }
 
@@ -59,6 +61,8 @@ export interface IRefuelingRequest {
   totalValue: number;
   station?: string | null;
   fuelType: FuelType;
+  /** Opcional: litros que já estavam no tanque antes de abastecer. */
+  litersInTank?: number | null;
 }
 
 export interface IPageMetadata {

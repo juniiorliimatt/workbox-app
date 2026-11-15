@@ -34,6 +34,10 @@ export const formatPerKm = (value: number | null | undefined): string =>
 
 export const formatLiters = (liters: number): string => `${number(liters, 2)} L`;
 
+/** `9,00 L + 5,00 L no tanque` quando o dono informou o que já havia no tanque; senão só os litros abastecidos. */
+export const formatLitersWithTank = (liters: number, litersInTank: number | null): string =>
+  litersInTank ? `${formatLiters(liters)} + ${formatLiters(litersInTank)} no tanque` : formatLiters(liters);
+
 /** Variação com sinal explícito (`+8,20%`, `−13,64%`); ausência vira "—". */
 export const formatPct = (value: number | null | undefined): string => {
   if (value === null || value === undefined) return EMPTY;

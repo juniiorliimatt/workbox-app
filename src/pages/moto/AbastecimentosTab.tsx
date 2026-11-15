@@ -37,7 +37,16 @@ import { FuelType, IMotorcycle, IRefueling, IRefuelingRequest } from '@/interfac
 import { errorMessage } from '@/pages/moto/errors';
 import { RecordCard, RecordList } from '@/pages/moto/RecordList';
 import { useCompactLayout } from '@/pages/moto/useCompactLayout';
-import { FUEL_TYPE_LABEL, MONTH_NAMES, OPEN_CONSUMPTION, formatDate, formatKm, formatKmPerLiter, formatLiters, formatPerLiter } from '@/pages/moto/format';
+import {
+  FUEL_TYPE_LABEL,
+  MONTH_NAMES,
+  OPEN_CONSUMPTION,
+  formatDate,
+  formatKm,
+  formatKmPerLiter,
+  formatLitersWithTank,
+  formatPerLiter,
+} from '@/pages/moto/format';
 import { createRefueling, deleteRefueling, listRefuelings, updateRefueling } from '@/services/motoApi';
 import { useAxiosWithAuth } from '@/services/useAxiosWithAuth';
 import { formatCurrency } from '@/utils/format';
@@ -75,9 +84,11 @@ interface FormValues {
   totalValue: string;
   station: string;
   fuelType: FuelType;
+  /** Opcional: litros que já estavam no tanque antes de abastecer. */
+  litersInTank: string;
 }
 
-const EMPTY: FormValues = { odometerKm: '', liters: '', totalValue: '', station: '', fuelType: 'GASOLINA_COMUM' };
+const EMPTY: FormValues = { odometerKm: '', liters: '', totalValue: '', station: '', fuelType: 'GASOLINA_COMUM', litersInTank: '' };
 
 const DECIMAL = /^\d+([.,]\d{1,2})?$/;
 const toNumber = (text: string): number => Number(text.trim().replace(',', '.'));
@@ -101,6 +112,11 @@ const schema = yup.object().shape({
   totalValue: decimalField('Valor é obrigatório', 'Valor inválido', 'Valor deve ser maior que zero'),
   station: yup.string().trim().max(120, 'Máximo de 120 caracteres').default(''),
   fuelType: yup.mixed<FuelType>().oneOf(Object.keys(FUEL_TYPE_LABEL) as FuelType[]).default('GASOLINA_COMUM'),
+  litersInTank: yup
+    .string()
+    .trim()
+    .default('')
+    .test('decimal', 'Litros no tanque inválido', (value) => !value || DECIMAL.test(value)),
 });
 
 const toFormValues = (refueling: IRefueling): FormValues => ({
@@ -109,6 +125,7 @@ const toFormValues = (refueling: IRefueling): FormValues => ({
   totalValue: refueling.totalValue.toString(),
   station: refueling.station ?? '',
   fuelType: refueling.fuelType,
+  litersInTank: refueling.litersInTank?.toString() ?? '',
 });
 
 /** Preço por litro a partir do que está digitado; `null` enquanto algum dos dois não for um número válido. */
@@ -196,6 +213,7 @@ const AbastecimentosTab: FC<AbastecimentosTabProps> = ({ motorcycle, active, onC
       totalValue: toNumber(values.totalValue),
       station: values.station.trim() || null,
       fuelType: values.fuelType,
+      litersInTank: values.litersInTank.trim() ? toNumber(values.litersInTank) : null,
     };
     try {
       if (editing) {
@@ -322,7 +340,7 @@ const AbastecimentosTab: FC<AbastecimentosTabProps> = ({ motorcycle, active, onC
                   key={item.id}
                   title={`${formatDate(item.date)} · ${formatKm(item.odometerKm)}`}
                   lines={[
-                    `${formatLiters(item.liters)} · ${formatCurrency(item.totalValue)} · ${formatPerLiter(item.pricePerLiter)}`,
+                    `${formatLitersWithTank(item.liters, item.litersInTank)} · ${formatCurrency(item.totalValue)} · ${formatPerLiter(item.pricePerLiter)}`,
                     item.kmDriven === null
                       ? 'Consumo em aberto até o próximo abastecimento'
                       : `${formatKm(item.kmDriven)} rodados · ${formatKmPerLiter(item.kmPerLiter)}`,
@@ -379,7 +397,7 @@ const AbastecimentosTab: FC<AbastecimentosTabProps> = ({ motorcycle, active, onC
                     <TableCell align="right">{formatKm(item.odometerKm)}</TableCell>
                     <TableCell align="right">{item.kmDriven === null ? OPEN_CONSUMPTION : formatKm(item.kmDriven)}</TableCell>
                     <TableCell align="right">{item.kmDriven === null ? OPEN_CONSUMPTION : formatKmPerLiter(item.kmPerLiter)}</TableCell>
-                    <TableCell align="right">{formatLiters(item.liters)}</TableCell>
+                    <TableCell align="right">{formatLitersWithTank(item.liters, item.litersInTank)}</TableCell>
                     <TableCell align="right">{formatCurrency(item.totalValue)}</TableCell>
                     <TableCell align="right" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{formatPerLiter(item.pricePerLiter)}</TableCell>
                     <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>{FUEL_TYPE_LABEL[item.fuelType]}</TableCell>
@@ -459,6 +477,16 @@ const AbastecimentosTab: FC<AbastecimentosTabProps> = ({ motorcycle, active, onC
                   {...register('totalValue')}
                   error={Boolean(errors.totalValue)}
                   helperText={errors.totalValue?.message}
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  label="Já havia no tanque (L)"
+                  fullWidth
+                  inputProps={{ inputMode: 'decimal' }}
+                  {...register('litersInTank')}
+                  error={Boolean(errors.litersInTank)}
+                  helperText={errors.litersInTank?.message ?? 'Opcional: o que restava antes de abastecer. Soma aos litros no consumo.'}
                 />
               </Grid>
               {price !== null && (

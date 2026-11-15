@@ -48,8 +48,8 @@ describe('Moto · aba Abastecimentos', () => {
   it('mostra o carregamento e depois as linhas formatadas', async () => {
     mockApi.get.mockResolvedValue({
       data: makeRefuelingPage([
-        // o mais recente fica em aberto até o próximo abastecimento
-        makeRefueling({ kmDriven: null, kmPerLiter: null }),
+        // o mais recente fica em aberto até o próximo abastecimento; já havia 2 L no tanque
+        makeRefueling({ kmDriven: null, kmPerLiter: null, litersInTank: 2 }),
         makeRefueling({
           id: 'b',
           date: '2026-01-20',
@@ -78,7 +78,8 @@ describe('Moto · aba Abastecimentos', () => {
     expect(first.getAllByText('Em aberto')).toHaveLength(2);
     expect(within(rows[2]).getByText('200 km')).toBeInTheDocument();
     expect(within(rows[2]).getByText('25,00 km/l')).toBeInTheDocument();
-    expect(first.getByText('5,00 L')).toBeInTheDocument();
+    expect(first.getByText('5,00 L + 2,00 L no tanque')).toBeInTheDocument();
+    expect(within(rows[2]).getByText('8,00 L')).toBeInTheDocument();
     expect(plain(first.getByText(/R\$\s32,00/).textContent)).toBe('R$ 32,00');
     expect(plain(first.getByText(/6,40\/L/).textContent)).toBe('R$ 6,40/L');
     expect(first.getByText('Gasolina comum')).toBeInTheDocument();
@@ -254,12 +255,38 @@ describe('Moto · aba Abastecimentos', () => {
           totalValue: 35.2,
           station: null,
           fuelType: 'GASOLINA_COMUM',
+          litersInTank: null,
         }),
       );
       expect(await screen.findByText('Abastecimento registrado!')).toBeInTheDocument();
       expect(onChanged).toHaveBeenCalledTimes(1);
       await waitFor(() => expect(mockApi.get).toHaveBeenCalledTimes(2));
       await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    });
+
+    it('envia os litros que já estavam no tanque (opcional, aceita vírgula) e valida o valor', async () => {
+      const user = userEvent.setup();
+      mockApi.post.mockResolvedValue({ data: makeRefueling() });
+      renderTab();
+      const form = await openNew(user);
+      const noTanque = form.getByLabelText(/^Já havia no tanque/);
+      expect(noTanque).not.toBeRequired();
+      expect(form.getByText('Opcional: o que restava antes de abastecer. Soma aos litros no consumo.')).toBeInTheDocument();
+
+      await user.type(form.getByLabelText(/^Hodômetro/), '68629');
+      await user.type(form.getByLabelText(/^Litros/), '9');
+      await user.type(form.getByLabelText(/^Valor total/), '64,75');
+      await user.type(noTanque, '-1');
+      await user.click(form.getByRole('button', { name: 'Salvar' }));
+      expect(await form.findByText('Litros no tanque inválido')).toBeInTheDocument();
+      expect(mockApi.post).not.toHaveBeenCalled();
+
+      await user.clear(noTanque);
+      await user.type(noTanque, '5,5');
+      await user.click(form.getByRole('button', { name: 'Salvar' }));
+
+      await waitFor(() => expect(mockApi.post).toHaveBeenCalledTimes(1));
+      expect(mockApi.post.mock.calls[0][1]).toMatchObject({ liters: 9, litersInTank: 5.5 });
     });
 
     it('não tem marcação de tanque completo e envia posto e combustível sem fullTank', async () => {
@@ -360,6 +387,7 @@ describe('Moto · aba Abastecimentos', () => {
   describe('editar e excluir', () => {
     it('editar abre preenchido e envia PUT com o id', async () => {
       const user = userEvent.setup();
+      mockApi.get.mockResolvedValue({ data: makeRefuelingPage([makeRefueling({ litersInTank: 5 })]) });
       mockApi.put.mockResolvedValue({ data: makeRefueling() });
       renderTab();
 
@@ -369,15 +397,18 @@ describe('Moto · aba Abastecimentos', () => {
       expect(form.getByLabelText(/^Litros/)).toHaveValue('5');
       expect(form.getByLabelText(/^Valor total/)).toHaveValue('32');
       expect(form.getByLabelText(/^Posto/)).toHaveValue('Posto Shell');
+      expect(form.getByLabelText(/^Já havia no tanque/)).toHaveValue('5');
 
       await user.clear(form.getByLabelText(/^Litros/));
       await user.type(form.getByLabelText(/^Litros/), '6');
+      // apagar o campo opcional volta a só os litros abastecidos
+      await user.clear(form.getByLabelText(/^Já havia no tanque/));
       await user.click(form.getByRole('button', { name: 'Salvar' }));
 
       await waitFor(() =>
         expect(mockApi.put).toHaveBeenCalledWith(
           `${URL}/${makeRefueling().id}`,
-          expect.objectContaining({ date: '2026-02-10', odometerKm: 1500, liters: 6, totalValue: 32 }),
+          expect.objectContaining({ date: '2026-02-10', odometerKm: 1500, liters: 6, totalValue: 32, litersInTank: null }),
         ),
       );
       expect(await screen.findByText('Abastecimento atualizado!')).toBeInTheDocument();

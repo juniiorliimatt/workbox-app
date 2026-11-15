@@ -7,6 +7,7 @@ import {
   formatKmPerDay,
   formatKmPerLiter,
   formatLiters,
+  formatLitersWithTank,
   formatPerKm,
   formatPct,
   formatPerLiter,
@@ -23,6 +24,12 @@ describe('moto · format', () => {
     expect(formatKm(-100)).toBe('-100 km');
     expect(formatKm(null)).toBe('—');
     expect(formatKm(undefined)).toBe('—');
+  });
+
+  it('formatLitersWithTank mostra o que já estava no tanque só quando informado e maior que zero', () => {
+    expect(formatLitersWithTank(9, 5)).toBe('9,00 L + 5,00 L no tanque');
+    expect(formatLitersWithTank(9, null)).toBe('9,00 L');
+    expect(formatLitersWithTank(9, 0)).toBe('9,00 L');
   });
 
   it('formatKmPerLiter tem 2 casas e vírgula; nulo vira traço', () => {

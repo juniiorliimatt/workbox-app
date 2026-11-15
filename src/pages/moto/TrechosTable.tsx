@@ -19,7 +19,7 @@ import { useSnackbar } from '@/hooks/useSnackbar';
 import { IRefuelingPage } from '@/interfaces/moto';
 import { RecordCard, RecordList } from '@/pages/moto/RecordList';
 import { useCompactLayout } from '@/pages/moto/useCompactLayout';
-import { OPEN_CONSUMPTION, formatDate, formatKm, formatKmPerLiter, formatLiters } from '@/pages/moto/format';
+import { OPEN_CONSUMPTION, formatDate, formatKm, formatKmPerLiter, formatLitersWithTank } from '@/pages/moto/format';
 import { listRefuelings } from '@/services/motoApi';
 import { useAxiosWithAuth } from '@/services/useAxiosWithAuth';
 
@@ -90,8 +90,8 @@ const TrechosTable: FC<TrechosTableProps> = ({ motoId, active, refreshKey }) => 
                   title={`${formatDate(item.date)} · ${formatKm(item.odometerKm)}`}
                   lines={[
                     item.kmDriven === null
-                      ? `${formatLiters(item.liters)} · consumo em aberto até o próximo abastecimento`
-                      : `${formatKm(item.kmDriven)} rodados com ${formatLiters(item.liters)} · ${formatKmPerLiter(item.kmPerLiter)}`,
+                      ? `${formatLitersWithTank(item.liters, item.litersInTank)} · consumo em aberto até o próximo abastecimento`
+                      : `${formatKm(item.kmDriven)} rodados com ${formatLitersWithTank(item.liters, item.litersInTank)} · ${formatKmPerLiter(item.kmPerLiter)}`,
                   ]}
                   actions={null}
                 />
@@ -115,7 +115,7 @@ const TrechosTable: FC<TrechosTableProps> = ({ motoId, active, refreshKey }) => 
                       <TableCell>{formatDate(item.date)}</TableCell>
                       <TableCell align="right">{formatKm(item.odometerKm)}</TableCell>
                       <TableCell align="right">{item.kmDriven === null ? OPEN_CONSUMPTION : formatKm(item.kmDriven)}</TableCell>
-                      <TableCell align="right">{formatLiters(item.liters)}</TableCell>
+                      <TableCell align="right">{formatLitersWithTank(item.liters, item.litersInTank)}</TableCell>
                       <TableCell align="right">{item.kmDriven === null ? OPEN_CONSUMPTION : formatKmPerLiter(item.kmPerLiter)}</TableCell>
                     </TableRow>
                   ))}
