@@ -43,7 +43,9 @@ src/
 │   └── UserAvatar.tsx     # Componente de exibição de avatar autenticado
 ├── contexts/        # Contextos React e State Management
 │   ├── AuthContext.tsx    # Provedor de autenticação, tokens, MFA e perfis
-│   └── AuthContextValue.ts
+│   ├── AuthContextValue.ts
+│   ├── SnackbarContext.tsx       # SnackbarProvider (avisos globais)
+│   └── SnackbarContextValue.ts   # O contexto em si, fora do arquivo do componente (Fast Refresh)
 ├── hooks/           # Custom React Hooks
 │   ├── useAuth.ts               # Hook de consumo do AuthContext
 │   └── useAuthenticatedAvatar.ts # Hook para carregar imagens autenticadas com Bearer

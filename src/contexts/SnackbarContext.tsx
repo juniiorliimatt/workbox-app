@@ -1,11 +1,6 @@
-import { createContext, useState, FC, ReactNode, useCallback } from 'react';
+import { useState, FC, ReactNode, useCallback } from 'react';
 import { Snackbar, Alert, AlertColor } from '@mui/material';
-
-export interface SnackbarContextType {
-  showSnackbar: (message: string, severity?: AlertColor) => void;
-}
-
-export const SnackbarContext = createContext<SnackbarContextType | undefined>(undefined);
+import { SnackbarContext } from '@/contexts/SnackbarContextValue';
 
 export const SnackbarProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const [open, setOpen] = useState(false);
