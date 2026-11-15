@@ -44,7 +44,7 @@ const Moto: FC = () => {
         backLabel="Voltar aos Módulos"
       />
 
-      <Container maxWidth="lg" sx={{ mt: 3, mb: 4, flexGrow: 1 }}>
+      <Container maxWidth="xl" sx={{ mt: 3, mb: 4, flexGrow: 1 }}>
         {loading && motos.length === 0 && !error && (
           <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
             <CircularProgress aria-label="Carregando motos" />

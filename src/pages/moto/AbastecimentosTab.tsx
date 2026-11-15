@@ -23,6 +23,7 @@ import {
   ToggleButtonGroup,
   Typography,
 } from '@mui/material';
+import { alpha, getOverlayAlpha } from '@mui/material/styles';
 import { Add as AddIcon, Delete as DeleteIcon, Edit as EditIcon } from '@mui/icons-material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { Controller, useForm } from 'react-hook-form';
@@ -53,6 +54,8 @@ type PeriodMode = 'todos' | 'mensal' | 'anual';
 
 const ISO = 'YYYY-MM-DD';
 const DEFAULT_PAGE_SIZE = 10;
+/** Elevação do Paper que envolve as abas em `pages/Moto.tsx`: a coluna de ações fixa precisa do mesmo fundo. */
+const PAGE_PAPER_ELEVATION = 1;
 const PAGE_SIZE_OPTIONS = [10, 20, 50];
 
 /** Intervalo `from`/`to` (inclusivo) da API para o filtro escolhido; `{}` = sem período. */
@@ -330,7 +333,28 @@ const AbastecimentosTab: FC<AbastecimentosTabProps> = ({ motorcycle, active, onC
             </RecordList>
           ) : (
           <TableContainer sx={{ position: 'relative' }}>
-            <Table size="small" aria-label="Abastecimentos">
+            {/*
+              Valores numa linha só ("37,56 km/l", não "km/" + "l"); só o posto, texto livre, quebra. Estreita, a tabela rola
+              e as ações ficam presas à direita (senão editar/excluir somem atrás do scroll).
+            */}
+            <Table
+              size="small"
+              aria-label="Abastecimentos"
+              sx={(theme) => {
+                // Mesmo fundo do Paper da página (elevação 1): no escuro o MUI clareia o Paper com um overlay.
+                const overlay = alpha('#fff', Number(getOverlayAlpha(PAGE_PAPER_ELEVATION)));
+                return {
+                  '& th, & td': { whiteSpace: 'nowrap' },
+                  '& .posto': { whiteSpace: 'normal', minWidth: 160 },
+                  '& .acoes': {
+                    position: 'sticky',
+                    right: 0,
+                    bgcolor: 'background.paper',
+                    backgroundImage: theme.palette.mode === 'dark' ? `linear-gradient(${overlay}, ${overlay})` : 'none',
+                  },
+                };
+              }}
+            >
               <TableHead>
                 <TableRow>
                   <TableCell>Data</TableCell>
@@ -341,8 +365,8 @@ const AbastecimentosTab: FC<AbastecimentosTabProps> = ({ motorcycle, active, onC
                   <TableCell align="right">Valor</TableCell>
                   <TableCell align="right" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>R$/L</TableCell>
                   <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>Combustível</TableCell>
-                  <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>Posto</TableCell>
-                  <TableCell align="right">
+                  <TableCell className="posto" sx={{ display: { xs: 'none', md: 'table-cell' } }}>Posto</TableCell>
+                  <TableCell align="right" className="acoes">
                     <span style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0 0 0 0)' }}>Ações</span>
                   </TableCell>
                 </TableRow>
@@ -358,8 +382,8 @@ const AbastecimentosTab: FC<AbastecimentosTabProps> = ({ motorcycle, active, onC
                     <TableCell align="right">{formatCurrency(item.totalValue)}</TableCell>
                     <TableCell align="right" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{formatPerLiter(item.pricePerLiter)}</TableCell>
                     <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>{FUEL_TYPE_LABEL[item.fuelType]}</TableCell>
-                    <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>{item.station ?? '—'}</TableCell>
-                    <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>{renderActions(item)}</TableCell>
+                    <TableCell className="posto" sx={{ display: { xs: 'none', md: 'table-cell' } }}>{item.station ?? '—'}</TableCell>
+                    <TableCell align="right" className="acoes">{renderActions(item)}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
