@@ -43,10 +43,13 @@ export interface IRefueling {
   pricePerLiter: number;
   station: string | null;
   fuelType: FuelType;
-  /** Hodômetro − hodômetro do abastecimento anterior da moto (independe de filtro/página); nulo no primeiro. */
-  kmSincePrevious: number | null;
-  /** km/l bruto desse trecho (km ÷ litros deste abastecimento); nulo no primeiro ou sem km. Não é a média. */
-  kmPerLiterSincePrevious: number | null;
+  /**
+   * Km rodados com o combustível deste abastecimento: hodômetro do próximo − o deste (independe de filtro/página).
+   * Nulo no mais recente: fica **em aberto** até o próximo abastecimento ser registrado.
+   */
+  kmDriven: number | null;
+  /** `kmDriven` ÷ litros deste abastecimento; nulo em aberto ou sem km rodados. */
+  kmPerLiter: number | null;
 }
 
 export interface IRefuelingRequest {
@@ -117,7 +120,7 @@ export interface IOilStatus {
   limitedBy: OilLimit | null;
 }
 
-/** Métricas de um período. km/l e custo por km = km dos trechos ÷ litros (e gasto) de todos os abastecimentos; `lowConfidence` = menos de 3 trechos. */
+/** Métricas de um período. km/l e custo por km = Σkm dos trechos ÷ Σlitros (e gasto) do abastecimento que inicia cada trecho; `lowConfidence` = menos de 3 trechos. */
 export interface IStats {
   from: string;
   to: string;

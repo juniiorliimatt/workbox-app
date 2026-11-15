@@ -94,8 +94,8 @@ export const makeRefueling = (overrides?: Partial<IRefueling>): IRefueling => ({
   pricePerLiter: 6.4,
   station: 'Posto Shell',
   fuelType: 'GASOLINA_COMUM',
-  kmSincePrevious: 200,
-  kmPerLiterSincePrevious: 40,
+  kmDriven: 200,
+  kmPerLiter: 40,
   ...overrides,
 });
 

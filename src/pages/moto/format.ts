@@ -10,6 +10,12 @@ const number = (value: number, decimals = 0): string =>
 /** `1.234 km`; ausência vira "—". */
 export const formatKm = (km: number | null | undefined): string => (km === null || km === undefined ? EMPTY : `${number(km)} km`);
 
+/**
+ * Km/consumo do abastecimento mais recente: o combustível dele ainda está rodando, então os valores só existem quando o
+ * próximo abastecimento for registrado.
+ */
+export const OPEN_CONSUMPTION = 'Em aberto';
+
 /** `37,50 km/l`; ausência vira "—". */
 export const formatKmPerLiter = (value: number | null | undefined): string =>
   value === null || value === undefined ? EMPTY : `${number(value, 2)} km/l`;

@@ -37,7 +37,7 @@ import { FuelType, IMotorcycle, IRefueling, IRefuelingRequest } from '@/interfac
 import { errorMessage } from '@/pages/moto/errors';
 import { RecordCard, RecordList } from '@/pages/moto/RecordList';
 import { useCompactLayout } from '@/pages/moto/useCompactLayout';
-import { FUEL_TYPE_LABEL, MONTH_NAMES, formatDate, formatKm, formatKmPerLiter, formatLiters, formatPerLiter } from '@/pages/moto/format';
+import { FUEL_TYPE_LABEL, MONTH_NAMES, OPEN_CONSUMPTION, formatDate, formatKm, formatKmPerLiter, formatLiters, formatPerLiter } from '@/pages/moto/format';
 import { createRefueling, deleteRefueling, listRefuelings, updateRefueling } from '@/services/motoApi';
 import { useAxiosWithAuth } from '@/services/useAxiosWithAuth';
 import { formatCurrency } from '@/utils/format';
@@ -323,8 +323,9 @@ const AbastecimentosTab: FC<AbastecimentosTabProps> = ({ motorcycle, active, onC
                   title={`${formatDate(item.date)} · ${formatKm(item.odometerKm)}`}
                   lines={[
                     `${formatLiters(item.liters)} · ${formatCurrency(item.totalValue)} · ${formatPerLiter(item.pricePerLiter)}`,
-                    item.kmSincePrevious !== null &&
-                      `${formatKm(item.kmSincePrevious)} rodados · ${formatKmPerLiter(item.kmPerLiterSincePrevious)}`,
+                    item.kmDriven === null
+                      ? 'Consumo em aberto até o próximo abastecimento'
+                      : `${formatKm(item.kmDriven)} rodados · ${formatKmPerLiter(item.kmPerLiter)}`,
                     [FUEL_TYPE_LABEL[item.fuelType], item.station].filter(Boolean).join(' · '),
                   ].filter(Boolean)}
                   actions={renderActions(item)}
@@ -376,8 +377,8 @@ const AbastecimentosTab: FC<AbastecimentosTabProps> = ({ motorcycle, active, onC
                   <TableRow key={item.id} hover>
                     <TableCell>{formatDate(item.date)}</TableCell>
                     <TableCell align="right">{formatKm(item.odometerKm)}</TableCell>
-                    <TableCell align="right">{formatKm(item.kmSincePrevious)}</TableCell>
-                    <TableCell align="right">{formatKmPerLiter(item.kmPerLiterSincePrevious)}</TableCell>
+                    <TableCell align="right">{item.kmDriven === null ? OPEN_CONSUMPTION : formatKm(item.kmDriven)}</TableCell>
+                    <TableCell align="right">{item.kmDriven === null ? OPEN_CONSUMPTION : formatKmPerLiter(item.kmPerLiter)}</TableCell>
                     <TableCell align="right">{formatLiters(item.liters)}</TableCell>
                     <TableCell align="right">{formatCurrency(item.totalValue)}</TableCell>
                     <TableCell align="right" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{formatPerLiter(item.pricePerLiter)}</TableCell>

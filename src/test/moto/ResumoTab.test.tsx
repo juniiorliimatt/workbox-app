@@ -51,8 +51,8 @@ const defaults = (): Data => ({
   oil: makeOilStatus(),
   refuelings: () =>
     makeRefuelingPage([
-      makeRefueling(),
-      makeRefueling({ id: 'b', date: '2026-01-20', odometerKm: 1300, liters: 8, kmSincePrevious: null, kmPerLiterSincePrevious: null }),
+      makeRefueling({ kmDriven: null, kmPerLiter: null }),
+      makeRefueling({ id: 'b', date: '2026-01-20', odometerKm: 1300, liters: 8, kmDriven: 200, kmPerLiter: 25 }),
     ]),
 });
 
@@ -202,10 +202,13 @@ describe('Moto · aba Resumo', () => {
       const first = within(rows[1]);
       expect(first.getByText('10/02/2026')).toBeInTheDocument();
       expect(first.getByText('1.500 km')).toBeInTheDocument();
-      expect(first.getByText('200 km')).toBeInTheDocument();
       expect(first.getByText('5,00 L')).toBeInTheDocument();
-      expect(first.getByText('40,00 km/l')).toBeInTheDocument();
-      expect(within(rows[2]).getAllByText('—')).toHaveLength(2);
+      expect(first.getAllByText('Em aberto')).toHaveLength(2);
+      // os litros da linha são os que rodaram os km dela: 200 km / 8 L
+      const second = within(rows[2]);
+      expect(second.getByText('200 km')).toBeInTheDocument();
+      expect(second.getByText('8,00 L')).toBeInTheDocument();
+      expect(second.getByText('25,00 km/l')).toBeInTheDocument();
       expect(calls('/refuelings')[0][1].params).toEqual({ page: 0, size: 10 });
 
       const cards = screen.getByRole('group', { name: 'Próxima troca de óleo' });
@@ -277,8 +280,8 @@ describe('Moto · aba Resumo', () => {
         expect(screen.queryByRole('table', { name: TITLE })).not.toBeInTheDocument();
         const items = within(list).getAllByRole('listitem');
         expect(within(items[0]).getByText('10/02/2026 · 1.500 km')).toBeInTheDocument();
-        expect(within(items[0]).getByText('200 km rodados · 5,00 L · 40,00 km/l')).toBeInTheDocument();
-        expect(within(items[1]).getByText('Primeiro abastecimento · 8,00 L')).toBeInTheDocument();
+        expect(within(items[0]).getByText('5,00 L · consumo em aberto até o próximo abastecimento')).toBeInTheDocument();
+        expect(within(items[1]).getByText('200 km rodados com 8,00 L · 25,00 km/l')).toBeInTheDocument();
       });
     });
   });

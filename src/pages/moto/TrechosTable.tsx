@@ -19,7 +19,7 @@ import { useSnackbar } from '@/hooks/useSnackbar';
 import { IRefuelingPage } from '@/interfaces/moto';
 import { RecordCard, RecordList } from '@/pages/moto/RecordList';
 import { useCompactLayout } from '@/pages/moto/useCompactLayout';
-import { formatDate, formatKm, formatKmPerLiter, formatLiters } from '@/pages/moto/format';
+import { OPEN_CONSUMPTION, formatDate, formatKm, formatKmPerLiter, formatLiters } from '@/pages/moto/format';
 import { listRefuelings } from '@/services/motoApi';
 import { useAxiosWithAuth } from '@/services/useAxiosWithAuth';
 
@@ -35,8 +35,8 @@ const TITLE = 'Entre abastecimentos';
 const PAGE_SIZE = 10;
 
 /**
- * Km rodados e km/l de cada abastecimento desde o anterior, do mais recente ao mais antigo. O km/l é o bruto do trecho
- * (vem do servidor, calculado sobre a moto inteira): num abastecimento parcial ele foge da curva; a média é a do card.
+ * Km rodados com o combustível de cada abastecimento e o km/l dele (km ÷ os litros da própria linha), do mais recente ao
+ * mais antigo. Vêm do servidor, calculados sobre a moto inteira; o mais recente fica "Em aberto" até o próximo.
  */
 const TrechosTable: FC<TrechosTableProps> = ({ motoId, active, refreshKey }) => {
   const api = useAxiosWithAuth();
@@ -89,9 +89,9 @@ const TrechosTable: FC<TrechosTableProps> = ({ motoId, active, refreshKey }) => 
                   key={item.id}
                   title={`${formatDate(item.date)} · ${formatKm(item.odometerKm)}`}
                   lines={[
-                    item.kmSincePrevious === null
-                      ? `Primeiro abastecimento · ${formatLiters(item.liters)}`
-                      : `${formatKm(item.kmSincePrevious)} rodados · ${formatLiters(item.liters)} · ${formatKmPerLiter(item.kmPerLiterSincePrevious)}`,
+                    item.kmDriven === null
+                      ? `${formatLiters(item.liters)} · consumo em aberto até o próximo abastecimento`
+                      : `${formatKm(item.kmDriven)} rodados com ${formatLiters(item.liters)} · ${formatKmPerLiter(item.kmPerLiter)}`,
                   ]}
                   actions={null}
                 />
@@ -114,9 +114,9 @@ const TrechosTable: FC<TrechosTableProps> = ({ motoId, active, refreshKey }) => 
                     <TableRow key={item.id} hover>
                       <TableCell>{formatDate(item.date)}</TableCell>
                       <TableCell align="right">{formatKm(item.odometerKm)}</TableCell>
-                      <TableCell align="right">{formatKm(item.kmSincePrevious)}</TableCell>
+                      <TableCell align="right">{item.kmDriven === null ? OPEN_CONSUMPTION : formatKm(item.kmDriven)}</TableCell>
                       <TableCell align="right">{formatLiters(item.liters)}</TableCell>
-                      <TableCell align="right">{formatKmPerLiter(item.kmPerLiterSincePrevious)}</TableCell>
+                      <TableCell align="right">{item.kmDriven === null ? OPEN_CONSUMPTION : formatKmPerLiter(item.kmPerLiter)}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
