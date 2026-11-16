@@ -73,7 +73,7 @@ textos exatos). Achado preservado: o "Novo Tipo de Receita" tem checkboxes de co
   e responde 403 "Invalid CORS request" em tudo — o login carregava mas não entrava. Não voltar para `$host`.
 - `api.ts`: `baseURL` vem de `VITE_PUBLIC_URL_API` (vazio = proxy), `withCredentials:
   true`. `useAxiosWithAuth` injeta `Authorization: Bearer` e, em `401`, renova via
-  `POST /api/v1/auth/refresh` (corpo `{ "refreshToken": ... }`) e repete a chamada.
+  `POST /api/v1/auth/refresh` (sem corpo: o refresh token vai no cookie HttpOnly) e repete a chamada.
 - Avatar protegido: blob autenticado via `GET /api/v1/user/{id}/avatar`
   (`useAuthenticatedAvatar`, com cache in-memory).
 - **Roles**: authority pura (`ADMIN`, `USER`) em `/api/v1/role` e `/api/v1/user/**`; o
@@ -224,10 +224,12 @@ textos exatos). Achado preservado: o "Novo Tipo de Receita" tem checkboxes de co
   cinzas e o tooltip branco padrão ficam ilegíveis no escuro. Exceção deliberada: QR do MFA continua branco (leitura).
   Tela nova: valide nos dois modos (screenshot do recharts: não use `fullPage`, ele redimensiona e o gráfico sai em branco).
 - **Segurança** (apontar sempre que tocar):
-  - O **refresh token fica em `localStorage`** (`AuthContext`, chave
-    `REFRESH_TOKEN_STORAGE_KEY`) — exposto a XSS (CWE-922); o ideal é cookie
-    `HttpOnly`+`Secure`+`SameSite` emitido pelo backend. Débito conhecido, mudança exige
-    contrato novo no `workbox-api`. O access token fica só em memória (`useState`).
+  - O **refresh token vive só no cookie `HttpOnly`** `workbox_refresh` emitido pelo `workbox-api` (`SameSite=Strict`,
+    `Path=/api/v1/auth`) — o JS nunca o vê, então um XSS não o exfiltra (CWE-922). O corpo de login/refresh traz só o
+    `access_token`, que fica só em memória (`useState`). **Nunca** voltar a guardar token em `localStorage`. A chave
+    antiga `workbox_refresh_token` só é lida uma vez, para migrar a sessão (enviada no corpo do `/refresh`), e apagada.
+    Como o cookie é invisível, "há sessão" é o `sessionAliveRef` do `AuthContext` (decide se a renovação tenta de novo);
+    no mount o app sempre chama `POST /auth/refresh` sem corpo — sem sessão, o 401 é o esperado.
   - "Lembrar de mim" guarda só o e-mail em `localStorage`.
   - Sem `dangerouslySetInnerHTML`/`innerHTML`; manter assim.
   - Auto-logout por inatividade de 15 min (`IdleMonitor`: teclado/mouse/toque + o evento `SESSION_ACTIVITY_EVENT` de
@@ -237,7 +239,8 @@ textos exatos). Achado preservado: o "Novo Tipo de Receita" tem checkboxes de co
     quando ele entrava nas deps a renovação do token (a cada ~13 min) reiniciava a contagem — o logout nunca disparava.
   - Access token (15 min) renovado por timer **2 min antes de expirar** (`AuthContext`); `refresh()` é single-flight e a
     referência da promessa é limpa em `.finally` (um `finally` interno já travou o refresh para sempre no retorno antecipado).
-    Só 4xx (≠ 408/429) do `/auth/refresh` encerra a sessão; rede/5xx/429 mantém o refresh token e tenta de novo em 15 s.
+    Só 4xx (≠ 408/429) do `/auth/refresh` encerra a sessão; rede/5xx/429 mantém a sessão e tenta de novo em 15 s. O
+    servidor também encerra sozinho: refresh token sem uso por 20 min (inatividade) ou sessão com 12 h desde o login.
     O interceptor 401 → refresh → repete a chamada é instalado **uma vez no `ProtectedRoute`** (`useAxiosWithAuth()`), então vale
     também para telas que montam o header à mão (Admin*, avatar). Tela nova pode usar `api` direto sem perder a renovação.
 

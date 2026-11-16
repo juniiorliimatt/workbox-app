@@ -14,7 +14,31 @@ import { IMfaEnrollResponse } from '@/interfaces/IMfaEnrollResponse';
 import api from '@/services/api';
 import { AuthContext } from './AuthContextValue';
 
-const REFRESH_TOKEN_STORAGE_KEY = 'workbox_refresh_token';
+/**
+ * Chave onde versões antigas guardavam o refresh token (exposto a XSS, CWE-922). Hoje o refresh token vive só no cookie
+ * HttpOnly `workbox_refresh`, que o JS não lê: a chave só é lida uma vez, para migrar a sessão, e então apagada.
+ */
+const LEGACY_REFRESH_TOKEN_STORAGE_KEY = 'workbox_refresh_token';
+const REFRESH_URL = '/api/v1/auth/refresh';
+
+/** Lê e apaga o refresh token legado do `localStorage` (sempre em try/catch: o storage pode estar bloqueado). */
+const takeLegacyRefreshToken = (): string | null => {
+  try {
+    const token = localStorage.getItem(LEGACY_REFRESH_TOKEN_STORAGE_KEY);
+    localStorage.removeItem(LEGACY_REFRESH_TOKEN_STORAGE_KEY);
+    return token;
+  } catch {
+    return null;
+  }
+};
+
+const clearLegacyRefreshToken = (): void => {
+  try {
+    localStorage.removeItem(LEGACY_REFRESH_TOKEN_STORAGE_KEY);
+  } catch {
+    // storage indisponível: nada a limpar
+  }
+};
 
 /** Antecedência da renovação (o token vale 15 min). Folga larga: aba em segundo plano tem os timers atrasados pelo browser. */
 const RENEW_MARGIN_MS = 2 * 60 * 1000;
@@ -58,9 +82,8 @@ const extractRolesFromToken = (token: string): string[] => {
 
 export const AuthProvider: FC<IAuthProviderProps> = ({ children }) => {
   const [accessToken, setAccessToken] = useState<string | null>(null);
-  const [, setRefreshTokenState] = useState<string | null>(() => {
-    return localStorage.getItem(REFRESH_TOKEN_STORAGE_KEY);
-  });
+  /** Há uma sessão no servidor (o cookie do refresh token não é visível ao JS): decide se vale tentar renovar de novo. */
+  const sessionAliveRef = useRef<boolean>(false);
   const [user, setUser] = useState<IUser | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [mfaRequired, setMfaRequired] = useState<boolean>(false);
@@ -105,14 +128,11 @@ export const AuthProvider: FC<IAuthProviderProps> = ({ children }) => {
     }
 
     const token = response.data.access_token || response.data.accessToken;
-    const refreshToken = response.data.refresh_token || response.data.refreshToken;
 
     if (token) {
+      // o refresh token chegou no cookie HttpOnly da resposta
+      sessionAliveRef.current = true;
       setAccessToken(token);
-      if (refreshToken) {
-        setRefreshTokenState(refreshToken);
-        localStorage.setItem(REFRESH_TOKEN_STORAGE_KEY, refreshToken);
-      }
       setMfaRequired(false);
       setMfaToken(null);
       await fetchUserProfile(token);
@@ -266,14 +286,10 @@ export const AuthProvider: FC<IAuthProviderProps> = ({ children }) => {
     });
 
     const token = response.data.access_token || response.data.accessToken;
-    const refreshToken = response.data.refresh_token || response.data.refreshToken;
 
     if (token) {
+      sessionAliveRef.current = true;
       setAccessToken(token);
-      if (refreshToken) {
-        setRefreshTokenState(refreshToken);
-        localStorage.setItem(REFRESH_TOKEN_STORAGE_KEY, refreshToken);
-      }
       setMfaRequired(false);
       setMfaToken(null);
       await fetchUserProfile(token);
@@ -286,42 +302,33 @@ export const AuthProvider: FC<IAuthProviderProps> = ({ children }) => {
     }
 
     const refreshLogic = async (): Promise<string | null> => {
-      const currentRefreshToken = localStorage.getItem(REFRESH_TOKEN_STORAGE_KEY);
-      if (!currentRefreshToken) {
-        setAccessToken(null);
-        setUser(null);
-        return null;
-      }
+      // O refresh token vai sozinho no cookie HttpOnly. Só uma sessão salva por versão antiga do app (localStorage) é
+      // enviada no corpo, uma única vez, para migrar: a resposta já devolve o token novo no cookie.
+      const legacyRefreshToken = takeLegacyRefreshToken();
 
       try {
-        const response = await api.post<IAuthResponse>(
-          '/api/v1/auth/refresh',
-          { refreshToken: currentRefreshToken }
-        );
+        const response = legacyRefreshToken
+          ? await api.post<IAuthResponse>(REFRESH_URL, { refreshToken: legacyRefreshToken })
+          : await api.post<IAuthResponse>(REFRESH_URL);
 
         const token = response.data.access_token || response.data.accessToken;
-        const refreshToken = response.data.refresh_token || response.data.refreshToken;
-
         if (token) {
+          sessionAliveRef.current = true;
           setAccessToken(token);
-          if (refreshToken) {
-            setRefreshTokenState(refreshToken);
-            localStorage.setItem(REFRESH_TOKEN_STORAGE_KEY, refreshToken);
-          }
           await fetchUserProfile(token);
           return token;
         }
+        sessionAliveRef.current = false;
         setAccessToken(null);
         setUser(null);
-        localStorage.removeItem(REFRESH_TOKEN_STORAGE_KEY);
         return null;
       } catch (error: unknown) {
-        // Só o servidor recusando o refresh token encerra a sessão. Queda de rede, 5xx e 429 são transitórios: mantém o
-        // refresh token (ainda válido) para a próxima tentativa, em vez de mandar o usuário logar de novo.
+        // Só o servidor recusando o refresh token encerra a sessão (sem cookie, vencido por inatividade, sessão no limite,
+        // revogado). Queda de rede, 5xx e 429 são transitórios: a sessão segue e a renovação é tentada de novo.
         if (isRefreshRejected(error)) {
+          sessionAliveRef.current = false;
           setAccessToken(null);
           setUser(null);
-          localStorage.removeItem(REFRESH_TOKEN_STORAGE_KEY);
         }
         return null;
       }
@@ -353,7 +360,7 @@ export const AuthProvider: FC<IAuthProviderProps> = ({ children }) => {
         void refresh().then((token) => {
           // Com token novo o efeito reexecuta (o `accessToken` mudou). Sem token e com a sessão ainda de pé, a falha foi
           // transitória: tenta de novo em alguns segundos.
-          if (!token && !cancelled && localStorage.getItem(REFRESH_TOKEN_STORAGE_KEY)) schedule(RENEW_RETRY_MS);
+          if (!token && !cancelled && sessionAliveRef.current) schedule(RENEW_RETRY_MS);
         });
       }, delayMs);
     };
@@ -381,12 +388,13 @@ export const AuthProvider: FC<IAuthProviderProps> = ({ children }) => {
     } catch {
       // Falha no logout de backend ainda limpa o estado local
     } finally {
+      // o cookie do refresh token é apagado pelo servidor na resposta do logout (HttpOnly: o JS não o alcança)
+      sessionAliveRef.current = false;
       setAccessToken(null);
-      setRefreshTokenState(null);
       setUser(null);
       setMfaRequired(false);
       setMfaToken(null);
-      localStorage.removeItem(REFRESH_TOKEN_STORAGE_KEY);
+      clearLegacyRefreshToken();
     }
   };
 

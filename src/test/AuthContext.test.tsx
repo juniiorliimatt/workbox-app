@@ -4,7 +4,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { useAuth } from '@/hooks/useAuth';
 import api from '@/services/api';
-import { AxiosResponse, InternalAxiosRequestConfig } from 'axios';
+import { AxiosError, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
 import { IAuthResponse } from '@/interfaces/IAuthResponse';
 import { IUser } from '@/interfaces/IUser';
 
@@ -50,14 +50,9 @@ describe('AuthContext & AuthProvider', () => {
     localStorage.clear();
   });
 
-  it('initializes and attempts token refresh with JSON body on mount', async () => {
-    localStorage.setItem('workbox_refresh_token', 'saved-refresh-token');
-
+  it('ao montar, renova a sessão pelo cookie HttpOnly (sem corpo e sem guardar nada no localStorage)', async () => {
     vi.mocked(api.post).mockResolvedValueOnce(
-      mockAxiosResponse<IAuthResponse>({
-        access_token: 'initial-jwt-token',
-        refresh_token: 'rotated-refresh-token',
-      })
+      mockAxiosResponse<IAuthResponse>({ access_token: 'initial-jwt-token' })
     );
 
     vi.mocked(api.get).mockResolvedValueOnce(
@@ -71,14 +66,46 @@ describe('AuthContext & AuthProvider', () => {
     );
 
     await waitFor(() => {
-      expect(api.post).toHaveBeenCalledWith('/api/v1/auth/refresh', {
-        refreshToken: 'saved-refresh-token',
-      });
-      expect(localStorage.getItem('workbox_refresh_token')).toBe('rotated-refresh-token');
+      expect(api.post).toHaveBeenCalledWith('/api/v1/auth/refresh');
       expect(screen.getByTestId('auth-status')).toHaveTextContent('Autenticado');
       expect(screen.getByTestId('user-name')).toHaveTextContent('Administrador');
       expect(screen.getByTestId('token')).toHaveTextContent('initial-jwt-token');
     });
+    expect(Object.keys(localStorage)).toEqual([]);
+  });
+
+  it('migra uma única vez o refresh token salvo no localStorage antes do cookie e apaga a chave', async () => {
+    localStorage.setItem('workbox_refresh_token', 'token-legado');
+    vi.mocked(api.post).mockResolvedValueOnce(mockAxiosResponse<IAuthResponse>({ access_token: 'jwt-migrado' }));
+    vi.mocked(api.get).mockResolvedValueOnce(
+      mockAxiosResponse<IUser>({ id: '1', socialName: 'Administrador', email: 'admin@workbox.local', enabled: true })
+    );
+
+    render(
+      <AuthProvider>
+        <TestConsumer />
+      </AuthProvider>
+    );
+
+    await waitFor(() => expect(screen.getByTestId('token')).toHaveTextContent('jwt-migrado'));
+    expect(api.post).toHaveBeenCalledWith('/api/v1/auth/refresh', { refreshToken: 'token-legado' });
+    expect(localStorage.getItem('workbox_refresh_token')).toBeNull();
+  });
+
+  it('a chave legada é apagada mesmo se o servidor recusar o token antigo', async () => {
+    localStorage.setItem('workbox_refresh_token', 'token-legado-vencido');
+    vi.mocked(api.post).mockRejectedValueOnce(
+      new AxiosError('401', '401', undefined, undefined, { status: 401, data: {}, statusText: '', headers: {}, config: { headers: {} } as InternalAxiosRequestConfig })
+    );
+
+    render(
+      <AuthProvider>
+        <TestConsumer />
+      </AuthProvider>
+    );
+
+    await waitFor(() => expect(screen.getByTestId('auth-status')).toHaveTextContent('Não autenticado'));
+    expect(localStorage.getItem('workbox_refresh_token')).toBeNull();
   });
 
   it('calls register endpoint on registerUser', async () => {
@@ -125,10 +152,7 @@ describe('AuthContext & AuthProvider', () => {
 
     // login succeeds
     vi.mocked(api.post).mockResolvedValueOnce(
-      mockAxiosResponse<IAuthResponse>({
-        access_token: 'new-jwt-token',
-        refresh_token: 'new-refresh-token',
-      })
+      mockAxiosResponse<IAuthResponse>({ access_token: 'new-jwt-token' })
     );
 
     vi.mocked(api.get).mockResolvedValueOnce(
@@ -144,23 +168,17 @@ describe('AuthContext & AuthProvider', () => {
     await user.click(loginBtn);
 
     await waitFor(() => {
-      expect(localStorage.getItem('workbox_refresh_token')).toBe('new-refresh-token');
       expect(screen.getByTestId('auth-status')).toHaveTextContent('Autenticado');
       expect(screen.getByTestId('user-name')).toHaveTextContent('Administrador');
       expect(screen.getByTestId('token')).toHaveTextContent('new-jwt-token');
     });
+    expect(Object.keys(localStorage)).toEqual([]);
   });
 
   it('performs logout and clears state and stored tokens', async () => {
     const user = userEvent.setup();
-    localStorage.setItem('workbox_refresh_token', 'jwt-refresh-to-logout');
 
-    vi.mocked(api.post).mockResolvedValueOnce(
-      mockAxiosResponse<IAuthResponse>({
-        access_token: 'jwt-to-logout',
-        refresh_token: 'jwt-refresh-to-logout',
-      })
-    );
+    vi.mocked(api.post).mockResolvedValueOnce(mockAxiosResponse<IAuthResponse>({ access_token: 'jwt-to-logout' }));
 
     vi.mocked(api.get).mockResolvedValueOnce(
       mockAxiosResponse<IUser>({ id: '1', socialName: 'Administrador', email: 'admin@workbox.local', enabled: true })
@@ -182,7 +200,8 @@ describe('AuthContext & AuthProvider', () => {
     await user.click(logoutBtn);
 
     await waitFor(() => {
-      expect(localStorage.getItem('workbox_refresh_token')).toBeNull();
+      // o servidor apaga o cookie do refresh token na resposta do logout
+      expect(api.post).toHaveBeenCalledWith('/api/v1/auth/logout', {}, { headers: { Authorization: 'Bearer jwt-to-logout' } });
       expect(screen.getByTestId('auth-status')).toHaveTextContent('Não autenticado');
       expect(screen.getByTestId('user-name')).toHaveTextContent('Anônimo');
       expect(screen.getByTestId('token')).toHaveTextContent('Sem token');
@@ -190,9 +209,6 @@ describe('AuthContext & AuthProvider', () => {
   });
 
   it('garante que refresh é single-flight (apenas uma requisição concorrente à API)', async () => {
-    // Configura o localStorage com um token para o refresh ser ativado
-    localStorage.setItem('workbox_refresh_token', 'mock-refresh-token');
-
     let apiResolve: (value: unknown) => void = () => undefined;
     const pendingPromise = new Promise((resolve) => {
       apiResolve = resolve;
@@ -226,10 +242,7 @@ describe('AuthContext & AuthProvider', () => {
     const p3 = capturedRefresh!();
 
     // Resolve a API com um novo par de tokens
-    apiResolve(mockAxiosResponse<IAuthResponse>({
-      access_token: 'new-single-flight-token',
-      refresh_token: 'new-single-flight-refresh'
-    }));
+    apiResolve(mockAxiosResponse<IAuthResponse>({ access_token: 'new-single-flight-token' }));
 
     const results = await Promise.all([p1, p2, p3]);
 

@@ -9,7 +9,6 @@ import { IUser } from '@/interfaces/IUser';
 
 vi.mock('@/services/api');
 
-const REFRESH_KEY = 'workbox_refresh_token';
 const ACCESS_LIFETIME_MS = 15 * 60 * 1000;
 
 const ok = <T,>(data: T): AxiosResponse<T> => ({ data, status: 200, statusText: 'OK', headers: {}, config: { headers: {} } as InternalAxiosRequestConfig });
@@ -21,7 +20,8 @@ const jwt = (expiresInMs: number) => {
 };
 
 const profile = ok<IUser>({ id: '1', socialName: 'Admin', email: 'admin@workbox.local', enabled: true });
-const tokens = (access: string, refresh: string) => ok<IAuthResponse>({ access_token: access, refresh_token: refresh });
+/** O corpo traz só o access token: o refresh token vai no cookie HttpOnly, invisível ao JS. */
+const tokens = (access: string) => ok<IAuthResponse>({ access_token: access });
 
 const httpError = (status: number) =>
   new AxiosError('falhou', String(status), undefined, undefined, { status, data: {}, statusText: '', headers: {}, config: { headers: {} } as InternalAxiosRequestConfig });
@@ -40,7 +40,8 @@ const Consumer = () => {
 };
 
 const renderLoggedOutThenLogin = async (access: string) => {
-  vi.mocked(api.post).mockResolvedValueOnce(tokens(access, 'R1'));
+  // no mount o app tenta renovar pelo cookie; sem sessão o servidor responde 401
+  vi.mocked(api.post).mockRejectedValueOnce(httpError(401));
   vi.mocked(api.get).mockResolvedValue(profile);
   render(
     <AuthProvider>
@@ -48,6 +49,7 @@ const renderLoggedOutThenLogin = async (access: string) => {
     </AuthProvider>,
   );
   await screen.findByText('Não autenticado');
+  vi.mocked(api.post).mockResolvedValueOnce(tokens(access));
   await act(async () => screen.getByRole('button', { name: 'login' }).click());
   await waitFor(() => expect(screen.getByTestId('status')).toHaveTextContent('Autenticado'));
 };
@@ -61,15 +63,14 @@ describe('AuthProvider · renovação do access token', () => {
   });
   afterEach(() => vi.useRealTimers());
 
-  it('renova a sessão iniciada na tela de login (a 1ª tentativa, sem refresh token salvo, não pode travar as seguintes)', async () => {
+  it('renova a sessão iniciada na tela de login (a 1ª tentativa recusada, sem sessão, não pode travar as seguintes)', async () => {
     await renderLoggedOutThenLogin(jwt(ACCESS_LIFETIME_MS));
-    vi.mocked(api.post).mockResolvedValueOnce(tokens('novo-access', 'R2'));
+    vi.mocked(api.post).mockResolvedValueOnce(tokens('novo-access'));
 
     await act(async () => screen.getByRole('button', { name: 'refresh' }).click());
 
-    await waitFor(() => expect(api.post).toHaveBeenCalledWith('/api/v1/auth/refresh', { refreshToken: 'R1' }));
+    await waitFor(() => expect(api.post).toHaveBeenCalledWith('/api/v1/auth/refresh'));
     await waitFor(() => expect(screen.getByTestId('token')).toHaveTextContent('novo-access'));
-    expect(localStorage.getItem(REFRESH_KEY)).toBe('R2');
   });
 
   it('renova sozinho, 2 minutos antes de o access token expirar, sem nenhuma requisição falhar antes', async () => {
@@ -77,15 +78,15 @@ describe('AuthProvider · renovação do access token', () => {
     const first = jwt(ACCESS_LIFETIME_MS);
     await renderLoggedOutThenLogin(first);
     const renewed = jwt(2 * ACCESS_LIFETIME_MS);
-    vi.mocked(api.post).mockResolvedValueOnce(tokens(renewed, 'R2'));
+    vi.mocked(api.post).mockResolvedValueOnce(tokens(renewed));
 
     await act(async () => vi.advanceTimersByTimeAsync(ACCESS_LIFETIME_MS - 121_000));
-    expect(api.post).toHaveBeenCalledTimes(1); // só o login: ainda não é hora
+    expect(api.post).toHaveBeenCalledTimes(2); // refresh do mount (recusado) + login: ainda não é hora
 
     await act(async () => vi.advanceTimersByTimeAsync(2_000));
 
-    expect(api.post).toHaveBeenCalledTimes(2);
-    expect(api.post).toHaveBeenLastCalledWith('/api/v1/auth/refresh', { refreshToken: 'R1' });
+    expect(api.post).toHaveBeenCalledTimes(3);
+    expect(api.post).toHaveBeenLastCalledWith('/api/v1/auth/refresh');
     await waitFor(() => expect(screen.getByTestId('token')).toHaveTextContent(renewed));
     expect(screen.getByTestId('status')).toHaveTextContent('Autenticado');
   });
@@ -95,20 +96,20 @@ describe('AuthProvider · renovação do access token', () => {
     await renderLoggedOutThenLogin(jwt(ACCESS_LIFETIME_MS));
     // o JWT é gerado na hora da chamada: um token renovado vale 15 min a partir de AGORA
     vi.mocked(api.post)
-      .mockImplementationOnce(async () => tokens(jwt(ACCESS_LIFETIME_MS), 'R2'))
-      .mockImplementationOnce(async () => tokens(jwt(ACCESS_LIFETIME_MS), 'R3'));
+      .mockImplementationOnce(async () => tokens(jwt(ACCESS_LIFETIME_MS)))
+      .mockImplementationOnce(async () => tokens(jwt(ACCESS_LIFETIME_MS)));
 
     await act(async () => vi.advanceTimersByTimeAsync(ACCESS_LIFETIME_MS - 119_000));
     await act(async () => vi.advanceTimersByTimeAsync(ACCESS_LIFETIME_MS));
 
-    expect(api.post).toHaveBeenCalledWith('/api/v1/auth/refresh', { refreshToken: 'R1' });
-    expect(api.post).toHaveBeenCalledWith('/api/v1/auth/refresh', { refreshToken: 'R2' });
+    expect(api.post).toHaveBeenCalledWith('/api/v1/auth/refresh');
+    expect(api.post).toHaveBeenCalledWith('/api/v1/auth/refresh');
     expect(screen.getByTestId('status')).toHaveTextContent('Autenticado');
   });
 
   it('refresh simultâneos viram uma única chamada ao backend (o refresh token roda a cada uso)', async () => {
     await renderLoggedOutThenLogin(jwt(ACCESS_LIFETIME_MS));
-    vi.mocked(api.post).mockResolvedValueOnce(tokens('novo-access', 'R2'));
+    vi.mocked(api.post).mockResolvedValueOnce(tokens('novo-access'));
 
     await act(async () => {
       screen.getByRole('button', { name: 'refresh' }).click();
@@ -116,22 +117,21 @@ describe('AuthProvider · renovação do access token', () => {
     });
 
     await waitFor(() => expect(screen.getByTestId('token')).toHaveTextContent('novo-access'));
-    expect(vi.mocked(api.post).mock.calls.filter(([url]) => url === '/api/v1/auth/refresh')).toHaveLength(1);
+    expect(vi.mocked(api.post).mock.calls.filter(([url]) => url === '/api/v1/auth/refresh')).toHaveLength(2); // a do mount (sem sessão) + uma só pelos dois cliques
   });
 
   it.each([
     ['queda de rede', new Error('Network Error')],
     ['erro 503 do servidor', httpError(503)],
     ['limite de requisições (429)', httpError(429)],
-  ])('falha transitória (%s) NÃO derruba a sessão nem apaga o refresh token', async (_name, failure) => {
+  ])('falha transitória (%s) NÃO derruba a sessão', async (_name, failure) => {
     await renderLoggedOutThenLogin(jwt(ACCESS_LIFETIME_MS));
     vi.mocked(api.post).mockRejectedValueOnce(failure);
 
     await act(async () => screen.getByRole('button', { name: 'refresh' }).click());
 
-    await waitFor(() => expect(api.post).toHaveBeenCalledWith('/api/v1/auth/refresh', { refreshToken: 'R1' }));
+    await waitFor(() => expect(api.post).toHaveBeenCalledWith('/api/v1/auth/refresh'));
     expect(screen.getByTestId('status')).toHaveTextContent('Autenticado');
-    expect(localStorage.getItem(REFRESH_KEY)).toBe('R1');
   });
 
   it('refresh token recusado pelo servidor (401) encerra a sessão', async () => {
@@ -141,7 +141,6 @@ describe('AuthProvider · renovação do access token', () => {
     await act(async () => screen.getByRole('button', { name: 'refresh' }).click());
 
     await waitFor(() => expect(screen.getByTestId('status')).toHaveTextContent('Não autenticado'));
-    expect(localStorage.getItem(REFRESH_KEY)).toBeNull();
   });
 
   it('depois de uma falha transitória, tenta renovar de novo em vez de esperar o token expirar', async () => {
@@ -149,13 +148,12 @@ describe('AuthProvider · renovação do access token', () => {
     await renderLoggedOutThenLogin(jwt(ACCESS_LIFETIME_MS));
     vi.mocked(api.post)
       .mockRejectedValueOnce(new Error('Network Error'))
-      .mockImplementationOnce(async () => tokens(jwt(ACCESS_LIFETIME_MS), 'R2'));
+      .mockImplementationOnce(async () => tokens(jwt(ACCESS_LIFETIME_MS)));
 
     await act(async () => vi.advanceTimersByTimeAsync(ACCESS_LIFETIME_MS - 119_000)); // 1ª tentativa falha
     await act(async () => vi.advanceTimersByTimeAsync(20_000)); // nova tentativa em poucos segundos
 
-    expect(api.post).toHaveBeenLastCalledWith('/api/v1/auth/refresh', { refreshToken: 'R1' });
-    expect(vi.mocked(api.post).mock.calls.filter(([url]) => url === '/api/v1/auth/refresh')).toHaveLength(2);
-    expect(localStorage.getItem(REFRESH_KEY)).toBe('R2');
+    expect(api.post).toHaveBeenLastCalledWith('/api/v1/auth/refresh');
+    expect(vi.mocked(api.post).mock.calls.filter(([url]) => url === '/api/v1/auth/refresh')).toHaveLength(3); // mount + tentativa que falhou + nova tentativa
   });
 });

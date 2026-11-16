@@ -111,7 +111,8 @@ em uso).
 - **Controle de Inatividade (Auto-Logout)**: O frontend expira e invalida a sessão automaticamente se o usuário ficar inativo por 15 minutos (sem interação com mouse/teclado/touch). Exceção: na tela **Forza › Ao vivo**, enquanto a telemetria está chegando, a sessão conta como ativa (quem joga no Xbox e só acompanha a tela não é deslogado); com o jogo parado a inatividade volta a valer.
 - **Renovação de Sessão (Token Refresh)**:
   - O access token (15 min) é renovado sozinho **2 min antes de expirar**; falha transitória (rede, 5xx, 429) não derruba a sessão e tenta de novo em 15 s — só o servidor recusando o refresh token encerra.
-  - Rotação contínua de refresh tokens via `POST /api/v1/auth/refresh` com corpo JSON `{ "refreshToken": "..." }`.
+  - Rotação contínua de refresh tokens via `POST /api/v1/auth/refresh`, **sem corpo**: o refresh token vai e volta só no cookie `HttpOnly` `workbox_refresh` (o JavaScript nunca o lê; nada de token em `localStorage`). Sessões salvas por versões antigas (chave `workbox_refresh_token`) são migradas uma vez e a chave é apagada.
+  - O servidor encerra a sessão sozinho após 20 min sem renovação (navegador fechado, máquina suspensa) e 12 h depois do login, mesmo com renovações.
   - Renovação automática transparente via interceptors do Axios em respostas 401.
 
 ### 2. Hub de Módulos (`/dashboard`)
