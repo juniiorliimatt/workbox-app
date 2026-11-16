@@ -69,6 +69,16 @@ const renderPage = () =>
     </AuthContext.Provider>
   );
 
+/**
+ * Preenche o campo colando o texto (eventos de input reais, de uma vez). Digitar a senha de cifra (23 caracteres) tecla a
+ * tecla re-renderizava o formulário MUI a cada caractere: ~1,2 s sozinho e acima dos 5 s de timeout com a suíte inteira
+ * rodando em paralelo. O teste valida tamanho e confirmação, não a digitação.
+ */
+const fill = async (user: ReturnType<typeof userEvent.setup>, label: RegExp, text: string) => {
+  await user.click(screen.getByLabelText(label));
+  await user.paste(text);
+};
+
 const stubList = (items: IBackupInfo[]) => vi.mocked(api.get).mockResolvedValue({ data: items });
 
 describe('AdminBackups', () => {
@@ -133,13 +143,13 @@ describe('AdminBackups', () => {
     await screen.findByText(/Nenhum backup gerado ainda/i);
 
     await user.click(screen.getByRole('checkbox', { name: /Cifrar com senha/i }));
-    await user.type(screen.getByLabelText(/^Senha de cifra/i), 'curta');
-    await user.type(screen.getByLabelText(/Confirmar senha/i), 'curta');
+    await fill(user, /^Senha de cifra/i, 'curta');
+    await fill(user, /Confirmar senha/i, 'curta');
     await user.click(screen.getByRole('button', { name: /Gerar backup agora/i }));
     expect(await screen.findByText(/pelo menos 12 caracteres/i)).toBeInTheDocument();
 
     await user.clear(screen.getByLabelText(/^Senha de cifra/i));
-    await user.type(screen.getByLabelText(/^Senha de cifra/i), PASSPHRASE);
+    await fill(user, /^Senha de cifra/i, PASSPHRASE);
     await user.click(screen.getByRole('button', { name: /Gerar backup agora/i }));
     expect(await screen.findByText(/confirmação não confere/i)).toBeInTheDocument();
 
@@ -154,8 +164,8 @@ describe('AdminBackups', () => {
     await screen.findByText(/Nenhum backup gerado ainda/i);
 
     await user.click(screen.getByRole('checkbox', { name: /Cifrar com senha/i }));
-    await user.type(screen.getByLabelText(/^Senha de cifra/i), PASSPHRASE);
-    await user.type(screen.getByLabelText(/Confirmar senha/i), PASSPHRASE);
+    await fill(user, /^Senha de cifra/i, PASSPHRASE);
+    await fill(user, /Confirmar senha/i, PASSPHRASE);
     await user.click(screen.getByRole('button', { name: /Gerar backup agora/i }));
 
     await waitFor(() =>
