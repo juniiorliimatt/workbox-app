@@ -243,6 +243,9 @@ textos exatos). Achado preservado: o "Novo Tipo de Receita" tem checkboxes de co
     servidor também encerra sozinho: refresh token sem uso por 20 min (inatividade) ou sessão com 12 h desde o login.
     O interceptor 401 → refresh → repete a chamada é instalado **uma vez no `ProtectedRoute`** (`useAxiosWithAuth()`), então vale
     também para telas que montam o header à mão (Admin*, avatar). Tela nova pode usar `api` direto sem perder a renovação.
+    O hook instala **um único par** de interceptors no app (contagem de referências entre as telas que o chamam) e lê
+    token/`refresh`/`logout` por referência atualizada em `useLayoutEffect`: nunca reinstale por render nem ponha essas
+    funções nas deps de um efeito que registra interceptor (elas mudam a cada render do `AuthProvider`).
 
 ## Testes (test-first)
 - Vitest + Testing Library em `src/test/` (`*.test.tsx`, `setupTests.ts`): comportamento,
